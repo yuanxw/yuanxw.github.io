@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>JAVA多线程(二)Java多线程之火车票</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E7%81%AB%E8%BD%A6%E7%A5%A8/</url>
+    <content><![CDATA[1. JAVA多线程(二)Java多线程之火车票&emsp;&emsp;需求如下：铁道部发布了一个售票任务，要求销售10张票，要求有4个窗口来进行销售，请编写多线程程序来模拟这个效果
+
+第001窗口，正在售票，票号：1
+第004窗口，正在售票，票号：2
+第002窗口，正在售票，票号：3
+第003窗口，正在售票，票号：4
+
+1.1 继承Thread类多线程进行售票继承Thread类的方式创建多线程进行售票的方式，在不加锁的情况下，每一个窗口都独立个体，数据没有共享。（四个窗口都卖了10张票，这显然不是我们想的结果），代码如下：
+package com.yuanxw.chapter2;/** * 火车票售票 */public class RailwayStation &#123;    public static void main(String[] args) &#123;        TicketWindow ticketWindow1 = new TicketWindow(&quot;001窗口&quot;);        TicketWindow ticketWindow2 = new TicketWindow(&quot;002窗口&quot;);        TicketWindow ticketWindow3 = new TicketWindow(&quot;003窗口&quot;);        TicketWindow ticketWindow4 = new TicketWindow(&quot;004窗口&quot;);        ticketWindow1.start();        ticketWindow2.start();        ticketWindow3.start();        ticketWindow4.start();    &#125;&#125;
+
+package com.yuanxw.chapter2;/** * 售票窗口 * @author yuanxw */public class TicketWindow  extends Thread &#123;    /** 最大售数 **/    private final int MAX_NUMBER = 10;    /** 当前售数 **/    private int currentNumber = 1;    /** 窗口名称 **/    private String name;    public TicketWindow(String name) &#123;        this.name = name;    &#125;    @Override    public void run() &#123;        while (currentNumber &lt;= MAX_NUMBER)&#123;            System.out.println(String.format(&quot;第%s，正在售票，票号：%s&quot;, name,currentNumber++));        &#125;    &#125;&#125;
+执行结果：
+第001窗口，正在售票，票号：1第002窗口，正在售票，票号：1第003窗口，正在售票，票号：1第001窗口，正在售票，票号：2第004窗口，正在售票，票号：1第003窗口，正在售票，票号：2第001窗口，正在售票，票号：3第003窗口，正在售票，票号：3第001窗口，正在售票，票号：4第003窗口，正在售票，票号：4第002窗口，正在售票，票号：2第001窗口，正在售票，票号：5第003窗口，正在售票，票号：5第002窗口，正在售票，票号：3第004窗口，正在售票，票号：2第003窗口，正在售票，票号：6第002窗口，正在售票，票号：4第001窗口，正在售票，票号：6第003窗口，正在售票，票号：7第002窗口，正在售票，票号：5第001窗口，正在售票，票号：7第004窗口，正在售票，票号：3第002窗口，正在售票，票号：6第001窗口，正在售票，票号：8第003窗口，正在售票，票号：8第002窗口，正在售票，票号：7第001窗口，正在售票，票号：9第003窗口，正在售票，票号：9第002窗口，正在售票，票号：8第004窗口，正在售票，票号：4第001窗口，正在售票，票号：10第002窗口，正在售票，票号：9第003窗口，正在售票，票号：10第004窗口，正在售票，票号：5第002窗口，正在售票，票号：10第004窗口，正在售票，票号：6第004窗口，正在售票，票号：7第004窗口，正在售票，票号：8第004窗口，正在售票，票号：9第004窗口，正在售票，票号：10
+
+2.2 实现Runnable接口多线程进行售票实现Runnable接口的方式将我们可执行的逻辑单元和我们的线程控制分离，Runnable接口更加适合多个相同线程处理同一份资源的情况。
+package com.yuanxw.chapter2;/** * 高铁站售票 */public class HighSpeedRailStation &#123;    public static void main(String[] args) &#123;        TicketWindowRunnable ticketWindowRunnable = new TicketWindowRunnable();        Thread thread1 = new Thread(ticketWindowRunnable,&quot;001窗口&quot;);        Thread thread2 = new Thread(ticketWindowRunnable,&quot;002窗口&quot;);        Thread thread3 = new Thread(ticketWindowRunnable,&quot;003窗口&quot;);        Thread thread4 = new Thread(ticketWindowRunnable,&quot;004窗口&quot;);        thread1.start();        thread2.start();        thread3.start();        thread4.start();    &#125;&#125;
+
+package com.yuanxw.chapter2;/** * 实现Runnable方式售票 */public class TicketWindowRunnable implements Runnable &#123;    /** 最大售数 **/    private final int MAX_NUMBER = 10;    /** 当前售数 **/    private int currentNumber = 1;    @Override    public void run() &#123;        try &#123;            Thread.sleep(100);        &#125; catch (InterruptedException e) &#123;            e.printStackTrace();        &#125;        while (currentNumber &lt;= MAX_NUMBER)&#123;            System.out.println(String.format(&quot;第%s，正在售票，票号：%s&quot;, Thread.currentThread().getName(),currentNumber++));        &#125;    &#125;&#125;
+
+执行结果：
+第001窗口，正在售票，票号：2第002窗口，正在售票，票号：3第004窗口，正在售票，票号：1第003窗口，正在售票，票号：4第001窗口，正在售票，票号：5第002窗口，正在售票，票号：6第004窗口，正在售票，票号：7第001窗口，正在售票，票号：9第002窗口，正在售票，票号：10第003窗口，正在售票，票号：8
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二)Java多线程之火车票》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(一)认识JAVA多线程</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%B8%80)%E8%AE%A4%E8%AF%86JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B/</url>
+    <content><![CDATA[1. 什么是线程和进程?&emsp;&emsp;在早期的计算机中不包含操作系统，它们从头到尾只执行一个程序，并肯这个程序能访问计算机中的所有的所有资源。在这种裸机环境中，不仅很难编写和运行程序，而且每次只能运行一个程序，这对于昂贵并且稀有的计算机资源来说也是一种浪费。
+&emsp;&emsp;操作系统的出现使得计算机每次能运行多个程序，并且不同的程序都在单独的进程中运行：操作系统为各个独立执行的进程分配各种资源，包括内存，文件句柄以及安全证书等。如果需要的话，在不同的进程之间可以通过一些粗粒度的通信机制来交换数据，包括：套接字、信号处理器、共享内存、信号量以及文件等。
+1.1 什么是进程进程是程序的一次执行过程，是系统运行程序的基本单位，因此进程是动态的。系统运行一个程序即是一个进程从创建，运行到消亡的过程。
+在 Java 中，当我们启动 main 函数时其实就是启动了一个 JVM 的进程，而 main 函数所在的线程就是这个进程中的一个线程，也称主线程。
+如下图所示，在 windows 中通过查看任务管理器的方式，我们就可以清楚看到 window 当前运行的进程（.exe 文件的运行）。
+1.2 什么是线程线程与进程相似，但线程是一个比进程更小的执行单位。一个进程在其执行的过程中可以产生多个线程。与进程不同的是同类的多个线程共享进程的堆和方法区资源，但每个线程有自己的程序计数器、虚拟机栈和本地方法栈，所以系统在产生一个线程，或是在各个线程之间作切换工作时，负担要比进程小得多，也正因为如此，线程也被称为轻量级进程。
+2. Java中创建线程&emsp;&emsp;在Java中创建线程的方式有三种：继承Thread类重写run方法、实现runnable接口重写run方法和实现callable接口重写call方法配合futureTask使用
+2.1 继承Thread类继承Thread类的方式创建线程算是最简单的了，但是你的线程类往往要继承项目中的其他类，而Java是单继承机制的，所以使用此方法会有很大的局限性。
+package com.yuanxw.chapter1;/** * Java中创建线程一：继承Thread类重写run方法 */public class MyThread extends Thread &#123;    public static void main(String[] args) &#123;        MyThread myThread = new MyThread();        myThread.start();        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, currentThread().getName()));    &#125;    @Override    public void run() &#123;        for (int i = 0; i &lt; 20; i++) &#123;            try &#123;                System.out.println(String.format(&quot;线程：【%s】,打印：%s&quot;, currentThread().getName(),i));                Thread.sleep(1000);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, currentThread().getName()));    &#125;&#125;
+2.2 实现Runnable接口Thread类的构造方法允许传入一个实现Runnable接口的target进去，线程启动将会执行target.run方法。实现Runnable接口的方式可以很好的避免单继承问题。
+package com.yuanxw.chapter1;/** * Java中创建线程二：实现Runnable接口重写run方法 */public class MyRunnable implements Runnable&#123;    public static void main(String[] args) &#123;        MyRunnable myRunnable = new MyRunnable();        Thread thread = new Thread(myRunnable);        thread.start();        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, Thread.currentThread().getName()));    &#125;    @Override    public void run() &#123;        for (int i = 0; i &lt; 20; i++) &#123;            try &#123;                System.out.println(String.format(&quot;线程：【%s】,打印：%s&quot;, Thread.currentThread().getName(),i));                Thread.sleep(1000);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, Thread.currentThread().getName()));    &#125;&#125;
+2.3 实现Callable接口call方法与run方法最大的区别在于call方法存在返回值futureTask的get方法可以获取这个返回值。使用此种方法实现线程的好处是当你创建的任务的结果不是立即就要时，你可以提交一个线程在后台执行，而你的程序仍可以正常运行下去，在需要执行结果时使用futureTask去获取即可。这是一种典型的异步任务处理的方法。
+package com.yuanxw.chapter1;import java.util.concurrent.Callable;import java.util.concurrent.ExecutionException;import java.util.concurrent.FutureTask;import java.util.concurrent.TimeoutException;public class MyCallable implements Callable &#123;    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException &#123;        FutureTask futureTask1 = new FutureTask(new MyCallable());        new Thread(futureTask1,&quot;子线程-A&quot;).start();        FutureTask futureTask2 = new FutureTask(new MyCallable());        new Thread(futureTask2,&quot;子线程-B&quot;).start();        // futureTask可以在指定时间内获取线程执行的返回值，超时则丢弃任务        //  因此futureTask可以用作异步任务处理        // futureTask.get(1000, TimeUnit.SECONDS);        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, Thread.currentThread().getName()));    &#125;    @Override    public Object call() throws Exception &#123;        int sum = 0;        for (int i = 0; i &lt; 50; i++) &#123;            try &#123;                System.out.println(String.format(&quot;线程：【%s】,打印：%s&quot;, Thread.currentThread().getName(),i));                Thread.sleep(100);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;            sum += i;        &#125;        System.out.println(String.format(&quot;线程：【%s】,运行结束&quot;, Thread.currentThread().getName()));        System.out.println(&quot;执行结果：&quot; + sum);        return sum;    &#125;&#125;
+
+3. 线程的生命周期和状态Java 线程在运行的生命周期中的指定时刻只可能处于下面 6 种不同状态的其中一个状态（图源《Java 并发编程艺术》4.1.4 节）。线程在生命周期中并不是固定处于某一个状态而是随着代码的执行在不同状态之间切换。Java 线程状态变迁如下图所示（图源《Java 并发编程艺术》4.1.4 节）：由上图可以看出：线程创建之后它将处于 NEW（新建） 状态，调用 start() 方法后开始运行，线程这时候处于 READY（可运行） 状态。可运行状态的线程获得了 CPU 时间片（timeslice）后就处于 RUNNING（运行） 状态。当线程执行 wait()方法之后，线程进入 WAITING（等待） 状态。进入等待状态的线程需要依靠其他线程的通知才能够返回到运行状态，而 TIME_WAITING(超时等待) 状态相当于在等待状态的基础上增加了超时限制，比如通过 sleep（long millis）方法或 wait（long millis）方法可以将 Java 线程置于 TIMED WAITING 状态。当超时时间到达后 Java 线程将会返回到 RUNNABLE 状态。当线程调用同步方法时，在没有获取到锁的情况下，线程将会进入到 BLOCKED（阻塞） 状态。线程在执行 Runnable 的run()方法之后将会进入到 TERMINATED（终止） 状态。
+学习推荐书籍： [1]: 《Java并发编程实践 》 [2]: 《Java并发编程的艺术 》 [3]: 《Java高并发编程详解：多线程与架构设计 》 [4]: 《Java多线程编程核心技术（第2版） 》
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+</search>
