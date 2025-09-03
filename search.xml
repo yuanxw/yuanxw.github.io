@@ -29,6 +29,82 @@ package com.yuanxw.chapter1;import java.util.concurrent.Callable;import java.uti
       </tags>
   </entry>
   <entry>
+    <title>JAVA多线程(七)Java多线程之synchronized(同步锁)</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8Bsynchronized(%E5%90%8C%E6%AD%A5%E9%94%81)/</url>
+    <content><![CDATA[1.JAVA多线程(七)Java多线程之synchronized(同步锁)1.1 synchronized(同步锁)&emsp;&emsp;synchronized关键字解决的是多个线程之间访问资源的同步性，synchronized关键字可以保证被它修饰的方法或者代码块在任意时刻只能有一个线程执行。
+另外，在 Java 早期版本中，synchronized属于重量级锁，效率低下，因为监视器锁（monitor）是依赖于底层的操作系统的 Mutex Lock 来实现的，Java 的线程是映射到操作系统的原生线程之上的。如果要挂起或者唤醒一个线程，都需要操作系统帮忙完成，而操作系统实现线程之间的切换时需要从用户态转换到内核态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高，这也是为什么早期的 synchronized 效率低的原因。庆幸的是在 Java 6 之后 Java 官方对从 JVM 层面对synchronized 较大优化，所以现在的 synchronized 锁效率也优化得很不错了。JDK1.6对锁的实现引入了大量的优化，如自旋锁、适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等技术来减少锁操作的开销。
+synchronized 关键字最主要的三种使用方式：
+
+修饰实例方法: 作用于当前对象实例加锁，进入同步代码前要获得当前对象实例的锁
+修饰静态方法: 也就是给当前类加锁，会作用于类的所有对象实例，因为静态成员不属于任何一个实例对象，是类成员（ static 表明这是该类的一个静态资源，不管new了多少个对象，只有一份）。所以如果一个线程A调用一个实例对象的非静态 synchronized 方法，而线程B需要调用这个实例对象所属类的静态 synchronized 方法，是允许的，不会发生互斥现象，因为访问静态 synchronized 方法占用的锁是当前类的锁，而访问非静态 synchronized 方法占用的锁是当前实例对象锁。 修饰代码块: 指定加锁对象，对给定对象加锁，进入同步代码库前要获得给定对象的锁。
+
+总结 ： synchronized 关键字加到 static 静态方法和 synchronized(class)代码块上都是是给 Class 类上锁。synchronized 关键字加到实例方法上是给对象实例上锁。尽量不要使用 synchronized(String a) 因为JVM中，字符串常量池具有缓存功能！
+1.1.1.模拟多线程下单减库存，在不锁的情况的结果一个抢购活动某个商品的总数是一个常数，购买者可以有多个，每个购买操作都会使总数减少。我们竟然发现了 余票为-1 -2的情况，这就与实际不符。原因在于 多个线程同时执行同一段代码，导致变量错误。
+package com.yuanxw.chapter7;/** * 多线程处理订单 */public class ThreadOrder &#123;    public static void main(String[] args) &#123;        OrderPayService orderPayService = new OrderPayService();        new Thread(orderPayService).start();        new Thread(orderPayService).start();        new Thread(orderPayService).start();        new Thread(orderPayService).start();    &#125;&#125;class OrderPayService implements Runnable &#123;    /** 最大库存 **/    private  int maxQuantityNum = 10;    @Override    public void run() &#123;        while (maxQuantityNum &gt;0)&#123;            try &#123;                Thread.sleep(3);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;            System.out.println(String.format(&quot;您抢购商品，库存只剩下【%s】个商品&quot;, maxQuantityNum--));        &#125;    &#125;&#125;
+执行结果
+您抢购商品，库存只剩下【9】个商品您抢购商品，库存只剩下【8】个商品您抢购商品，库存只剩下【7】个商品您抢购商品，库存只剩下【10】个商品您抢购商品，库存只剩下【6】个商品您抢购商品，库存只剩下【6】个商品您抢购商品，库存只剩下【4】个商品您抢购商品，库存只剩下【5】个商品您抢购商品，库存只剩下【3】个商品您抢购商品，库存只剩下【3】个商品您抢购商品，库存只剩下【2】个商品您抢购商品，库存只剩下【1】个商品您抢购商品，库存只剩下【-1】个商品您抢购商品，库存只剩下【0】个商品
+我们应对这段代码进行加锁控制
+package com.yuanxw.chapter7;/** * 多线程处理订单 */public class ThreadOrderSynchronized &#123;    public static void main(String[] args) &#123;        OrderPaymentService orderPaymentService = new OrderPaymentService();        new Thread(orderPaymentService).start();        new Thread(orderPaymentService).start();        new Thread(orderPaymentService).start();        new Thread(orderPaymentService).start();    &#125;&#125;class OrderPaymentService implements Runnable &#123;    /** 最大库存 **/    private  int maxQuantityNum = 10;    /** 监控 **/    private final Object MONITOR = new Object();    @Override    public void run() &#123;        // synchronized 关键字加到实例方法上是给对象实例上锁        synchronized (MONITOR) &#123;            while (maxQuantityNum &gt; 0) &#123;                try &#123;                    Thread.sleep(3);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;                System.out.println(String.format(&quot;您抢购商品，库存只剩下【%s】个商品&quot;, maxQuantityNum--));            &#125;        &#125;    &#125;&#125;
+执行结果
+您抢购商品，库存只剩下【10】个商品您抢购商品，库存只剩下【9】个商品您抢购商品，库存只剩下【8】个商品您抢购商品，库存只剩下【7】个商品您抢购商品，库存只剩下【6】个商品您抢购商品，库存只剩下【5】个商品您抢购商品，库存只剩下【4】个商品您抢购商品，库存只剩下【3】个商品您抢购商品，库存只剩下【2】个商品您抢购商品，库存只剩下【1】个商品
+
+通过 JDK 自带的 javap 命令查看 OrderPaymentService.class 类的相关字节码信息：首先切换到类的对应目录执行 javac OrderPaymentService.java 命令生成编译后的 OrderPaymentService.class 文件，然后执行javap -c -s -v -l OrderPaymentService.class从上面我们可以看出：
+synchronized 同步语句块的实现使用的是 monitorenter 和 monitorexit 指令，其中 monitorenter 指令指向同步代码块的开始位置，monitorexit 指令则指明同步代码块的结束位置。 当执行 monitorenter 指令时，线程试图获取锁也就是获取 monitor(monitor对象存在于每个Java对象的对象头中，synchronized 锁便是通过这种方式获取锁的，也是为什么Java中任意对象可以作为锁的原因) 的持有权。当计数器为0则可以成功获取，获取后将锁计数器设为1也就是加1。相应的在执行 monitorexit 指令后，将锁计数器设为0，表明锁被释放。如果获取对象锁失败，那当前线程就要阻塞等待，直到锁被另外一个线程释放为止。
+1.2 单例模式(一)：【双重校验锁实现对象单例（线程安全）】双重检验锁方式实现单例模式的原理：需要注意 uniqueInstance 采用 volatile 关键字修饰也是很有必要。
+package com.yuanxw.chapter7;/** * 单例模式：一 */public class Singleton &#123;    // 内存可见性    private volatile static Singleton uniqueInstance;    private Singleton() &#123;    &#125;    public static Singleton getUniqueInstance() &#123;        //先判断对象是否已经实例过，没有实例化过才进入加锁代码        if (uniqueInstance == null) &#123;            //类对象加锁            synchronized (Singleton.class) &#123;                if (uniqueInstance == null) &#123;                    uniqueInstance = new Singleton();                &#125;            &#125;        &#125;        return uniqueInstance;    &#125;&#125;
+
+uniqueInstance 采用 volatile 关键字修饰也是很有必要的， uniqueInstance &#x3D; new Singleton(); 这段代码其实是分为三步执行：
+为 uniqueInstance 分配内存空间
+初始化 uniqueInstance
+将 uniqueInstance 指向分配的内存地址
+
+但是由于 JVM 具有指令重排的特性，执行顺序有可能变成 1-&gt;3-&gt;2。指令重排在单线程环境下不会出现问题，但是在多线程环境下会导致一个线程获得还没有初始化的实例。例如，线程 T1 执行了 1 和 3，此时 T2 调用 getUniqueInstance() 后发现 uniqueInstance 不为空，因此返回 uniqueInstance，但此时 uniqueInstance 还未被初始化。
+使用 volatile 可以禁止 JVM 的指令重排，保证在多线程环境下也能正常运行。
+1.3 单例模式(二)单例模式(二)：JVM类在加载的时候，只会运行一次，静态类可以严格的保证线程执行顺序 
+package com.yuanxw.chapter7;/** * 单例模式：二 */public class SingletonHolder &#123;    private SingletonHolder()&#123;    &#125;    /** JVM类在加载的时候，只会运行一次，静态类可以严格的保证线程执行顺序 **/    private static class InstanceHolder&#123;        private final static SingletonHolder instance = new SingletonHolder();    &#125;    public static SingletonHolder getInstance()&#123;        // 只有使用时才会加载。        return  SingletonHolder.getInstance();    &#125;&#125;
+1.4 单例模式(三)通过枚举的方式，保证线程安全。枚举构造函数只会被装载一次，因此可以保证对象只会被创建一次。
+package com.yuanxw.chapter7;/** * 单例模式：三 * 推荐使用 */public class SingtonEnum &#123;    private SingtonEnum()&#123;    &#125;    /**     * 通过枚举的方式，保证线程安全     */    private enum Sington &#123;        INSTANCE;        private final SingtonEnum instance;        Sington() &#123;            // 只会被创建一次            instance = new SingtonEnum();        &#125;        public SingtonEnum getInstance() &#123;            return instance;        &#125;    &#125;    /**     * 获得单例     * @return     */    public static SingtonEnum getInstance()&#123;        return Sington.INSTANCE.getInstance();    &#125;&#125;
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(七)Java多线程之synchronized(同步锁)》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(三)Java多线程之守护线程</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%B8%89)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E5%AE%88%E6%8A%A4%E7%BA%BF%E7%A8%8B/</url>
+    <content><![CDATA[1.JAVA多线程(三)Java多线程之守护线程1.1 daemon(守护线程)&emsp;&emsp;Java中有两类线程：User Thread(用户线程)、Daemon Thread(守护线程)。用户线程即运行在前台的线程，而守护线程是运行在后台的线程。
+
+&emsp;&emsp; 用户线程：运行在前台，执行具体的任务，程序的主线程，连接网络的子线程等都是用户线程。
+
+&emsp;&emsp; 守护线程：运行在后台，为其他前台线程服务。
+
+特点：当所有非守护线程结束时，程序也就终止，同时会杀死所有守护线程。
+应用：数据库连接池中的监测线程JVM启动后的监测线程
+最常见的守护线程：垃圾回收线程
+如何设置守护线程：可以通过Thread类的setDaemon（true）方法来设置当前的线程为守护线程
+
+
+
+package com.yuanxw.chapter3;/** * 守护线程 */public class DaemonThread &#123;    public static void main(String[] args) &#123;        Thread thread = new Thread()&#123;            @Override            public void run() &#123;                while (true)&#123;                    try &#123;                        sleep(500L);                    &#125; catch (InterruptedException e) &#123;                        e.printStackTrace();                    &#125;                    System.out.println(&quot;connecting to network ...&quot;);                &#125;            &#125;        &#125;;        /**         * 设置为守护线程，必须的调用start()方法之前设置。         * 在start()方法之后设置：Exception in thread &quot;main&quot; java.lang.IllegalThreadStateException         */        thread.setDaemon(true);        thread.start();    &#125;&#125;
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(三)Java多线程之守护线程》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JAVA多线程(二)Java多线程之火车票</title>
     <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E7%81%AB%E8%BD%A6%E7%A5%A8/</url>
     <content><![CDATA[1. JAVA多线程(二)Java多线程之火车票&emsp;&emsp;需求如下：铁道部发布了一个售票任务，要求销售10张票，要求有4个窗口来进行销售，请编写多线程程序来模拟这个效果
@@ -55,6 +131,229 @@ package com.yuanxw.chapter2;/** * 实现Runnable方式售票 */public class Tick
 
 
  &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二)Java多线程之火车票》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(九)Java多线程之生产者与消费者</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%B9%9D)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E7%94%9F%E4%BA%A7%E8%80%85%E4%B8%8E%E6%B6%88%E8%B4%B9%E8%80%85/</url>
+    <content><![CDATA[1.JAVA多线程(九)Java多线程之生产者与消费者
+需求如下：自定义多线程生产者与消费者
+1.如果生产者没有生产消息，就需要去生产消息，消费者就需要等待消费者生产完以后再去消费。
+2.如果消费者没有消费消息，那么生产者就需要等待，消费都消费完成后，再去生产消息。
+
+1.1 生产者与消费者【一个生产线程和一个消费者线程】package com.yuanxw.chapter9;/** * 自定义多线程生产者与消费者 * 1.如果生产者没有生产消息，就需要去生产消息，消费者就需要等待消费者生产完以后再去消费。 * 2.如果消费者没有消费消息，那么生产者就需要等待，消费都消费完成后，再去生产消息。 */public class ProduceConsumer &#123;    /** 生产数量 **/    private int num = 0;    /** 锁 **/    protected final Object LOCK = new Object();    /** volatile:内存可见性关键字，默认为没有生产，可以进行生产 **/    private volatile boolean isProducted = false;    /**     * 生产方法     * @return     */    public void produce() throws InterruptedException &#123;        // 同步生产        synchronized (LOCK)&#123;            // 如果消息已经生产，需要等待消费者消费后再去生产            if(isProducted)&#123;                /**                 * 调用 wait() 使得线程等待某个条件满足，线程在等待时会被挂起，当其他线程的运行使得这个条件满足时，其它线程会调用 notify() 或者 notifyAll() 来唤醒挂起的线程。                 * 它们都属于 Object 的一部分，而不属于 Thread。                 */                LOCK.wait();            &#125;else &#123;                // 如果已经消费，那么就需要进行生产                num++;                System.out.println(String.format(&quot;生产消息&gt;&gt;【%s】&quot;, num));                /**                 * 调用 wait() 使得线程等待某个条件满足，线程在等待时会被挂起，当其他线程的运行使得这个条件满足时，其它线程会调用 notify() 或者 notifyAll() 来唤醒挂起的线程。                 * 它们都属于 Object 的一部分，而不属于 Thread。                 */                // 通知消费者，可以进行消费                LOCK.notify();                // 设置标记：已经生产                isProducted = true;            &#125;        &#125;    &#125;    /**     * 消费方法     */    public void consumer() throws InterruptedException &#123;        // 同步消费        synchronized (LOCK)&#123;            // 如果已经生产，那么消费者消费            if(isProducted)&#123;                System.out.println(String.format(&quot;消费消息&lt;&lt;【%s】&quot;, num));                // 通知生产者已经消费                LOCK.notify();                // 设置标记：未生产                isProducted = false;            &#125;else &#123;                // 如果已经没有生产，即需要消息费进行等待生产者进行生产                LOCK.wait();            &#125;        &#125;    &#125;    public static void main(String[] args) &#123;        ProduceConsumer produceConsumer = new ProduceConsumer();        // 生产者：生产线程        new Thread(()-&gt;&#123;            try &#123;                while (true) &#123;                    produceConsumer.produce();                &#125;            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;).start();        // 消费者：消费线程        new Thread(()-&gt;&#123;            try &#123;                while (true) &#123;                    produceConsumer.consumer();                &#125;            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;).start();    &#125;&#125;
+
+执行结果：
+生产消息&gt;&gt;【1】消费消息&lt;&lt;【1】生产消息&gt;&gt;【2】消费消息&lt;&lt;【2】生产消息&gt;&gt;【3】消费消息&lt;&lt;【3】生产消息&gt;&gt;【4】消费消息&lt;&lt;【4】生产消息&gt;&gt;【5】消费消息&lt;&lt;【5】生产消息&gt;&gt;【6】消费消息&lt;&lt;【6】生产消息&gt;&gt;【7】消费消息&lt;&lt;【7】生产消息&gt;&gt;【8】消费消息&lt;&lt;【8】生产消息&gt;&gt;【9】消费消息&lt;&lt;【9】生产消息&gt;&gt;【10】消费消息&lt;&lt;【10】
+
+1.2 生产者与消费者【多个生产线程和多个消费者线程】package com.yuanxw.chapter9;import java.util.Arrays;/** * 自定义多线程生产者与消费者【多生產者多消費者】 * 1.如果生产者没有生产消息，就需要去生产消息，消费者就需要等待消费者生产完以后再去消费。 * 2.如果消费者没有消费消息，那么生产者就需要等待，消费都消费完成后，再去生产消息。 */public class MultiProduceConsumer &#123;    /** 生产数量 **/    private int num = 0;    /** 锁 **/    protected final Object LOCK = new Object();    /** volatile:内存可见性关键字，默认为没有生产，可以进行生产 **/    private volatile boolean isProducted = false;    /**     * 生产方法     * @return     */    public void produce() throws InterruptedException &#123;        // 同步生产        synchronized (LOCK)&#123;            // 如果消息已经生产，需要等待消费者消费后再去生产            while (isProducted)&#123;                /**                 * 调用 wait() 使得线程等待某个条件满足，线程在等待时会被挂起，当其他线程的运行使得这个条件满足时，其它线程会调用 notify() 或者 notifyAll() 来唤醒挂起的线程。                 * 它们都属于 Object 的一部分，而不属于 Thread。                 */                LOCK.wait();            &#125;            // 如果已经消费，那么就需要进行生产            num++;            System.out.println(String.format(&quot;生产消息&gt;&gt;&gt;&gt;【%s】&quot;, num));            /**             * 调用 wait() 使得线程等待某个条件满足，线程在等待时会被挂起，当其他线程的运行使得这个条件满足时，其它线程会调用 notify() 或者 notifyAll() 来唤醒挂起的线程。             * 它们都属于 Object 的一部分，而不属于 Thread。             */            // 通知消费者，可以进行消费            LOCK.notifyAll();            // 设置标记：已经生产            isProducted = true;        &#125;    &#125;    /**     * 消费方法     */    public void consumer() throws InterruptedException &#123;        // 同步消费        synchronized (LOCK)&#123;            // 如果已经生产，那么消费者消费            while (!isProducted)&#123;                // 如果已经没有生产，即需要消息费进行等待生产者进行生产                LOCK.wait();            &#125;            System.out.println(String.format(&quot;消费消息&lt;&lt;&lt;&lt;【%s】&quot;, num));            // 通知生产者已经消费            LOCK.notifyAll();            // 设置标记：未生产            isProducted = false;        &#125;    &#125;    public static void main(String[] args) &#123;        MultiProduceConsumer produceConsumer = new MultiProduceConsumer();        Arrays.asList(&quot;Produce1&quot;,&quot;Produce2&quot;,&quot;Produce3&quot;,&quot;Produce4&quot;,&quot;Produce5&quot;,&quot;Produce6&quot;,&quot;Produce7&quot;,&quot;Produce8&quot;).forEach(p-&gt;&#123;            // 生产者Produce            new Thread(()-&gt;&#123;                try &#123;                    while (true) &#123;                        produceConsumer.produce();                         Thread.sleep(10L);                    &#125;                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;            &#125;,p).start();        &#125;);        Arrays.asList(&quot;Consumer1&quot;,&quot;Consumer2&quot;,&quot;Consumer3&quot;,&quot;Consumer4&quot;,&quot;Consumer5&quot;,&quot;Consumer6&quot;).forEach(c-&gt; &#123;            // 消费者            new Thread(() -&gt; &#123;                try &#123;                    while (true) &#123;                        produceConsumer.consumer();                         Thread.sleep(10L);                    &#125;                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;            &#125;,c).start();        &#125;);    &#125;&#125;
+执行结果：
+生产消息&gt;&gt;&gt;&gt;【1】消费消息&lt;&lt;&lt;&lt;【1】生产消息&gt;&gt;&gt;&gt;【2】消费消息&lt;&lt;&lt;&lt;【2】生产消息&gt;&gt;&gt;&gt;【3】消费消息&lt;&lt;&lt;&lt;【3】生产消息&gt;&gt;&gt;&gt;【4】消费消息&lt;&lt;&lt;&lt;【4】生产消息&gt;&gt;&gt;&gt;【5】消费消息&lt;&lt;&lt;&lt;【5】生产消息&gt;&gt;&gt;&gt;【6】消费消息&lt;&lt;&lt;&lt;【6】生产消息&gt;&gt;&gt;&gt;【7】消费消息&lt;&lt;&lt;&lt;【7】生产消息&gt;&gt;&gt;&gt;【8】消费消息&lt;&lt;&lt;&lt;【8】生产消息&gt;&gt;&gt;&gt;【9】消费消息&lt;&lt;&lt;&lt;【9】生产消息&gt;&gt;&gt;&gt;【10】消费消息&lt;&lt;&lt;&lt;【10】生产消息&gt;&gt;&gt;&gt;【11】消费消息&lt;&lt;&lt;&lt;【11】生产消息&gt;&gt;&gt;&gt;【12】消费消息&lt;&lt;&lt;&lt;【12】生产消息&gt;&gt;&gt;&gt;【13】消费消息&lt;&lt;&lt;&lt;【13】生产消息&gt;&gt;&gt;&gt;【14】消费消息&lt;&lt;&lt;&lt;【14】生产消息&gt;&gt;&gt;&gt;【15】消费消息&lt;&lt;&lt;&lt;【15】生产消息&gt;&gt;&gt;&gt;【16】消费消息&lt;&lt;&lt;&lt;【16】生产消息&gt;&gt;&gt;&gt;【17】消费消息&lt;&lt;&lt;&lt;【17】生产消息&gt;&gt;&gt;&gt;【18】消费消息&lt;&lt;&lt;&lt;【18】生产消息&gt;&gt;&gt;&gt;【19】消费消息&lt;&lt;&lt;&lt;【19】生产消息&gt;&gt;&gt;&gt;【20】消费消息&lt;&lt;&lt;&lt;【20】
+
+1.3 JAVA中sleep() 方法和 wait() 方法区别
+sleep方法是Thread类的方法，而wait方法是Object方法。
+sleep方法没有释放锁，而wait方法释放了锁，并且加入到Object的queue。
+使用sleep方法不用synchronized监控，而wait方法需要。
+使用sleep方法不需要唤醒，而wait需要。
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(九)Java多线程之生产者与消费者》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(五)Java多线程之interrupted线程中断</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8Binterrupted%E7%BA%BF%E7%A8%8B%E4%B8%AD%E6%96%AD/</url>
+    <content><![CDATA[1.JAVA多线程(五)Java多线程之interrupted线程中断1.1 interrupted(线程中断)&emsp;&emsp;一个线程执行完毕之后会自动结束，如果在运行过程中发生异常也会提前结束。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。但是不能中断 I&#x2F;O 阻塞和 synchronized 锁阻塞。对于以下代码，在 main() 中启动一个线程之后再中断它，由于线程中调用了 Thread.sleep() 方法，因此会抛出一个 InterruptedException，从而提前结束线程，不执行之后的语句。
+package com.yuanxw.chapter5;/** * 中断线程 */public class InterruptThread &#123;    public static void main(String[] args) throws InterruptedException &#123;        Thread thread = new Thread() &#123;            @Override            public void run() &#123;                try &#123;                    while (true) &#123;                        sleep(500);                        System.out.println(Thread.currentThread().getName() + &quot;正在运行...&quot;);                    &#125;                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                    System.out.println(Thread.currentThread().getName() + &quot;线程被打断了...&quot;);                &#125;            &#125;        &#125;;        thread.start();        /** main线程休息2秒 **/        Thread.sleep(2000);        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));        /** 中断线程操作 **/        thread.interrupt();        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));    &#125;&#125;
+执行结果：
+Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...【Thread-0】线程是否中断：false【Thread-0】线程是否中断：trueThread-0线程被打断了...java.lang.InterruptedException: sleep interrupted	at java.lang.Thread.sleep(Native Method)	at com.yuanxw.chapter3.InterruptThread$1.run(InterruptThread.java:13) 
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(五)Java多线程之interrupted线程中断》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(八)Java多线程之死锁</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%85%AB)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E6%AD%BB%E9%94%81/</url>
+    <content><![CDATA[1.JAVA多线程(八)Java多线程之死锁1.1什么是线程死锁?如何避免死锁?&emsp;&emsp;多个线程同时被阻塞，它们中的一个或者全部都在等待某个资源被释放。由于线程被无限期地阻塞，因此程序不可能正常终止。
+如下图所示，线程 A 持有资源 2，线程 B 持有资源 1，他们同时都想申请对方的资源，所以这两个线程就会互相等待而进入死锁状态。
+![在这里插入图片描述](&#x2F;images&#x2F;java_multithreading&#x2F;chapter8&#x2F;20191230105715913.png
+下面通过一个例子来说明线程死锁,代码模拟了上图的死锁的情况 (代码来源于《并发编程之美》)：
+package com.yuanxw.chapter8;/** * 死锁 */public class DeadLockDemo &#123;    private static Object resource1 = new Object();//资源 1    private static Object resource2 = new Object();//资源 2    public static void main(String[] args) &#123;        new Thread(() -&gt; &#123;            synchronized (resource1) &#123;                System.out.println(Thread.currentThread() + &quot;get resource1&quot;);                try &#123;                    Thread.sleep(1000);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;                System.out.println(Thread.currentThread() + &quot;waiting get resource2&quot;);                synchronized (resource2) &#123;                    System.out.println(Thread.currentThread() + &quot;get resource2&quot;);                &#125;            &#125;        &#125;, &quot;线程A&quot;).start();        new Thread(() -&gt; &#123;            synchronized (resource2) &#123;                System.out.println(Thread.currentThread() + &quot;get resource2&quot;);                try &#123;                    Thread.sleep(1000);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;                System.out.println(Thread.currentThread() + &quot;waiting get resource1&quot;);                synchronized (resource1) &#123;                    System.out.println(Thread.currentThread() + &quot;get resource1&quot;);                &#125;            &#125;        &#125;, &quot;线程B&quot;).start();    &#125;&#125;
+执行结果
+Thread[线程A,5,main]get resource1Thread[线程B,5,main]get resource2Thread[线程B,5,main]waiting get resource1Thread[线程A,5,main]waiting get resource2
+
+线程 A 通过 synchronized (resource1) 获得 resource1 的监视器锁，然后通过Thread.sleep(1000);让线程 A 休眠 1s 为的是让线程 B 得到执行然后获取到 resource2 的监视器锁。线程 A 和线程 B 休眠结束了都开始企图请求获取对方的资源，然后这两个线程就会陷入互相等待的状态，这也就产生了死锁。上面的例子符合产生死锁的四个必要条件。
+学过操作系统的朋友都知道产生死锁必须具备以下四个条件：
+
+互斥条件：该资源任意一个时刻只由一个线程占用。
+请求与保持条件：一个进程因请求资源而阻塞时，对已获得的资源保持不放。
+不剥夺条件:线程已获得的资源在末使用完之前不能被其他线程强行剥夺，只有自己使用完毕后才释放资源。
+循环等待条件:若干进程之间形成一种头尾相接的循环等待资源关系。
+
+1.2通过命令检查死锁
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(八)Java多线程之死锁》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(六)Java多线程之ThreadGroup</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BThreadGroup/</url>
+    <content><![CDATA[1.JAVA多线程(六)Java多线程之ThreadGroup1.1 ThreadGroup&emsp;&emsp;ThreadGroup是Java提供的一种对线程进行分组管理的手段，可以对所有线程以组为单位进行操作，如设置优先级、守护线程等。
+&emsp;&emsp;在Java程序中，默认情况下，新的线程都会加入到 main 线程所在的 group 中， main 线程的 group 和线程同名。和线程存在父子关系一样， ThreadGroup 也存在父子关系
+
+package com.yuanxw.chapter6;import java.util.Arrays;public class ThreadGroupService &#123;    public static void main(String[] args) &#123;        Thread thread = new Thread(&quot;thread-0&quot;)&#123;            @Override            public void run() &#123;                try &#123;                    // 睡眠100L                    sleep(100L);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;            &#125;        &#125;;        thread.start();        // 获得当前线程的名称        System.out.println(&quot;获得当前线程的名称：&quot;+Thread.currentThread().getName());        // 获得当前线程的线程线名称        System.out.println(&quot;获得当前线程的线程线名称：&quot;+Thread.currentThread().getThreadGroup().getName());        // 获得thread-0线程的线程线名称        System.out.println(&quot;获得&quot;+thread.getName()+&quot;线程的线程线名称：&quot;+thread.getThreadGroup().getName());        // 創建线程组        ThreadGroup syncDbGroup = new ThreadGroup(&quot;SYNC_DB_GROUP&quot;);        Arrays.asList(&quot;thread-A&quot;,&quot;thread-B&quot;,&quot;thread-C&quot;,&quot;thread-D&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        ThreadGroup syncErpDbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_ERP_DB_GROUP&quot;);        ThreadGroup syncOADbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_OA_DB_GROUP&quot;);        Arrays.asList(&quot;thread-1&quot;,&quot;thread-2&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncErpDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        System.out.println(&quot;返回此线程组及其子组中活动线程数的估计：&quot;+syncDbGroup.activeCount());        System.out.println(&quot;返回此线程组及其子组中活动组数的估计：&quot;+syncDbGroup.activeGroupCount());        // 设置线程组为后台线程组----最后一个线程执行结束或者被销毁后,该后台线程组自动销毁        syncDbGroup.setDaemon(true);        // interrupt 的作用其实也不是中断线程，而是「通知线程应该中断了」，具体到底中断还是继续运行，应该由被通知的线程自己处理。        syncErpDbGroup.interrupt();    &#125;&#125;
+执行结果：
+获得当前线程的名称：main获得当前线程的线程线名称：main获得thread-0线程的线程线名称：main返回此线程组及其子组中活动线程数的估计：6返回此线程组及其子组中活动组数的估计：2
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(六)Java多线程之ThreadGroup》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(十)Java多线程之ThreadLocal</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BThreadLocal/</url>
+    <content><![CDATA[1.JAVA多线程(十)Java多线程之ThreadLocal1.1 ThreadLocal类&emsp;&emsp;  ThreadLocal类主要解决的就是让每个线程绑定自己的值，可以将ThreadLocal类形象的比喻成存放数据的盒子，盒子中可以存储每个线程的私有数据。如果你创建了一个ThreadLocal变量，那么访问这个变量的每个线程都会有这个变量的本地副本，这也是ThreadLocal变量名的由来。他们可以使用 get()和 set())方法来获取默认值或将其值更改为当前线程所存的副本的值，从而避免了线程安全问题。
+每个线程往ThreadLocal中读写数据是线程隔离，互相之间不会影响的，由于不需要共享信息，自然就不存在竞争问题了，从而保证了某些情况下线程的安全，以及避免了某些情况需要考虑线程安全必须同步带来的性能损失！
+1.2 ThreadLocal示例package com.yuanxw.chapter10;import java.util.Random;/** * ThreadLocal * 线程局部变量 */public class ThreadLocalExample &#123;    private static ThreadLocal&lt;String&gt; defaultThreadLocal = new ThreadLocal()&#123;        @Override        protected Object initialValue() &#123;            return &quot;==initialValue==&quot;;        &#125;    &#125;;    private static ThreadLocal&lt;String&gt; threadLocal = new ThreadLocal();    public static void main(String[] args) throws InterruptedException &#123;        System.out.println(&quot;获得defaultThreadLocal默认值：&quot;+defaultThreadLocal.get());        // 线程-A        Thread thread1 = new Thread(() -&gt; &#123;            // 设置【threadLocal】对象值为：张三            threadLocal.set(&quot;张三&quot;);            try &#123;                Thread.sleep(new Random().nextInt(1000));            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;            System.out.println(String.format(&quot;【%s】线程-执行threadLocal值：【%s】&quot;, Thread.currentThread().getName(),threadLocal.get()));        &#125;, &quot;Thread-A&quot;);        // 线程-B        Thread thread2 = new Thread(() -&gt; &#123;            // 设置【threadLocal】对象值为：李四            threadLocal.set(&quot;李四&quot;);            try &#123;                Thread.sleep(new Random().nextInt(1000));            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;            System.out.println(String.format(&quot;【%s】线程-执行threadLocal值：【%s】&quot;, Thread.currentThread().getName(),threadLocal.get()));        &#125;, &quot;Thread-B&quot;);        thread1.join();        thread2.join();        thread1.start();        thread2.start();        Thread.sleep(new Random().nextInt(1000));        System.out.println(String.format(&quot;【%s】线程-执行threadLocal值：【%s】&quot;, Thread.currentThread().getName(),threadLocal.get()));    &#125;&#125;
+执行结果：
+获得defaultThreadLocal默认值：==initialValue==【Thread-B】线程-执行threadLocal值：【李四】【Thread-A】线程-执行threadLocal值：【张三】【main】线程-执行threadLocal值：【null】
+1.3 ThreadLocal对应的底层结构图
+每个 Thread 都有一个 ThreadLocal.ThreadLocalMap 对象。当调用一个 ThreadLocal 的 set(T value) 方法时，先得到当前线程的 ThreadLocalMap 对象，然后将 ThreadLocal-&gt;value 键值对插入到该 Map 中，get() 方法类似。
+/* ThreadLocal values pertaining to this thread. This map is maintained * by the ThreadLocal class. */ThreadLocal.ThreadLocalMap threadLocals = null;/** * Returns the value in the current thread&#x27;s copy of this * thread-local variable.  If the variable has no value for the * current thread, it is first initialized to the value returned * by an invocation of the &#123;@link #initialValue&#125; method. * * @return the current thread&#x27;s value of this thread-local */public T get() &#123;    Thread t = Thread.currentThread();    ThreadLocalMap map = getMap(t);    if (map != null) &#123;        ThreadLocalMap.Entry e = map.getEntry(this);        if (e != null) &#123;            @SuppressWarnings(&quot;unchecked&quot;)            T result = (T)e.value;            return result;        &#125;    &#125;    return setInitialValue();&#125;/** * Sets the current thread&#x27;s copy of this thread-local variable * to the specified value.  Most subclasses will have no need to * override this method, relying solely on the &#123;@link #initialValue&#125; * method to set the values of thread-locals. * * @param value the value to be stored in the current thread&#x27;s copy of *        this thread-local. */public void set(T value) &#123;    Thread t = Thread.currentThread();    ThreadLocalMap map = getMap(t);    if (map != null)        map.set(this, value);    else        createMap(t, value);&#125;
+
+1.3 ThreadLocal 内存泄露问题在一些场景 (尤其是使用线程池) 下，ThreadLocal 没有被外部强引用的情况下，在垃圾回收的时候，key 会被清理掉，而 value 不会被清理掉。这样一来，ThreadLocalMap 中就会出现key为null的Entry。假如我们不做任何措施的话，value 永远无法被GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap实现中已经考虑了这种情况，在调用 set()、get()、remove() 方法的时候，会清理掉 key 为 null 的记录。使用完 ThreadLocal方法后 最好手动调用remove()方法。
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十)Java多线程之ThreadLocal》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(十一)Java多线程之自定义线程池</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%80)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
+    <content><![CDATA[1.JAVA多线程(十一)Java多线程之自定义线程池1.1 什么是用线程池&emsp;&emsp; 线程池是一种多线程处理形式，处理过程中将任务添加到队列，然后在创建线程后自动启动这些任务。线程池线程都是后台线程。每个线程都使用默认的堆栈大小，以默认的优先级运行，并处于多线程单元中。如果某个线程在托管代码中空闲（如正在等待某个事件）,则线程池将插入另一个辅助线程来使所有处理器保持繁忙。如果所有线程池线程都始终保持繁忙，但队列中包含挂起的工作，则线程池将在一段时间后创建另一个辅助线程但线程的数目永远不会超过最大值。超过最大值的线程可以排队，但他们要等到其他线程完成后才启动。
+1.2 为什么要用线程池&emsp;&emsp;池化技术相比大家已经屡见不鲜了，线程池、数据库连接池、Http 连接池等等都是对这个思想的应用。池化技术的思想主要是为了减少每次获取资源的消耗，提高对资源的利用率。线程池提供了一种限制和管理资源（包括执行一个任务）。 每个线程池还维护一些基本统计信息，例如已完成任务的数量。
+这里借用《Java并发编程的艺术》提到的来说一下使用线程池的好处：
+
+降低资源消耗。通过重复利用已创建的线程降低线程创建和销毁造成的消耗。
+提高响应速度。当任务到达时，任务可以不需要的等到线程创建就能立即执行。
+提高线程的可管理性。线程是稀缺资源，如果无限制的创建，不仅会消耗系统资源，还会降低系统的稳定性，使用线程池可以进行统一的分配，调优和监控。
+
+1.3 如何自定义线程池&emsp;&emsp;自定义简单的线程池，线程池大小，任务队列大小，拒绝策略等，下面的代码简单实现线程池。
+
+定义任务状态
+
+package com.yuanxw.chapter11;/** * 任务状态 */public enum TaskState &#123;        /**         * 空闲         **/        FREE,        /**         * 运行中         **/        RUNNING,        /**         * 阻塞         **/        BLOCKED,        /**         * 死亡         **/        DEAD;&#125;
+
+
+自定义异常
+
+package com.yuanxw.chapter11;/** * 自定义异常 */public class DiscardException extends RuntimeException&#123;    public DiscardException(String message) &#123;        super(message);    &#125;&#125;
+
+
+定义拒绝策略接口
+
+package com.yuanxw.chapter11;/** * 拒绝策略 */public interface DiscardPolicy &#123;    /** 定义拒绝策略 **/    void discard() throws DiscardException;&#125;
+
+
+定义拒绝策略接口实现
+
+package com.yuanxw.chapter11;/** * 默认：拒绝策略 */public class DefaultDiscardPolicyImpl implements DiscardPolicy&#123;    @Override    public void discard() throws DiscardException &#123;        throw new DiscardException(&quot;该任务已经被拒绝！&quot;);    &#125;&#125;
+
+
+线程池实现方法
+
+package com.yuanxw.chapter11;import java.util.ArrayList;import java.util.LinkedList;import java.util.List;/** * 自定义简单的线程池 */public class SimpleThreadPool &#123;    /**     * 线程池大小     **/    private final int size;    /**     * 任务队列大小     **/    private final int taskQueueSize;    /**     * 默认线程池大小为：5     **/    private final static int DEFAULT_SIZE = 5;    /**     * 默认任务队列大小：2000     **/    private final static int DEFAULT_TASK_QUEUE_SIZE = 2000;    /**     * 线程序号     */    private static volatile int seq = 0;    /**     * 线程前缀     **/    private final static String THREAD_PREFIX = &quot;SIMPLE-THREAD-POOL-&quot;;    /**     * 定义线程程     **/    private final static ThreadGroup GROUP = new ThreadGroup(&quot;POOL_GROUP&quot;);    /**     * 定线程队列     **/    private final static List&lt;WorkerTask&gt; THREAD_QUEUE = new ArrayList&lt;&gt;();    /**     * 任务队列     */    private static LinkedList&lt;Runnable&gt; TASK_QUEUE = new LinkedList&lt;&gt;();    /**     * 默认策略     **/    public static final DiscardPolicy DEFAULT_DISCARD_POLICY = new DefaultDiscardPolicyImpl();    /** 定义策略变量 **/    private final DiscardPolicy discardPolicy;    /** 是否已经销毁 **/    private volatile boolean destroy = false;    public SimpleThreadPool() &#123;        this(DEFAULT_SIZE, DEFAULT_TASK_QUEUE_SIZE, DEFAULT_DISCARD_POLICY);    &#125;    public SimpleThreadPool(int size, int taskQueueSize, DiscardPolicy discardPolicy) &#123;        this.size = size;        this.taskQueueSize = taskQueueSize;        this.discardPolicy = discardPolicy;        init();    &#125;    /**     * 初始化方法     */    private void init() &#123;        // 创建size线程        for (int i = 0; i &lt; size; i++) &#123;            createWorkTask();        &#125;    &#125;    /**     * 创建线程函数     */    private void createWorkTask() &#123;        /** 创建线程 **/        WorkerTask task = new WorkerTask(GROUP, THREAD_PREFIX + (seq++));        /** 启动线程 **/        task.start();        /** 线程添加到组中 **/        THREAD_QUEUE.add(task);    &#125;    /**     * 任务提交     * @param runnable     */    public void submit(Runnable runnable) &#123;        if(destroy)&#123;            throw new IllegalStateException(&quot;线程池已经销毁不能再提交新的任务...&quot;);        &#125;        synchronized (TASK_QUEUE) &#123;            // 队列长度大于指定队列长度，执行策略            if (TASK_QUEUE.size() &gt; taskQueueSize) &#123;                discardPolicy.discard();            &#125;            // 从后面添加新任务            TASK_QUEUE.addLast(runnable);            // 通知唤醒线程            TASK_QUEUE.notifyAll();        &#125;    &#125;    /**     * 停止线程池运行     */    public void shutdonw() throws InterruptedException &#123;        // 如果线程队列中还有在执行的结程，那执行停止的方法需要等待。等待到所有线程都执行完成。        while (!TASK_QUEUE.isEmpty()) &#123;            Thread.sleep(50);        &#125;        int initVal = THREAD_QUEUE.size();        while (initVal &gt; 0) &#123;            for (WorkerTask workerTask : THREAD_QUEUE) &#123;                if (workerTask.getTaskState() == TaskState.BLOCKED) &#123;                    // 打断线程                    workerTask.interrupt();                    // 修改线程状态为结束状态                    workerTask.close();                    initVal--;                &#125; else &#123;                    Thread.sleep(10);                &#125;            &#125;        &#125;        this.destroy = true;        System.out.println(&quot;线程已经运行结束...&quot;);    &#125;    private static class WorkerTask extends Thread &#123;        /**         * 默认线程的状态是空闲的         **/        private volatile TaskState taskState = TaskState.FREE;        /**         * 设置线程组         **/        public WorkerTask(ThreadGroup group, String name) &#123;            super(group, name);        &#125;        @Override        public void run() &#123;            OUTTER:            // 状态不是DEAD状态，一直处理线程            while (this.taskState != TaskState.DEAD) &#123;                Runnable runnable;                synchronized (TASK_QUEUE) &#123;                    // 程线池中一直是空的，一直等待                    while (TASK_QUEUE.isEmpty()) &#123;                        try &#123;                            this.taskState = TaskState.BLOCKED;                            TASK_QUEUE.wait();                        &#125; catch (InterruptedException e) &#123;                            // e.printStackTrace();                            break OUTTER;                        &#125;                    &#125;                    // 从此列表中删除并返回第一个元素。                    runnable = TASK_QUEUE.removeFirst();                &#125;                if (runnable != null) &#123;                    // 设置线程状态，运行中                    taskState = TaskState.RUNNING;                    // run函数                    runnable.run();                    // 设置线程状态，空闲                    taskState = TaskState.FREE;                &#125;            &#125;        &#125;        /**         * 获得线程状态         *         * @return         */        public TaskState getTaskState() &#123;            return this.taskState;        &#125;        /**         * 结束线程状态         */        public void close() &#123;            this.taskState = TaskState.DEAD;        &#125;    &#125;    public static void main(String[] args) throws InterruptedException &#123;        SimpleThreadPool simpleThreadPool = new SimpleThreadPool();        // 拒绝策略        // SimpleThreadPool simpleThreadPool = new SimpleThreadPool(6, 10, DEFAULT_DISCARD_POLICY);        for (int i = 0; i &lt; 50; i++) &#123;            simpleThreadPool.submit(new Runnable() &#123;                @Override                public void run() &#123;                    System.out.println(String.format(&quot;线程【%s】，已经开始&gt;&gt;运行&quot;, Thread.currentThread()));                    try &#123;                        Thread.sleep(1000L);                    &#125; catch (InterruptedException e) &#123;                        e.printStackTrace();                    &#125;                    System.out.println(String.format(&quot;线程【%s】，已经&lt;&lt;结束&quot;, Thread.currentThread()));                &#125;            &#125;);        &#125;        Thread.sleep(1000L);        simpleThreadPool.shutdonw();    &#125;&#125;
+执行结果：
+线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经开始&gt;&gt;运行线程【Thread[SIMPLE-THREAD-POOL-0,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-1,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-2,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-3,5,POOL_GROUP]】，已经&lt;&lt;结束线程【Thread[SIMPLE-THREAD-POOL-4,5,POOL_GROUP]】，已经&lt;&lt;结束线程已经运行结束...
+
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十一)Java多线程之自定义线程池》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(十二)Java多线程之CountDownLatch</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCountDownLatch/</url>
+    <content><![CDATA[1.JAVA多线程(十二)Java多线程之CountDownLatch1.1 CountDownLatch是什么?&emsp;&emsp; CountDownLatch 是一个同步工具类，它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。CountDownLatch是在java1.5被引入的，跟它一起被引入的并发工具类还有CyclicBarrier、Semaphore、ConcurrentHashMap和BlockingQueue，它们都存在于java.util.concurrent包下。CountDownLatch这个类能够使一个线程等待其他线程完成各自的工作后再执行。例如，应用程序的主线程希望在负责启动框架服务的线程已经启动所有的框架服务之后再执行。
+
+某一线程在开始运行前等待 n 个线程执行完毕。将 CountDownLatch 的计数器初始化为 n ：new CountDownLatch(n)，每当一个任务线程执行完毕，就将计数器减 1 countdownlatch.countDown()，当计数器的值变为 0 时，在CountDownLatch上 await() 的线程就会被唤醒。一个典型应用场景就是启动一个服务时，主线程需要等待多个组件加载完毕，之后再继续执行。
+
+实现多个线程开始执行任务的最大并行性。注意是并行性，不是并发，强调的是多个线程在某一时刻同时开始执行。类似于赛跑，将多个线程放到起点，等待发令枪响，然后同时开跑。做法是初始化一个共享的 CountDownLatch 对象，将其计数器初始化为 1 ：new CountDownLatch(1)，多个线程在开始执行任务前首先 coundownlatch.await()，当主线程调用 countDown() 时，计数器变为 0，多个线程同时被唤醒。
+
+CountDownLatch维护了一个计数器 cnt，每次调用 countDown() 方法会让计数器的值减 1，减到 0 的时候，那些因为调用 await() 方法而在等待的线程就会被唤醒。
+
+
+
+1.2 CountdownLatch使用例子package com.yuanxw.chapter12;import java.util.Random;import java.util.concurrent.CountDownLatch;import java.util.concurrent.ExecutorService;import java.util.concurrent.Executors;import java.util.stream.IntStream;public class CountdownLatchExample &#123;    /** 随机数：使用long参数的所有64位作为因子值。 **/    private static Random random = new Random(System.currentTimeMillis());    /** 总线程数 **/    private static final int TOTAL_THREAD_NUMBER = 5;    /** 通过线程池，创建5个线程 **/    private static ExecutorService executorService = Executors.newFixedThreadPool(TOTAL_THREAD_NUMBER);    /** 创建CountDownLatch对象 **/    private static CountDownLatch countDownLatch = new CountDownLatch(TOTAL_THREAD_NUMBER);    public static void main(String[] args) throws InterruptedException &#123;        IntStream.range(0,5).forEach(i-&gt;&#123;            executorService.execute(()-&gt;&#123;                doWorking();                /** 将count值减1 **/                countDownLatch.countDown();            &#125;);        &#125;);        /** 当前线程等到锁存器计数到零  **/        countDownLatch.await();        executorService.shutdown();        System.out.println(&quot;所有线程工作已经执行完成！！！&quot;);    &#125;    /**     * 模拟工作方法     */    private static void doWorking()&#123;        try &#123;            System.out.println(String.format(&quot;线程【%s】工作&gt;&gt;开始&quot;, Thread.currentThread().getName()));            Thread.sleep(random.nextInt(1000));            System.out.println(String.format(&quot;线程【%s】工作&lt;&lt;结束&quot;, Thread.currentThread().getName()));        &#125; catch (InterruptedException e) &#123;            e.printStackTrace();        &#125;    &#125;&#125;
+执行结果：
+线程【pool-1-thread-2】工作&gt;&gt;开始线程【pool-1-thread-5】工作&gt;&gt;开始线程【pool-1-thread-3】工作&gt;&gt;开始线程【pool-1-thread-4】工作&gt;&gt;开始线程【pool-1-thread-1】工作&gt;&gt;开始线程【pool-1-thread-4】工作&lt;&lt;结束线程【pool-1-thread-2】工作&lt;&lt;结束线程【pool-1-thread-3】工作&lt;&lt;结束线程【pool-1-thread-1】工作&lt;&lt;结束线程【pool-1-thread-5】工作&lt;&lt;结束所有线程工作已经执行完成！！！
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十一)Java多线程之CountDownLatch》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(四)Java多线程之join等待结束</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8Bjoin%E7%AD%89%E5%BE%85%E7%BB%93%E6%9D%9F/</url>
+    <content><![CDATA[1.JAVA多线程(四)Java多线程之join等待结束1.1 join(等待结束)&emsp;&emsp;join()方法的作用，是等待这个线程结束；
+也就是说，thread.join()方法阻塞调用此方法的线程(calling thread)进入 TIMED_WAITING 状态，直到线程thread完成，此线程再继续；通常用于在main()主线程内，等待其它线程完成再结束main()主线程。
+package com.yuanxw.chapter4;public class ThreadJoin &#123;    public static void main(String[] args) throws InterruptedException &#123;        long startTime = System.currentTimeMillis();        Thread thread1 = new Thread(new SyncDatabase(&quot;T1&quot;,&quot;192.168.185.26&quot;,1000L));        Thread thread2 = new Thread(new SyncDatabase(&quot;T2&quot;,&quot;192.168.185.27&quot;,1500L));        Thread thread3 = new Thread(new SyncDatabase(&quot;T3&quot;,&quot;192.168.185.28&quot;,2500L));        thread1.start();        thread2.start();        thread3.start();        // 等待【thread1、thread2、thread3】对象线程死亡（结束）        thread1.join();        thread2.join();        thread3.join();        long endTime = System.currentTimeMillis();        System.out.println(String.format(&quot;所有服务器数据同步完成，共耗时【%s】毫秒&quot;,endTime - startTime ));    &#125;&#125;/** * 同步数据库数据 */class SyncDatabase implements Runnable&#123;    /** 同步服务器名称 **/    private String serviceName;    /** 同步服务IP地址 **/    private String ipAddr;    /** 同步时间 **/    private long syncTime;    public SyncDatabase(String serviceName, String ipAddr, long syncTime) &#123;        this.serviceName = serviceName;        this.ipAddr = ipAddr;        this.syncTime = syncTime;    &#125;    @Override    public void run() &#123;        try &#123;            Thread.sleep(syncTime);            System.out.println(String.format(&quot;同步【%s】服务器，IP地址【%s】，数据同步完成，共耗时【%s】毫秒&quot;, serviceName,ipAddr,syncTime));        &#125; catch (InterruptedException e) &#123;            e.printStackTrace();        &#125;    &#125;&#125;
+执行结果：
+同步【T1】服务器，IP地址【192.168.185.26】，数据同步完成，共耗时【1000】毫秒同步【T2】服务器，IP地址【192.168.185.27】，数据同步完成，共耗时【1500】毫秒同步【T3】服务器，IP地址【192.168.185.28】，数据同步完成，共耗时【2500】毫秒所有服务器数据同步完成，共耗时【2502】毫秒
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(四)Java多线程之join等待结束》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
 ]]></content>
       <categories>
         <category>Java多线程</category>
