@@ -1030,7 +1030,7 @@ json-format job-timeout [arthas@8161]$ options json-format  LEVEL              T
       </tags>
   </entry>
   <entry>
-    <title>Arthas诊断**工具(四)**Arthas（阿尔萨斯）class/classloader相关命令</title>
+    <title>Arthas诊断工具(四)Arthas（阿尔萨斯）class/classloader相关命令</title>
     <url>/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[Arthas诊断工具(四)Arthas（阿尔萨斯）class&#x2F;classloader相关命令1. sc命令查看 JVM 已加载的类信息，
 “Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 [d]、[E]、[f] 和 [x:]。
@@ -2643,6 +2643,64 @@ NIO的方式使用了缓存区的概念
       </tags>
   </entry>
   <entry>
+    <title>JVM虚拟机详解(五)**程序计数器(PC寄存器)PC Register</title>
+    <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E4%BA%94)%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8(PC%E5%AF%84%E5%AD%98%E5%99%A8)PC%20Register/</url>
+    <content><![CDATA[JVM虚拟机详解(五)程序计数器(PC寄存器)PC Register1. 概述Java 虚拟机可以同时支持多个线程的执行(jls17)。每个 Java 虚拟机线程都有自己的 pc (程序计数器)寄存器。在任何时候，每个 Java 虚拟机线程都在执行单个方法的代码，即该线程的当前方法(2.6)。如果这个方法不是本机的，那么 pc 寄存器就会包含当前正在执行的 Java 虚拟指令的地址。如果当前由线程执行的方法是本机的，那么 Java 虚拟机的 pc 寄存器的值是未定义的。Java 虚拟机的 pc 寄存器足够宽，可以在特定平台上保存 returnAddress 或本机指针。
+官网：The Java® Virtual Machine Specification (oracle.com)
+
+
+JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。
+这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。
+它是一块很小的内存空间，几乎可以忽略不记。也是运行速度最快的存储区域。
+在JVM规范中，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。
+任何时间一个线程都只有一个方法在执行，也就是所谓的当前方法。程序计数器会存储当前线程正在执行的Java方法的JVM指令地址；或者，如果是在执行native方法，则是未指定值（undefned）。
+它是程序控制流的指示器，分支、循环、跳转、异常处理、线程恢复等基础功能都需要依赖这个计数器来完成。
+字节码解释器工作时就是通过改变这个计数器的值来选取下一条需要执行的字节码指令。
+它是唯一一个在Java虚拟机规范中没有规定任何OutofMemoryError情况的区域。
+
+
+作用
+  PC寄存器用来存储指向下一条指令的地址，也即将要执行的指令代码。由执行引擎读取下一条指令。
+  
+  内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。
+
+代码实现
+  package com.peppa.register;/**程序计数器 * @author: peppa * @create: 2022-02-10 13:25:3 */public class PCRegisterTest &#123;    public static void main(String[] args) &#123;        int i = 10;        int j = 20;        int k = i + j;    &#125;&#125;
+  然后将代码进行编译成字节码文件，我们再次查看 ，发现在字节码的左边有一个行号标识，它其实就是指令地址，用于指向当前执行到哪里。
+  0: bipush        102: istore_13: bipush        205: istore_26: iload_17: iload_28: iadd9: istore_310: return
+  通过PC寄存器，我们就可以知道当前程序执行到哪一步了
+  
+  
+
+使用PC寄存器存储字节码指令地址有什么用呢？
+  因为CPU需要不停的切换各个线程，这时候切换回来以后，就得知道接着从哪开始继续执行。
+  JVM的字节码解释器就需要通过改变PC寄存器的值来明确下一条应该执行什么样的字节码指令。
+  
+
+PC寄存器为什么被设定为私有的？
+
+我们都知道所谓的多线程在一个特定的时间段内只会执行其中某一个线程的方法，CPU会不停地做任务切换，这样必然导致经常中断或恢复，如何保证分毫无差呢？为了能够准确地记录各个线程正在执行的当前字节码指令地址，最好的办法自然是为每一个线程都分配一个PC寄存器，这样一来各个线程之间便可以进行独立计算，从而不会出现相互干扰的情况。
+由于CPU时间片轮限制，众多线程在并发执行过程中，任何一个确定的时刻，一个处理器或者多核处理器中的一个内核，只会执行某个线程中的一条指令。
+这样必然导致经常中断或恢复，如何保证分毫无差呢？每个线程在创建后，都会产生自己的程序计数器和栈帧，程序计数器在各个线程之间互不影响。
+
+
+
+2.CPU 时间片
+CPU时间片即CPU分配给各个程序的时间，每个线程被分配一个时间段，称作它的时间片。
+在宏观上：我们可以同时打开多个应用程序，每个程序并行不悖，同时运行。
+但在微观上：由于只有一个CPU，一次只能处理程序要求的一部分，如何处理公平，一种方法就是引入时间片，每个程序轮流执行。
+
+
+]]></content>
+      <categories>
+        <category>JVM虚拟机详解</category>
+      </categories>
+      <tags>
+        <tag>JVM</tag>
+        <tag>JVM虚拟机详解</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JVM虚拟机详解(二)**类加载子系统</title>
     <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E4%BA%8C)%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F/</url>
     <content><![CDATA[JVM虚拟机详解(二)类加载子系统1. 内存结构概述
@@ -2817,64 +2875,6 @@ Dog 类的父类是 Animal 类，所以需要先执行 Animal 类的加载，再
 先加载 DeadThread 类的线程抢到了同步锁，然后在类的静态代码块中执行死循环，而另一个线程在等待同步锁的释放
 所以无论哪个线程先执行 DeadThread 类的加载，另外一个类也不会继续执行。（一个类只会被加载一次）
 
-
-
-]]></content>
-      <categories>
-        <category>JVM虚拟机详解</category>
-      </categories>
-      <tags>
-        <tag>JVM</tag>
-        <tag>JVM虚拟机详解</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JVM虚拟机详解(五)**程序计数器(PC寄存器)PC Register</title>
-    <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E4%BA%94)%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8(PC%E5%AF%84%E5%AD%98%E5%99%A8)PC%20Register/</url>
-    <content><![CDATA[JVM虚拟机详解(五)程序计数器(PC寄存器)PC Register1. 概述Java 虚拟机可以同时支持多个线程的执行(jls17)。每个 Java 虚拟机线程都有自己的 pc (程序计数器)寄存器。在任何时候，每个 Java 虚拟机线程都在执行单个方法的代码，即该线程的当前方法(2.6)。如果这个方法不是本机的，那么 pc 寄存器就会包含当前正在执行的 Java 虚拟指令的地址。如果当前由线程执行的方法是本机的，那么 Java 虚拟机的 pc 寄存器的值是未定义的。Java 虚拟机的 pc 寄存器足够宽，可以在特定平台上保存 returnAddress 或本机指针。
-官网：The Java® Virtual Machine Specification (oracle.com)
-
-
-JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。
-这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。
-它是一块很小的内存空间，几乎可以忽略不记。也是运行速度最快的存储区域。
-在JVM规范中，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。
-任何时间一个线程都只有一个方法在执行，也就是所谓的当前方法。程序计数器会存储当前线程正在执行的Java方法的JVM指令地址；或者，如果是在执行native方法，则是未指定值（undefned）。
-它是程序控制流的指示器，分支、循环、跳转、异常处理、线程恢复等基础功能都需要依赖这个计数器来完成。
-字节码解释器工作时就是通过改变这个计数器的值来选取下一条需要执行的字节码指令。
-它是唯一一个在Java虚拟机规范中没有规定任何OutofMemoryError情况的区域。
-
-
-作用
-  PC寄存器用来存储指向下一条指令的地址，也即将要执行的指令代码。由执行引擎读取下一条指令。
-  
-  内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。
-
-代码实现
-  package com.peppa.register;/**程序计数器 * @author: peppa * @create: 2022-02-10 13:25:3 */public class PCRegisterTest &#123;    public static void main(String[] args) &#123;        int i = 10;        int j = 20;        int k = i + j;    &#125;&#125;
-  然后将代码进行编译成字节码文件，我们再次查看 ，发现在字节码的左边有一个行号标识，它其实就是指令地址，用于指向当前执行到哪里。
-  0: bipush        102: istore_13: bipush        205: istore_26: iload_17: iload_28: iadd9: istore_310: return
-  通过PC寄存器，我们就可以知道当前程序执行到哪一步了
-  
-  
-
-使用PC寄存器存储字节码指令地址有什么用呢？
-  因为CPU需要不停的切换各个线程，这时候切换回来以后，就得知道接着从哪开始继续执行。
-  JVM的字节码解释器就需要通过改变PC寄存器的值来明确下一条应该执行什么样的字节码指令。
-  
-
-PC寄存器为什么被设定为私有的？
-
-我们都知道所谓的多线程在一个特定的时间段内只会执行其中某一个线程的方法，CPU会不停地做任务切换，这样必然导致经常中断或恢复，如何保证分毫无差呢？为了能够准确地记录各个线程正在执行的当前字节码指令地址，最好的办法自然是为每一个线程都分配一个PC寄存器，这样一来各个线程之间便可以进行独立计算，从而不会出现相互干扰的情况。
-由于CPU时间片轮限制，众多线程在并发执行过程中，任何一个确定的时刻，一个处理器或者多核处理器中的一个内核，只会执行某个线程中的一条指令。
-这样必然导致经常中断或恢复，如何保证分毫无差呢？每个线程在创建后，都会产生自己的程序计数器和栈帧，程序计数器在各个线程之间互不影响。
-
-
-
-2.CPU 时间片
-CPU时间片即CPU分配给各个程序的时间，每个线程被分配一个时间段，称作它的时间片。
-在宏观上：我们可以同时打开多个应用程序，每个程序并行不悖，同时运行。
-但在微观上：由于只有一个CPU，一次只能处理程序要求的一部分，如何处理公平，一种方法就是引入时间片，每个程序轮流执行。
 
 
 ]]></content>
@@ -4805,63 +4805,6 @@ stringDeduplicationAgeThreshold(uintx) ：达到这个年龄的String对象被�
       </tags>
   </entry>
   <entry>
-    <title>JVM虚拟机详解(四)**运行时数据区概述及线程</title>
-    <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%9B%9B)%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/</url>
-    <content><![CDATA[JVM虚拟机详解(四)运行时数据区概述及线程1. 前言本节主要讲的是运行时数据区，也就是下图这部分，它是在类加载完成后的阶段
-
-当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区
-
-也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品
-
-内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。
-
-我们通过磁盘或者网络IO得到的数据，都需要先加载到内存中，然后CPU从内存中获取数据进行读取，也就是说内存充当了CPU和磁盘之间的桥梁
-
-
-运行时数据区的完整图
-  
-  Java虚拟机定义了若干种程序运行期间会使用到的运行时数据区，其中有一些会随着虚拟机启动而创建，随着虚拟机退出而销毁。另外一些则是与线程一一对应的，这些与线程对应的数据区域会随着线程开始和结束而创建和销毁。
-  灰色的为单独线程私有的，红色的为多个线程共享的。即：
-
-每个线程：独立包括程序计数器、栈、本地栈。
-线程间共享：堆、堆外内存（永久代或元空间、代码缓存）
-
-  
-
-
-2. 线程
-JVM 线程
-线程是一个程序里的运行单元。JVM允许一个应用有多个线程并行的执行
-在Hotspot JVM里，每个线程都与操作系统的本地线程直接映射
-当一个Java线程准备好执行以后，此时一个操作系统的本地线程也同时创建。Java线程执行终止后，本地线程也会回收
-
-
-操作系统负责将线程安排调度到任何一个可用的CPU上。一旦本地线程初始化成功，它就会调用Java线程中的run()方法
-
-
-JVM 系统线程
-如果你使用jconsole或者是任何一个调试工具，都能看到在后台有许多线程在运行。这些后台线程不包括调用public static void main(String[])的main线程以及所有这个main线程自己创建的线程。
-这些主要的后台系统线程在Hotspot JVM里主要是以下几个：
-虚拟机线程：这种线程的操作是需要JVM达到安全点才会出现。这些操作必须在不同的线程中发生的原因是他们都需要JVM达到安全点，这样堆才不会变化。这种线程的执行类型括”stop-the-world”的垃圾收集，线程栈收集，线程挂起以及偏向锁撤销
-周期任务线程：这种线程是时间周期事件的体现（比如中断），他们一般用于周期性操作的调度执行
-GC线程：这种线程对在JVM里不同种类的垃圾收集行为提供了支持
-编译线程：这种线程在运行时会将字节码编译成到本地代码
-信号调度线程：这种线程接收信号并发送给JVM，在它内部通过调用适当的方法进行处理
-
-
-
-
-
-]]></content>
-      <categories>
-        <category>JVM虚拟机详解</category>
-      </categories>
-      <tags>
-        <tag>JVM</tag>
-        <tag>JVM虚拟机详解</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>JVM虚拟机详解(十四)**垃圾回收相关概念</title>
     <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/</url>
     <content><![CDATA[JVM虚拟机详解(十四)垃圾回收相关概念1. System.gc()
@@ -4967,6 +4910,63 @@ Java虚拟机的堆内存设置不够。
 
 
 3.Stop The World]]></content>
+      <categories>
+        <category>JVM虚拟机详解</category>
+      </categories>
+      <tags>
+        <tag>JVM</tag>
+        <tag>JVM虚拟机详解</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JVM虚拟机详解(四)**运行时数据区概述及线程</title>
+    <url>/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%9B%9B)%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/</url>
+    <content><![CDATA[JVM虚拟机详解(四)运行时数据区概述及线程1. 前言本节主要讲的是运行时数据区，也就是下图这部分，它是在类加载完成后的阶段
+
+当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区
+
+也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品
+
+内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。
+
+我们通过磁盘或者网络IO得到的数据，都需要先加载到内存中，然后CPU从内存中获取数据进行读取，也就是说内存充当了CPU和磁盘之间的桥梁
+
+
+运行时数据区的完整图
+  
+  Java虚拟机定义了若干种程序运行期间会使用到的运行时数据区，其中有一些会随着虚拟机启动而创建，随着虚拟机退出而销毁。另外一些则是与线程一一对应的，这些与线程对应的数据区域会随着线程开始和结束而创建和销毁。
+  灰色的为单独线程私有的，红色的为多个线程共享的。即：
+
+每个线程：独立包括程序计数器、栈、本地栈。
+线程间共享：堆、堆外内存（永久代或元空间、代码缓存）
+
+  
+
+
+2. 线程
+JVM 线程
+线程是一个程序里的运行单元。JVM允许一个应用有多个线程并行的执行
+在Hotspot JVM里，每个线程都与操作系统的本地线程直接映射
+当一个Java线程准备好执行以后，此时一个操作系统的本地线程也同时创建。Java线程执行终止后，本地线程也会回收
+
+
+操作系统负责将线程安排调度到任何一个可用的CPU上。一旦本地线程初始化成功，它就会调用Java线程中的run()方法
+
+
+JVM 系统线程
+如果你使用jconsole或者是任何一个调试工具，都能看到在后台有许多线程在运行。这些后台线程不包括调用public static void main(String[])的main线程以及所有这个main线程自己创建的线程。
+这些主要的后台系统线程在Hotspot JVM里主要是以下几个：
+虚拟机线程：这种线程的操作是需要JVM达到安全点才会出现。这些操作必须在不同的线程中发生的原因是他们都需要JVM达到安全点，这样堆才不会变化。这种线程的执行类型括”stop-the-world”的垃圾收集，线程栈收集，线程挂起以及偏向锁撤销
+周期任务线程：这种线程是时间周期事件的体现（比如中断），他们一般用于周期性操作的调度执行
+GC线程：这种线程对在JVM里不同种类的垃圾收集行为提供了支持
+编译线程：这种线程在运行时会将字节码编译成到本地代码
+信号调度线程：这种线程接收信号并发送给JVM，在它内部通过调用适当的方法进行处理
+
+
+
+
+
+]]></content>
       <categories>
         <category>JVM虚拟机详解</category>
       </categories>
@@ -5261,65 +5261,6 @@ SingleThreadExecutor 的 execute()方法的执行示意图（该图片来源：�
       </tags>
   </entry>
   <entry>
-    <title>JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池</title>
-    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%89)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BScheduledThreadPool%E5%AE%9A%E6%9C%9F%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
-    <content><![CDATA[1.JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池1.1 定时执行任务线程池ScheduledThreadPoolExecutor&emsp;&emsp; ScheduledThreadPoolExecutor是一个使用线程池执行定时任务的类，相较于Java中提供的另一个执行定时任务的类Timer，其主要有如下两个优点：
-
-使用多线程执行任务，不用担心任务执行时间过长而导致任务相互阻塞的情况，Timer是单线程执行的，因而会出现这个问题。
-不用担心任务执行过程中，如果线程失活，其会新建线程执行任务，Timer类的单线程挂掉之后是不会重新创建线程执行后续任务的。
-
-时cheduledThreadPoolExecutor定 执行任务线程池继承结构关系图：
-通过源代码查看ScheduledThreadPoolExecutor构造函数实现：
-/** * 创建一个ScheduledThreadPoolExecutor，需要指定核心线程池大小。 * Creates a new &#123;@code ScheduledThreadPoolExecutor&#125; with the * given core pool size. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; */public ScheduledThreadPoolExecutor(int corePoolSize) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue());&#125;/** * Creates a new ScheduledThreadPoolExecutor with the given * initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param handler the handler to use when execution is blocked *        because the thread bounds and queue capacities are reached * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code handler&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   RejectedExecutionHandler handler) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), handler);&#125;/** * Creates a new &#123;@code ScheduledThreadPoolExecutor&#125; with the * given initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param threadFactory the factory to use when the executor *        creates a new thread * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code threadFactory&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   ThreadFactory threadFactory) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), threadFactory);&#125;/** * Creates a new ScheduledThreadPoolExecutor with the given * initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param threadFactory the factory to use when the executor *        creates a new thread * @param handler the handler to use when execution is blocked *        because the thread bounds and queue capacities are reached * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code threadFactory&#125; or *         &#123;@code handler&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   ThreadFactory threadFactory,                                   RejectedExecutionHandler handler) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), threadFactory, handler);&#125;
-在ScheduledThreadPoolExecutor实现中：
-
-corePoolSize &#x3D;&gt; 需要自己传递参数，指定核心线程数大小。
-maximumPoolSize &#x3D;&gt; 允许最大的线程数默认Integer.MAX_VALUE无限大。
-keepAliveTime &#x3D;&gt; keepAliveTime为0，意味着多余的空闲线程会被立即终止。
-workQueue &#x3D;&gt; 采用DelayedWorkQueue作为线程池的工作队列。该队列是一个使用数组实现的优先队列，在调用ScheduledFutureTask::cancel()方法时，其会根据removeOnCancel变量的设置来确认是否需要将当前任务真正的从队列中移除，而不只是标识其为已删除状态。
-
-1.2 ScheduledThreadPoolExecutor使用样例package com.yuanxw.chapter23;import java.util.concurrent.ScheduledFuture;import java.util.concurrent.ScheduledThreadPoolExecutor;import java.util.concurrent.TimeUnit;public class ScheduledThreadPoolExample &#123;    public static void main(String[] args) &#123;        // schedule();        // scheduleAtFixedRate();        scheduleWithFixedDelay();    &#125;    /**     * 单次定时任务调用     * schedule(Runnable command, long delay, TimeUnit unit) // 无返回值的延迟任务     * schedule(Callable callable, long delay, TimeUnit unit) // 有返回值的延迟任务     */    private static void schedule() &#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);        // 创建并执行在给定延迟后启用的单次操作。        ScheduledFuture&lt;?&gt; scheduledFuture = scheduledThreadPoolExecutor.schedule(() -&gt; System.out.println(&quot;定时任务正在被执行&gt;&gt;&gt;&quot;), 2L, TimeUnit.SECONDS);        // 尝试取消执行此任务。        System.out.println(scheduledFuture.cancel(true));    &#125;    /**         执行结果：          true     */          /**     * 固定频率周期任务     * 注意：一次任务超时，会持续的影响后续的任务周期；     */    private static void scheduleAtFixedRate()&#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(5);        scheduledThreadPoolExecutor.scheduleAtFixedRate(()-&gt;System.out.println(String.format(&quot;===定时任务线程【%s】正在执行，执行时间：【%s】===&quot;, Thread.currentThread().getName(),System.currentTimeMillis())),2,2,TimeUnit.SECONDS);        /**         执行结果：          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728645370】===          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728647372】===          ===定时任务线程【pool-1-thread-2】正在执行，执行时间：【1580728649372】===          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728651374】===          ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580728653371】===         */    &#125;    /**     * 固定延迟周期任务     * 注意：固定延迟周期任务，即每次任务结束后，需要再加上等待固定时间；     */    private static void scheduleWithFixedDelay()&#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(5);        scheduledThreadPoolExecutor.scheduleWithFixedDelay(() -&gt; &#123;            System.out.println(String.format(&quot;===定时任务线程【%s】正在执行，执行时间：【%s】===&quot;, Thread.currentThread().getName(),System.currentTimeMillis()));            try &#123;                // 睡眠5秒                TimeUnit.SECONDS.sleep(5);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;,1,2,TimeUnit.SECONDS);        /**         执行结果：         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729087258】===         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729094268】===         ===定时任务线程【pool-1-thread-2】正在执行，执行时间：【1580729101272】===         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729108273】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729115275】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729122277】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729129279】===         */    &#125;&#125;
-
-1.3 ScheduledThreadPoolExecutor运行机制&emsp;&emsp; ScheduledThreadPoolExecutor 使用的任务队列 DelayQueue 封装了一个 PriorityQueue，PriorityQueue 会对队列中的任务进行排序，执行所需时间短的放在前面先被执行(ScheduledFutureTask 的 time 变量小的先执行)，如果执行所需时间相同则先提交的任务将被先执行(ScheduledFutureTask 的 squenceNumber 变量小的先执行)。
-
-ScheduledThreadPoolExecutor 和 Timer 的比较：
-
-Timer 对系统时钟的变化敏感，ScheduledThreadPoolExecutor不是；
-Timer 只有一个执行线程，因此长时间运行的任务可以延迟其他任务。 ScheduledThreadPoolExecutor 可以配置任意数量的线程。 此外，如果你想（通过提供 ThreadFactory），你可以完全控制创建的线程;
-在TimerTask 中抛出的运行时异常会杀死一个线程，从而导致 Timer 死机:-( …即计划任务将不再运行。ScheduledThreadExecutor 不仅捕获运行时异常，还允许您在需要时处理它们（通过重写 afterExecute 方法ThreadPoolExecutor）。抛出异常的任务将被取消，但其他任务将继续运行。
-
-
-ScheduledThreadPoolExecutor 的执行主要分为两大部分：
-
-当调用 ScheduledThreadPoolExecutor 的 scheduleAtFixedRate() 方法或者scheduleWirhFixedDelay() 方法时，会向 ScheduledThreadPoolExecutor 的 DelayQueue 添加一个实现了 RunnableScheduledFuture 接口的 ScheduledFutureTask 。  线程池中的线程从 DelayQueue 中获取 ScheduledFutureTask，然后执行任务。
-
-
-ScheduledThreadPoolExecutor 为了实现周期性的执行任务，对 ThreadPoolExecutor 做了如下修改：
-
-使用 DelayQueue 作为任务队列；
-获取任务的方不同
-执行周期任务后，增加了额外的处理
-
-
-
-1.4 ScheduledThreadPoolExecutor 执行周期任务的步骤
-
-线程 1 从 DelayQueue 中获取已到期的 ScheduledFutureTask（DelayQueue.take()）。到期任务是指 ScheduledFutureTask 的 time 大于等于当前系统的时间；
-线程 1 执行这个 ScheduledFutureTask；
-线程 1 修改 ScheduledFutureTask 的 time 变量为下次将要被执行的时间；
-线程 1 把这个修改 time 之后的 ScheduledFutureTask 放回 DelayQueue 中（DelayQueue.add())。
-
- &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
-]]></content>
-      <categories>
-        <category>Java多线程</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>多线程</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池</title>
     <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
     <content><![CDATA[1.JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池1.1 工作窃取线程池WorkStealingPool&emsp;&emsp; 在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。
@@ -5382,6 +5323,65 @@ ArrayBlockingQueue 是基于数组实现的，也就具有数组的特性：一�
       </tags>
   </entry>
   <entry>
+    <title>JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%89)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BScheduledThreadPool%E5%AE%9A%E6%9C%9F%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1%E7%BA%BF%E7%A8%8B%E6%B1%A0/</url>
+    <content><![CDATA[1.JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池1.1 定时执行任务线程池ScheduledThreadPoolExecutor&emsp;&emsp; ScheduledThreadPoolExecutor是一个使用线程池执行定时任务的类，相较于Java中提供的另一个执行定时任务的类Timer，其主要有如下两个优点：
+
+使用多线程执行任务，不用担心任务执行时间过长而导致任务相互阻塞的情况，Timer是单线程执行的，因而会出现这个问题。
+不用担心任务执行过程中，如果线程失活，其会新建线程执行任务，Timer类的单线程挂掉之后是不会重新创建线程执行后续任务的。
+
+时cheduledThreadPoolExecutor定 执行任务线程池继承结构关系图：
+通过源代码查看ScheduledThreadPoolExecutor构造函数实现：
+/** * 创建一个ScheduledThreadPoolExecutor，需要指定核心线程池大小。 * Creates a new &#123;@code ScheduledThreadPoolExecutor&#125; with the * given core pool size. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; */public ScheduledThreadPoolExecutor(int corePoolSize) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue());&#125;/** * Creates a new ScheduledThreadPoolExecutor with the given * initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param handler the handler to use when execution is blocked *        because the thread bounds and queue capacities are reached * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code handler&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   RejectedExecutionHandler handler) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), handler);&#125;/** * Creates a new &#123;@code ScheduledThreadPoolExecutor&#125; with the * given initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param threadFactory the factory to use when the executor *        creates a new thread * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code threadFactory&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   ThreadFactory threadFactory) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), threadFactory);&#125;/** * Creates a new ScheduledThreadPoolExecutor with the given * initial parameters. * * @param corePoolSize the number of threads to keep in the pool, even *        if they are idle, unless &#123;@code allowCoreThreadTimeOut&#125; is set * @param threadFactory the factory to use when the executor *        creates a new thread * @param handler the handler to use when execution is blocked *        because the thread bounds and queue capacities are reached * @throws IllegalArgumentException if &#123;@code corePoolSize &lt; 0&#125; * @throws NullPointerException if &#123;@code threadFactory&#125; or *         &#123;@code handler&#125; is null */public ScheduledThreadPoolExecutor(int corePoolSize,                                   ThreadFactory threadFactory,                                   RejectedExecutionHandler handler) &#123;    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,          new DelayedWorkQueue(), threadFactory, handler);&#125;
+在ScheduledThreadPoolExecutor实现中：
+
+corePoolSize &#x3D;&gt; 需要自己传递参数，指定核心线程数大小。
+maximumPoolSize &#x3D;&gt; 允许最大的线程数默认Integer.MAX_VALUE无限大。
+keepAliveTime &#x3D;&gt; keepAliveTime为0，意味着多余的空闲线程会被立即终止。
+workQueue &#x3D;&gt; 采用DelayedWorkQueue作为线程池的工作队列。该队列是一个使用数组实现的优先队列，在调用ScheduledFutureTask::cancel()方法时，其会根据removeOnCancel变量的设置来确认是否需要将当前任务真正的从队列中移除，而不只是标识其为已删除状态。
+
+1.2 ScheduledThreadPoolExecutor使用样例package com.yuanxw.chapter23;import java.util.concurrent.ScheduledFuture;import java.util.concurrent.ScheduledThreadPoolExecutor;import java.util.concurrent.TimeUnit;public class ScheduledThreadPoolExample &#123;    public static void main(String[] args) &#123;        // schedule();        // scheduleAtFixedRate();        scheduleWithFixedDelay();    &#125;    /**     * 单次定时任务调用     * schedule(Runnable command, long delay, TimeUnit unit) // 无返回值的延迟任务     * schedule(Callable callable, long delay, TimeUnit unit) // 有返回值的延迟任务     */    private static void schedule() &#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);        // 创建并执行在给定延迟后启用的单次操作。        ScheduledFuture&lt;?&gt; scheduledFuture = scheduledThreadPoolExecutor.schedule(() -&gt; System.out.println(&quot;定时任务正在被执行&gt;&gt;&gt;&quot;), 2L, TimeUnit.SECONDS);        // 尝试取消执行此任务。        System.out.println(scheduledFuture.cancel(true));    &#125;    /**         执行结果：          true     */          /**     * 固定频率周期任务     * 注意：一次任务超时，会持续的影响后续的任务周期；     */    private static void scheduleAtFixedRate()&#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(5);        scheduledThreadPoolExecutor.scheduleAtFixedRate(()-&gt;System.out.println(String.format(&quot;===定时任务线程【%s】正在执行，执行时间：【%s】===&quot;, Thread.currentThread().getName(),System.currentTimeMillis())),2,2,TimeUnit.SECONDS);        /**         执行结果：          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728645370】===          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728647372】===          ===定时任务线程【pool-1-thread-2】正在执行，执行时间：【1580728649372】===          ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580728651374】===          ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580728653371】===         */    &#125;    /**     * 固定延迟周期任务     * 注意：固定延迟周期任务，即每次任务结束后，需要再加上等待固定时间；     */    private static void scheduleWithFixedDelay()&#123;        // 设置核心线程数        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(5);        scheduledThreadPoolExecutor.scheduleWithFixedDelay(() -&gt; &#123;            System.out.println(String.format(&quot;===定时任务线程【%s】正在执行，执行时间：【%s】===&quot;, Thread.currentThread().getName(),System.currentTimeMillis()));            try &#123;                // 睡眠5秒                TimeUnit.SECONDS.sleep(5);            &#125; catch (InterruptedException e) &#123;                e.printStackTrace();            &#125;        &#125;,1,2,TimeUnit.SECONDS);        /**         执行结果：         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729087258】===         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729094268】===         ===定时任务线程【pool-1-thread-2】正在执行，执行时间：【1580729101272】===         ===定时任务线程【pool-1-thread-1】正在执行，执行时间：【1580729108273】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729115275】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729122277】===         ===定时任务线程【pool-1-thread-3】正在执行，执行时间：【1580729129279】===         */    &#125;&#125;
+
+1.3 ScheduledThreadPoolExecutor运行机制&emsp;&emsp; ScheduledThreadPoolExecutor 使用的任务队列 DelayQueue 封装了一个 PriorityQueue，PriorityQueue 会对队列中的任务进行排序，执行所需时间短的放在前面先被执行(ScheduledFutureTask 的 time 变量小的先执行)，如果执行所需时间相同则先提交的任务将被先执行(ScheduledFutureTask 的 squenceNumber 变量小的先执行)。
+
+ScheduledThreadPoolExecutor 和 Timer 的比较：
+
+Timer 对系统时钟的变化敏感，ScheduledThreadPoolExecutor不是；
+Timer 只有一个执行线程，因此长时间运行的任务可以延迟其他任务。 ScheduledThreadPoolExecutor 可以配置任意数量的线程。 此外，如果你想（通过提供 ThreadFactory），你可以完全控制创建的线程;
+在TimerTask 中抛出的运行时异常会杀死一个线程，从而导致 Timer 死机:-( …即计划任务将不再运行。ScheduledThreadExecutor 不仅捕获运行时异常，还允许您在需要时处理它们（通过重写 afterExecute 方法ThreadPoolExecutor）。抛出异常的任务将被取消，但其他任务将继续运行。
+
+
+ScheduledThreadPoolExecutor 的执行主要分为两大部分：
+
+当调用 ScheduledThreadPoolExecutor 的 scheduleAtFixedRate() 方法或者scheduleWirhFixedDelay() 方法时，会向 ScheduledThreadPoolExecutor 的 DelayQueue 添加一个实现了 RunnableScheduledFuture 接口的 ScheduledFutureTask 。  线程池中的线程从 DelayQueue 中获取 ScheduledFutureTask，然后执行任务。
+
+
+ScheduledThreadPoolExecutor 为了实现周期性的执行任务，对 ThreadPoolExecutor 做了如下修改：
+
+使用 DelayQueue 作为任务队列；
+获取任务的方不同
+执行周期任务后，增加了额外的处理
+
+
+
+1.4 ScheduledThreadPoolExecutor 执行周期任务的步骤
+
+线程 1 从 DelayQueue 中获取已到期的 ScheduledFutureTask（DelayQueue.take()）。到期任务是指 ScheduledFutureTask 的 time 大于等于当前系统的时间；
+线程 1 执行这个 ScheduledFutureTask；
+线程 1 修改 ScheduledFutureTask 的 time 变量为下次将要被执行的时间；
+线程 1 把这个修改 time 之后的 ScheduledFutureTask 放回 DelayQueue 中（DelayQueue.add())。
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JAVA多线程(二十八)Java多线程之SynchronousQueue容器</title>
     <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AB)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BSynchronousQue/</url>
     <content><![CDATA[1.JAVA多线程(二十八)Java多线程之SynchronousQueue容器1.1 什么是SynchronousQueue&emsp;&emsp;Java 6的并发编程包中的SynchronousQueue是一个没有数据缓冲的BlockingQueue，生产者线程对其的插入操作put必须等待消费者的移除操作take，反过来也一样。
@@ -5434,6 +5434,24 @@ PriorityBlockingQueue不可以插入 null 值。
 1.4 常用的方法package com.yuanxw.thread.chapter26;import java.util.concurrent.PriorityBlockingQueue;public class PriorityBlockingQueueExample &#123;    public static void main(String[] args) throws InterruptedException &#123;        // add();        // poll();        // peek();        // element();        // remove();        // addNoComparable();        addWithNull();            &#125;    /**     * PriorityBlockingQueue     * 将指定的元素插入到此优先级队列中。 由于队列无限制，此方法将永远不会返回false 。     * add()方法、put()方法，都调用用offer()方法。     执行结果：         =====执行add()签名方法-开始=====         Message 1         Message 2         Message 3         =====执行add()签名方法-开始=====     */    public static void add()&#123;        System.out.println(&quot;=====执行add()签名方法-开始=====&quot;);        // 创建一个PriorityBlockingQueue ，具有指定的初始容量，根据它们的natural ordering对其元素进行排序 。        // 超过容量之后会自动扩容        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue(2);        priorityBlockingQueue.add(&quot;Message 1&quot;);        priorityBlockingQueue.put(&quot;Message 2&quot;);        priorityBlockingQueue.offer(&quot;Message 3&quot;);        priorityBlockingQueue.forEach(System.out::println);        System.out.println(&quot;=====执行add()签名方法-开始=====&quot;);    &#125;    /**     * 检索并删除此队列的头，则等待空间变为可用。     =====执行poll()签名方法-开始=====     执行结果：         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】         当前priorityBlockingQueue对象中poll()数据值为：Message 1         当前priorityBlockingQueue对象中poll()数据值为：Message 2         当前priorityBlockingQueue对象中的个数：【1】,容量：【2147483647】         当前priorityBlockingQueue对象中poll()数据值为：Message 3         当前priorityBlockingQueue对象中poll()数据值为：null         当前priorityBlockingQueue对象中poll()数据值为：null     =====执行poll()签名方法-结束=====     */    public static void poll() &#123;        System.out.println(&quot;=====执行poll()签名方法-开始=====&quot;);        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue(2);        priorityBlockingQueue.put(&quot;Message 1&quot;);        priorityBlockingQueue.put(&quot;Message 2&quot;);        priorityBlockingQueue.put(&quot;Message 3&quot;);        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot; + priorityBlockingQueue.poll());        System.out.println(&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot; + priorityBlockingQueue.poll());        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot; + priorityBlockingQueue.poll());        System.out.println(&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot; + priorityBlockingQueue.poll());        System.out.println(&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot; + priorityBlockingQueue.poll());        System.out.println(&quot;=====执行poll()签名方法-结束=====&quot;);    &#125;    /**     * 检索但不删除此队列的头，如果此队列为空，则返回 null。     执行结果：         =====执行peek()签名方法-开始=====         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】         当前priorityBlockingQueue对象中peek()数据值为：Message 1         当前priorityBlockingQueue对象中peek()数据值为：Message 1         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】         当前priorityBlockingQueue对象中peek()数据值为：Message 1         当前priorityBlockingQueue对象中peek()数据值为：Message 1         当前priorityBlockingQueue对象中peek()数据值为：Message 1         =====执行peek()签名方法-结束=====     */    public static void peek()  &#123;        System.out.println(&quot;=====执行peek()签名方法-开始=====&quot;);        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue(2);        priorityBlockingQueue.put(&quot;Message 1&quot;);        priorityBlockingQueue.put(&quot;Message 2&quot;);        priorityBlockingQueue.put(&quot;Message 3&quot;);        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot; + priorityBlockingQueue.peek());        System.out.println(&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot; + priorityBlockingQueue.peek());        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot; + priorityBlockingQueue.peek());        System.out.println(&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot; + priorityBlockingQueue.peek());        System.out.println(&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot; + priorityBlockingQueue.peek());        System.out.println(&quot;=====执行peek()签名方法-结束=====&quot;);    &#125;    /**     * 检索，但不删除，这个队列的头。 此方法与peek的不同之处在于，如果此队列为空，它将抛出异常。     执行结果：         =====执行element()签名方法-开始=====         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】         当前priorityBlockingQueue对象中take()数据值为：Message 1         当前priorityBlockingQueue对象中take()数据值为：Message 2         当前priorityBlockingQueue对象中take()数据值为：Message 3         当前priorityBlockingQueue对象中的个数：【0】,容量：【2147483647】         Exception in thread &quot;main&quot; java.util.NoSuchElementException         at java.util.AbstractQueue.element(AbstractQueue.java:136)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.element(PriorityBlockingQueueExample.java:123)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:11)     */    public static void element() throws InterruptedException &#123;        System.out.println(&quot;=====执行element()签名方法-开始=====&quot;);        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue(3);        priorityBlockingQueue.put(&quot;Message 1&quot;);        priorityBlockingQueue.put(&quot;Message 2&quot;);        priorityBlockingQueue.put(&quot;Message 3&quot;);        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中take()数据值为：&quot; + priorityBlockingQueue.take());        System.out.println(&quot;当前priorityBlockingQueue对象中take()数据值为：&quot; + priorityBlockingQueue.take());        System.out.println(&quot;当前priorityBlockingQueue对象中take()数据值为：&quot; + priorityBlockingQueue.take());        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中element()数据值为：&quot; + priorityBlockingQueue.element());        System.out.println(&quot;=====执行element()签名方法-结束=====&quot;);    &#125;    /**     * 检索并删除此队列的头。 此方法与poll不同之处在于，如果此队列为空，它将抛出异常。     执行结果：         =====执行remove()签名方法-开始=====         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】         当前priorityBlockingQueue对象中remove()数据值为：Message 1         当前priorityBlockingQueue对象中remove()数据值为：Message 2         当前priorityBlockingQueue对象中remove()数据值为：Message 3         Exception in thread &quot;main&quot; java.util.NoSuchElementException         at java.util.AbstractQueue.remove(AbstractQueue.java:117)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.remove(PriorityBlockingQueueExample.java:151)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:12)     */    public static void remove() &#123;        System.out.println(&quot;=====执行remove()签名方法-开始=====&quot;);        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue(3);        priorityBlockingQueue.put(&quot;Message 1&quot;);        priorityBlockingQueue.put(&quot;Message 2&quot;);        priorityBlockingQueue.put(&quot;Message 3&quot;);        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot; + priorityBlockingQueue.remove());        System.out.println(&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot; + priorityBlockingQueue.remove());        System.out.println(&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot; + priorityBlockingQueue.remove());        System.out.println(&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot; + priorityBlockingQueue.remove());        System.out.println(String.format(&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));        System.out.println(&quot;=====执行remove()签名方法-结束=====&quot;);    &#125;    /**     * 验证：     * 添加元素时，插入队列的对象必须是可比较大小的（comparable），否则报 ClassCastException 异常。     执行结果：         =====执行addNoComparable()签名方法-开始=====         Exception in thread &quot;main&quot; java.lang.ClassCastException: com.yuanxw.thread.chapter26.PriorityBlockingQueueExample$Order cannot be cast to java.lang.Comparable         at java.util.concurrent.PriorityBlockingQueue.siftUpComparable(PriorityBlockingQueue.java:358)         at java.util.concurrent.PriorityBlockingQueue.offer(PriorityBlockingQueue.java:490)         at java.util.concurrent.PriorityBlockingQueue.add(PriorityBlockingQueue.java:464)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.addNoComparable(PriorityBlockingQueueExample.java:166)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:12)     */    public static void addNoComparable()&#123;        System.out.println(&quot;=====执行addNoComparable()签名方法-开始=====&quot;);        // 默认长度为：11        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue();        priorityBlockingQueue.add(new Order());        priorityBlockingQueue.forEach(System.out::println);        System.out.println(&quot;=====执行addNoComparable()签名方法-结束=====&quot;);    &#125;    /**     * 验证：     * 添加元素时，插入队列的对象是null，报 NullPointerException 异常。     执行结果：         =====执行addWithNull()签名方法-开始=====         Exception in thread &quot;main&quot; java.lang.NullPointerException         at java.util.concurrent.PriorityBlockingQueue.offer(PriorityBlockingQueue.java:480)         at java.util.concurrent.PriorityBlockingQueue.add(PriorityBlockingQueue.java:464)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.addWithNull(PriorityBlockingQueueExample.java:194)         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:13)     */    public static void addWithNull()&#123;        System.out.println(&quot;=====执行addWithNull()签名方法-开始=====&quot;);        // 默认长度为：11        PriorityBlockingQueue priorityBlockingQueue = new PriorityBlockingQueue();        priorityBlockingQueue.add(null);        priorityBlockingQueue.forEach(System.out::println);        System.out.println(&quot;=====执行addWithNull()签名方法-结束=====&quot;);    &#125;    private static class Order&#123;&#125;&#125;
 
  &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(五)Java多线程之interrupted线程中断</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8Binterrupted%E7%BA%BF%E7%A8%8B%E4%B8%AD%E6%96%AD/</url>
+    <content><![CDATA[1.JAVA多线程(五)Java多线程之interrupted线程中断1.1 interrupted(线程中断)&emsp;&emsp;一个线程执行完毕之后会自动结束，如果在运行过程中发生异常也会提前结束。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。但是不能中断 I&#x2F;O 阻塞和 synchronized 锁阻塞。对于以下代码，在 main() 中启动一个线程之后再中断它，由于线程中调用了 Thread.sleep() 方法，因此会抛出一个 InterruptedException，从而提前结束线程，不执行之后的语句。
+package com.yuanxw.chapter5;/** * 中断线程 */public class InterruptThread &#123;    public static void main(String[] args) throws InterruptedException &#123;        Thread thread = new Thread() &#123;            @Override            public void run() &#123;                try &#123;                    while (true) &#123;                        sleep(500);                        System.out.println(Thread.currentThread().getName() + &quot;正在运行...&quot;);                    &#125;                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                    System.out.println(Thread.currentThread().getName() + &quot;线程被打断了...&quot;);                &#125;            &#125;        &#125;;        thread.start();        /** main线程休息2秒 **/        Thread.sleep(2000);        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));        /** 中断线程操作 **/        thread.interrupt();        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));    &#125;&#125;
+执行结果：
+Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...【Thread-0】线程是否中断：false【Thread-0】线程是否中断：trueThread-0线程被打断了...java.lang.InterruptedException: sleep interrupted	at java.lang.Thread.sleep(Native Method)	at com.yuanxw.chapter3.InterruptThread$1.run(InterruptThread.java:13) 
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(五)Java多线程之interrupted线程中断》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
 ]]></content>
       <categories>
         <category>Java多线程</category>
@@ -5718,24 +5736,6 @@ package com.yuanxw.chapter24;import java.util.concurrent.CompletableFuture;impor
       </tags>
   </entry>
   <entry>
-    <title>JAVA多线程(五)Java多线程之interrupted线程中断</title>
-    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8Binterrupted%E7%BA%BF%E7%A8%8B%E4%B8%AD%E6%96%AD/</url>
-    <content><![CDATA[1.JAVA多线程(五)Java多线程之interrupted线程中断1.1 interrupted(线程中断)&emsp;&emsp;一个线程执行完毕之后会自动结束，如果在运行过程中发生异常也会提前结束。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。但是不能中断 I&#x2F;O 阻塞和 synchronized 锁阻塞。对于以下代码，在 main() 中启动一个线程之后再中断它，由于线程中调用了 Thread.sleep() 方法，因此会抛出一个 InterruptedException，从而提前结束线程，不执行之后的语句。
-package com.yuanxw.chapter5;/** * 中断线程 */public class InterruptThread &#123;    public static void main(String[] args) throws InterruptedException &#123;        Thread thread = new Thread() &#123;            @Override            public void run() &#123;                try &#123;                    while (true) &#123;                        sleep(500);                        System.out.println(Thread.currentThread().getName() + &quot;正在运行...&quot;);                    &#125;                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                    System.out.println(Thread.currentThread().getName() + &quot;线程被打断了...&quot;);                &#125;            &#125;        &#125;;        thread.start();        /** main线程休息2秒 **/        Thread.sleep(2000);        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));        /** 中断线程操作 **/        thread.interrupt();        System.out.println(String.format(&quot;【%s】线程是否中断：%s&quot;, thread.getName(),thread.isInterrupted()));    &#125;&#125;
-执行结果：
-Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...Thread-0正在运行...【Thread-0】线程是否中断：false【Thread-0】线程是否中断：trueThread-0线程被打断了...java.lang.InterruptedException: sleep interrupted	at java.lang.Thread.sleep(Native Method)	at com.yuanxw.chapter3.InterruptThread$1.run(InterruptThread.java:13) 
-
- &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(五)Java多线程之interrupted线程中断》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
-]]></content>
-      <categories>
-        <category>Java多线程</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>多线程</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>JAVA多线程(八)Java多线程之死锁</title>
     <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%85%AB)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B%E6%AD%BB%E9%94%81/</url>
     <content><![CDATA[1.JAVA多线程(八)Java多线程之死锁1.1什么是线程死锁?如何避免死锁?&emsp;&emsp;多个线程同时被阻塞，它们中的一个或者全部都在等待某个资源被释放。由于线程被无限期地阻塞，因此程序不可能正常终止。
@@ -5756,27 +5756,6 @@ Thread[线程A,5,main]get resource1Thread[线程B,5,main]get resource2Thread[线
 
 1.2通过命令检查死锁
  &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(八)Java多线程之死锁》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
-]]></content>
-      <categories>
-        <category>Java多线程</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>多线程</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA多线程(六)Java多线程之ThreadGroup</title>
-    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BThreadGroup/</url>
-    <content><![CDATA[1.JAVA多线程(六)Java多线程之ThreadGroup1.1 ThreadGroup&emsp;&emsp;ThreadGroup是Java提供的一种对线程进行分组管理的手段，可以对所有线程以组为单位进行操作，如设置优先级、守护线程等。
-&emsp;&emsp;在Java程序中，默认情况下，新的线程都会加入到 main 线程所在的 group 中， main 线程的 group 和线程同名。和线程存在父子关系一样， ThreadGroup 也存在父子关系
-
-package com.yuanxw.chapter6;import java.util.Arrays;public class ThreadGroupService &#123;    public static void main(String[] args) &#123;        Thread thread = new Thread(&quot;thread-0&quot;)&#123;            @Override            public void run() &#123;                try &#123;                    // 睡眠100L                    sleep(100L);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;            &#125;        &#125;;        thread.start();        // 获得当前线程的名称        System.out.println(&quot;获得当前线程的名称：&quot;+Thread.currentThread().getName());        // 获得当前线程的线程线名称        System.out.println(&quot;获得当前线程的线程线名称：&quot;+Thread.currentThread().getThreadGroup().getName());        // 获得thread-0线程的线程线名称        System.out.println(&quot;获得&quot;+thread.getName()+&quot;线程的线程线名称：&quot;+thread.getThreadGroup().getName());        // 創建线程组        ThreadGroup syncDbGroup = new ThreadGroup(&quot;SYNC_DB_GROUP&quot;);        Arrays.asList(&quot;thread-A&quot;,&quot;thread-B&quot;,&quot;thread-C&quot;,&quot;thread-D&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        ThreadGroup syncErpDbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_ERP_DB_GROUP&quot;);        ThreadGroup syncOADbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_OA_DB_GROUP&quot;);        Arrays.asList(&quot;thread-1&quot;,&quot;thread-2&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncErpDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        System.out.println(&quot;返回此线程组及其子组中活动线程数的估计：&quot;+syncDbGroup.activeCount());        System.out.println(&quot;返回此线程组及其子组中活动组数的估计：&quot;+syncDbGroup.activeGroupCount());        // 设置线程组为后台线程组----最后一个线程执行结束或者被销毁后,该后台线程组自动销毁        syncDbGroup.setDaemon(true);        // interrupt 的作用其实也不是中断线程，而是「通知线程应该中断了」，具体到底中断还是继续运行，应该由被通知的线程自己处理。        syncErpDbGroup.interrupt();    &#125;&#125;
-执行结果：
-获得当前线程的名称：main获得当前线程的线程线名称：main获得thread-0线程的线程线名称：main返回此线程组及其子组中活动线程数的估计：6返回此线程组及其子组中活动组数的估计：2
-
-
- &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(六)Java多线程之ThreadGroup》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
 ]]></content>
       <categories>
         <category>Java多线程</category>
@@ -5861,36 +5840,17 @@ package com.yuanxw.chapter11;import java.util.ArrayList;import java.util.LinkedL
       </tags>
   </entry>
   <entry>
-    <title>JAVA多线程(十七)Java多线程之ForkJoin框架</title>
-    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/</url>
-    <content><![CDATA[1.JAVA多线程(十七)Java多线程之ForkJoin框架1.1 什么是ForkJoin框架？&emsp;&emsp; Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。
+    <title>JAVA多线程(六)Java多线程之ThreadGroup</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BThreadGroup/</url>
+    <content><![CDATA[1.JAVA多线程(六)Java多线程之ThreadGroup1.1 ThreadGroup&emsp;&emsp;ThreadGroup是Java提供的一种对线程进行分组管理的手段，可以对所有线程以组为单位进行操作，如设置优先级、守护线程等。
+&emsp;&emsp;在Java程序中，默认情况下，新的线程都会加入到 main 线程所在的 group 中， main 线程的 group 和线程同名。和线程存在父子关系一样， ThreadGroup 也存在父子关系
 
-Fork&#x2F;Join框架要完成两件事情：
-
-任务分割：&emsp;&emsp; 首先Fork&#x2F;Join框架需要把大的任务分割成足够小的子任务，如果子任务比较大的话还要对子任务进行继续分割。
-
-执行任务并合并结果：&emsp;&emsp; 分割的子任务分别放到双端队列里，然后几个启动线程分别从双端队列里获取任务执行。子任务执行完的结果都放在另外一个队列里，启动一个线程从队列里取数据，然后合并这些数据。
-
-ForkJoinTask类：&emsp;&emsp;使用Fork&#x2F;Join框架，首先需要创建一个ForkJoin任务。该类提供了在任务中执行fork和join的机制。通常情况下我们不需要直接集成ForkJoinTask类，只需要继承它的子类，Fork&#x2F;Join框架提供了两个子类:&emsp;&emsp;RecursiveTask： 用于有返回结果的任务&emsp;&emsp;RecursiveAction：用于没有返回结果的任务
-
-
-
-1.2 RecursiveTask使用样例使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求，代码如下：
-package com.yuanxw.chapter17;import java.util.concurrent.ExecutionException;import java.util.concurrent.ForkJoinPool;import java.util.concurrent.ForkJoinTask;import java.util.concurrent.RecursiveTask;import java.util.stream.IntStream;/** * 使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求 */public class ForkJoinRecursiveTask &#123;    // 阈值    private final static int THRESHOLD = 200;    public static void main(String[] args) throws ExecutionException, InterruptedException &#123;        // 计算1-50累加值        CalculatorRecursiveTask calculatorRecursiveTask = new CalculatorRecursiveTask(1,10000);        ForkJoinPool forkJoinPool = new ForkJoinPool();        ForkJoinTask&lt;Integer&gt; forkJoinTask = forkJoinPool.submit(calculatorRecursiveTask);        System.out.println(&quot;计算结果：&quot;+forkJoinTask.get());    &#125;    /**     * 有返回值ForkJoin任务     */    private static class CalculatorRecursiveTask extends RecursiveTask&lt;Integer&gt; &#123;        // 开始计算机位置        public int first;        // 结束计算机位置        private int last;        /**         * 构造函数         *         * @param first         * @param last         */        public CalculatorRecursiveTask(int first, int last) &#123;            this.first = first;            this.last = last;        &#125;        @Override        protected Integer compute() &#123;            if (last - first &lt;= THRESHOLD) &#123;                /**                 * 任务足够小则直接计算                 * 使用lambda表达式简化如下代码                 * &lt;pre&gt;                 * for (int i = first; i &lt;= last; i++) &#123;                 *     result += i;                 * &#125;                 * &lt;/pre&gt;                 */                return IntStream.rangeClosed(first, last).sum();            &#125; else &#123;                // 获得中间值，向上取整                int middle = (first + last) / 2;                CalculatorRecursiveTask leftTask = new CalculatorRecursiveTask(first, middle);                CalculatorRecursiveTask rightTask = new CalculatorRecursiveTask(middle + 1, last);                leftTask.fork();                rightTask.fork();                return leftTask.join() + rightTask.join();            &#125;        &#125;    &#125;&#125;
+package com.yuanxw.chapter6;import java.util.Arrays;public class ThreadGroupService &#123;    public static void main(String[] args) &#123;        Thread thread = new Thread(&quot;thread-0&quot;)&#123;            @Override            public void run() &#123;                try &#123;                    // 睡眠100L                    sleep(100L);                &#125; catch (InterruptedException e) &#123;                    e.printStackTrace();                &#125;            &#125;        &#125;;        thread.start();        // 获得当前线程的名称        System.out.println(&quot;获得当前线程的名称：&quot;+Thread.currentThread().getName());        // 获得当前线程的线程线名称        System.out.println(&quot;获得当前线程的线程线名称：&quot;+Thread.currentThread().getThreadGroup().getName());        // 获得thread-0线程的线程线名称        System.out.println(&quot;获得&quot;+thread.getName()+&quot;线程的线程线名称：&quot;+thread.getThreadGroup().getName());        // 創建线程组        ThreadGroup syncDbGroup = new ThreadGroup(&quot;SYNC_DB_GROUP&quot;);        Arrays.asList(&quot;thread-A&quot;,&quot;thread-B&quot;,&quot;thread-C&quot;,&quot;thread-D&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        ThreadGroup syncErpDbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_ERP_DB_GROUP&quot;);        ThreadGroup syncOADbGroup = new ThreadGroup(syncDbGroup,&quot;SYNC_OA_DB_GROUP&quot;);        Arrays.asList(&quot;thread-1&quot;,&quot;thread-2&quot;).forEach(name -&gt;&#123;            Thread t = new Thread(syncErpDbGroup, () -&gt; &#123;                while (true) &#123;&#125;            &#125;, name);            t.setDaemon(true);            t.start();        &#125;);        System.out.println(&quot;返回此线程组及其子组中活动线程数的估计：&quot;+syncDbGroup.activeCount());        System.out.println(&quot;返回此线程组及其子组中活动组数的估计：&quot;+syncDbGroup.activeGroupCount());        // 设置线程组为后台线程组----最后一个线程执行结束或者被销毁后,该后台线程组自动销毁        syncDbGroup.setDaemon(true);        // interrupt 的作用其实也不是中断线程，而是「通知线程应该中断了」，具体到底中断还是继续运行，应该由被通知的线程自己处理。        syncErpDbGroup.interrupt();    &#125;&#125;
 执行结果：
-计算结果：50005000
+获得当前线程的名称：main获得当前线程的线程线名称：main获得thread-0线程的线程线名称：main返回此线程组及其子组中活动线程数的估计：6返回此线程组及其子组中活动组数的估计：2
 
-1.3 ForkJoinPool线程池&emsp;&emsp;ForkJoin 使用 ForkJoinPool 来启动，它是一个特殊的线程池，线程数量取决于 CPU 核数。
-public class ForkJoinPool extends AbstractExecutorService &#123;    /**     * Creates a &#123;@code ForkJoinPool&#125; with parallelism equal to &#123;@link     * java.lang.Runtime#availableProcessors&#125;, using the &#123;@linkplain     * #defaultForkJoinWorkerThreadFactory default thread factory&#125;,     * no UncaughtExceptionHandler, and non-async LIFO processing mode.     *     * @throws SecurityException if a security manager exists and     *         the caller is not permitted to modify threads     *         because it does not hold &#123;@link     *         java.lang.RuntimePermission&#125;&#123;@code (&quot;modifyThread&quot;)&#125;     */    public ForkJoinPool() &#123;        this(Math.min(MAX_CAP, Runtime.getRuntime().availableProcessors()),             defaultForkJoinWorkerThreadFactory, null, false);    &#125;
-ForkJoinPool 实现了工作窃取算法来提高 CPU 的利用率。每个线程都维护了一个双端队列，用来存储需要执行的任务。工作窃取算法允许空闲的线程从其它线程的双端队列中窃取一个任务来执行。窃取的任务必须是最晚的任务，避免和队列所属线程发生竞争。例如下图中，Thread2 从 Thread1 的队列中拿出最晚的 Task1 任务，Thread1 会拿出 Task2 来执行，这样就避免发生竞争。但是如果队列中只有一个任务时还是会发生竞争。
 
-1.4 RecursiveAction使用样例
-用于没有返回结果的任务，利用RecursiveAction，拆分大文件。代码如下：
-
-package com.yuanxw.chapter17;import java.io.File;import java.io.FileInputStream;import java.io.FileNotFoundException;import java.io.FileOutputStream;import java.io.IOException;import java.nio.channels.FileChannel;import java.util.concurrent.ForkJoinPool;import java.util.concurrent.ForkJoinTask;import java.util.concurrent.RecursiveAction;import java.util.concurrent.TimeUnit;/** * 利用RecursiveAction，拆分大文件 */public class ForkJoinRecursiveAction &#123;    // 阈值    private final static int SPLIT_THRESHOLD = 100_000_000;    public static void main(String[] args) throws IOException, InterruptedException &#123;        String fileFullPath = &quot;G:\\当幸福来敲门BD中英双字1280高清.rmvb&quot;;        File bigFile = new File(fileFullPath);        FileInputStream fileInputStream = new FileInputStream(bigFile);        ForkJoinPool forkJoinPool = new ForkJoinPool();        ForkJoinTask&lt;Void&gt; submit = forkJoinPool.submit(new SplitFileRecursiveAction(fileInputStream, fileFullPath, 0, (int) bigFile.length()));        // 等待任务执行结束        forkJoinPool.awaitTermination(1, TimeUnit.SECONDS);    &#125;    /**     * 无返回值ForkJoin任务     */    private static class SplitFileRecursiveAction extends RecursiveAction &#123;        // 文件输出流        private FileInputStream fileInputStream;        // 文件全路径        private String fileFullPath;        // 开始位置        private int start;        // 结束位置        private int end;        public SplitFileRecursiveAction(FileInputStream fileInputStream, String fileFullPath, int start, int end) &#123;            this.fileInputStream = fileInputStream;            this.fileFullPath = fileFullPath;            this.start = start;            this.end = end;        &#125;        @Override        protected void compute() &#123;            // 如果任务计算小于阈值，则开始拆分文件            int length = end - start;            System.out.println(start +&quot;-&quot;+end);            if(length &lt;= SPLIT_THRESHOLD)&#123;                try &#123;                    // 每次切割大小                    byte[] buffer = new byte[length];                    File currentTempFile = new File(fileFullPath);                    String[] split = currentTempFile.getName().split(&quot;\\.&quot;);                    File fileName = new File(String.format(&quot;%s_%s_%s.%s&quot;, currentTempFile.getParent()+split[0], start, end, split[1]));                    FileOutputStream fileOutputStream = new FileOutputStream(fileName);                    FileChannel outputChannel = fileOutputStream.getChannel();                    // 通道传输文件数据                    fileInputStream.getChannel().transferTo(start, end, outputChannel);                    fileOutputStream.write(buffer);                    fileOutputStream.flush();                    outputChannel.close();                &#125; catch (FileNotFoundException e) &#123;                    e.printStackTrace();                &#125; catch (IOException e) &#123;                    e.printStackTrace();                &#125;            &#125; else &#123;                // 获得中间值，向上取整                int middle = (end + start) / 2;                SplitFileRecursiveAction leftAction = new SplitFileRecursiveAction(fileInputStream,fileFullPath,start,middle);                SplitFileRecursiveAction rightAction = new SplitFileRecursiveAction(fileInputStream,fileFullPath,middle+1,end);                leftAction.fork();                rightAction.fork();                leftAction.join();                rightAction.join();            &#125;        &#125;    &#125;&#125;
-执行结果：
-
- &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十七)Java多线程之ForkJoin框架》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(六)Java多线程之ThreadGroup》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
 ]]></content>
       <categories>
         <category>Java多线程</category>
@@ -5939,6 +5899,74 @@ CountDownLatch 是计数器，线程完成一个记录一个，只不过计数�
       </tags>
   </entry>
   <entry>
+    <title>JAVA多线程(十七)Java多线程之ForkJoin框架</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/</url>
+    <content><![CDATA[1.JAVA多线程(十七)Java多线程之ForkJoin框架1.1 什么是ForkJoin框架？&emsp;&emsp; Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。
+
+Fork&#x2F;Join框架要完成两件事情：
+
+任务分割：&emsp;&emsp; 首先Fork&#x2F;Join框架需要把大的任务分割成足够小的子任务，如果子任务比较大的话还要对子任务进行继续分割。
+
+执行任务并合并结果：&emsp;&emsp; 分割的子任务分别放到双端队列里，然后几个启动线程分别从双端队列里获取任务执行。子任务执行完的结果都放在另外一个队列里，启动一个线程从队列里取数据，然后合并这些数据。
+
+ForkJoinTask类：&emsp;&emsp;使用Fork&#x2F;Join框架，首先需要创建一个ForkJoin任务。该类提供了在任务中执行fork和join的机制。通常情况下我们不需要直接集成ForkJoinTask类，只需要继承它的子类，Fork&#x2F;Join框架提供了两个子类:&emsp;&emsp;RecursiveTask： 用于有返回结果的任务&emsp;&emsp;RecursiveAction：用于没有返回结果的任务
+
+
+
+1.2 RecursiveTask使用样例使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求，代码如下：
+package com.yuanxw.chapter17;import java.util.concurrent.ExecutionException;import java.util.concurrent.ForkJoinPool;import java.util.concurrent.ForkJoinTask;import java.util.concurrent.RecursiveTask;import java.util.stream.IntStream;/** * 使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求 */public class ForkJoinRecursiveTask &#123;    // 阈值    private final static int THRESHOLD = 200;    public static void main(String[] args) throws ExecutionException, InterruptedException &#123;        // 计算1-50累加值        CalculatorRecursiveTask calculatorRecursiveTask = new CalculatorRecursiveTask(1,10000);        ForkJoinPool forkJoinPool = new ForkJoinPool();        ForkJoinTask&lt;Integer&gt; forkJoinTask = forkJoinPool.submit(calculatorRecursiveTask);        System.out.println(&quot;计算结果：&quot;+forkJoinTask.get());    &#125;    /**     * 有返回值ForkJoin任务     */    private static class CalculatorRecursiveTask extends RecursiveTask&lt;Integer&gt; &#123;        // 开始计算机位置        public int first;        // 结束计算机位置        private int last;        /**         * 构造函数         *         * @param first         * @param last         */        public CalculatorRecursiveTask(int first, int last) &#123;            this.first = first;            this.last = last;        &#125;        @Override        protected Integer compute() &#123;            if (last - first &lt;= THRESHOLD) &#123;                /**                 * 任务足够小则直接计算                 * 使用lambda表达式简化如下代码                 * &lt;pre&gt;                 * for (int i = first; i &lt;= last; i++) &#123;                 *     result += i;                 * &#125;                 * &lt;/pre&gt;                 */                return IntStream.rangeClosed(first, last).sum();            &#125; else &#123;                // 获得中间值，向上取整                int middle = (first + last) / 2;                CalculatorRecursiveTask leftTask = new CalculatorRecursiveTask(first, middle);                CalculatorRecursiveTask rightTask = new CalculatorRecursiveTask(middle + 1, last);                leftTask.fork();                rightTask.fork();                return leftTask.join() + rightTask.join();            &#125;        &#125;    &#125;&#125;
+执行结果：
+计算结果：50005000
+
+1.3 ForkJoinPool线程池&emsp;&emsp;ForkJoin 使用 ForkJoinPool 来启动，它是一个特殊的线程池，线程数量取决于 CPU 核数。
+public class ForkJoinPool extends AbstractExecutorService &#123;    /**     * Creates a &#123;@code ForkJoinPool&#125; with parallelism equal to &#123;@link     * java.lang.Runtime#availableProcessors&#125;, using the &#123;@linkplain     * #defaultForkJoinWorkerThreadFactory default thread factory&#125;,     * no UncaughtExceptionHandler, and non-async LIFO processing mode.     *     * @throws SecurityException if a security manager exists and     *         the caller is not permitted to modify threads     *         because it does not hold &#123;@link     *         java.lang.RuntimePermission&#125;&#123;@code (&quot;modifyThread&quot;)&#125;     */    public ForkJoinPool() &#123;        this(Math.min(MAX_CAP, Runtime.getRuntime().availableProcessors()),             defaultForkJoinWorkerThreadFactory, null, false);    &#125;
+ForkJoinPool 实现了工作窃取算法来提高 CPU 的利用率。每个线程都维护了一个双端队列，用来存储需要执行的任务。工作窃取算法允许空闲的线程从其它线程的双端队列中窃取一个任务来执行。窃取的任务必须是最晚的任务，避免和队列所属线程发生竞争。例如下图中，Thread2 从 Thread1 的队列中拿出最晚的 Task1 任务，Thread1 会拿出 Task2 来执行，这样就避免发生竞争。但是如果队列中只有一个任务时还是会发生竞争。
+
+1.4 RecursiveAction使用样例
+用于没有返回结果的任务，利用RecursiveAction，拆分大文件。代码如下：
+
+package com.yuanxw.chapter17;import java.io.File;import java.io.FileInputStream;import java.io.FileNotFoundException;import java.io.FileOutputStream;import java.io.IOException;import java.nio.channels.FileChannel;import java.util.concurrent.ForkJoinPool;import java.util.concurrent.ForkJoinTask;import java.util.concurrent.RecursiveAction;import java.util.concurrent.TimeUnit;/** * 利用RecursiveAction，拆分大文件 */public class ForkJoinRecursiveAction &#123;    // 阈值    private final static int SPLIT_THRESHOLD = 100_000_000;    public static void main(String[] args) throws IOException, InterruptedException &#123;        String fileFullPath = &quot;G:\\当幸福来敲门BD中英双字1280高清.rmvb&quot;;        File bigFile = new File(fileFullPath);        FileInputStream fileInputStream = new FileInputStream(bigFile);        ForkJoinPool forkJoinPool = new ForkJoinPool();        ForkJoinTask&lt;Void&gt; submit = forkJoinPool.submit(new SplitFileRecursiveAction(fileInputStream, fileFullPath, 0, (int) bigFile.length()));        // 等待任务执行结束        forkJoinPool.awaitTermination(1, TimeUnit.SECONDS);    &#125;    /**     * 无返回值ForkJoin任务     */    private static class SplitFileRecursiveAction extends RecursiveAction &#123;        // 文件输出流        private FileInputStream fileInputStream;        // 文件全路径        private String fileFullPath;        // 开始位置        private int start;        // 结束位置        private int end;        public SplitFileRecursiveAction(FileInputStream fileInputStream, String fileFullPath, int start, int end) &#123;            this.fileInputStream = fileInputStream;            this.fileFullPath = fileFullPath;            this.start = start;            this.end = end;        &#125;        @Override        protected void compute() &#123;            // 如果任务计算小于阈值，则开始拆分文件            int length = end - start;            System.out.println(start +&quot;-&quot;+end);            if(length &lt;= SPLIT_THRESHOLD)&#123;                try &#123;                    // 每次切割大小                    byte[] buffer = new byte[length];                    File currentTempFile = new File(fileFullPath);                    String[] split = currentTempFile.getName().split(&quot;\\.&quot;);                    File fileName = new File(String.format(&quot;%s_%s_%s.%s&quot;, currentTempFile.getParent()+split[0], start, end, split[1]));                    FileOutputStream fileOutputStream = new FileOutputStream(fileName);                    FileChannel outputChannel = fileOutputStream.getChannel();                    // 通道传输文件数据                    fileInputStream.getChannel().transferTo(start, end, outputChannel);                    fileOutputStream.write(buffer);                    fileOutputStream.flush();                    outputChannel.close();                &#125; catch (FileNotFoundException e) &#123;                    e.printStackTrace();                &#125; catch (IOException e) &#123;                    e.printStackTrace();                &#125;            &#125; else &#123;                // 获得中间值，向上取整                int middle = (end + start) / 2;                SplitFileRecursiveAction leftAction = new SplitFileRecursiveAction(fileInputStream,fileFullPath,start,middle);                SplitFileRecursiveAction rightAction = new SplitFileRecursiveAction(fileInputStream,fileFullPath,middle+1,end);                leftAction.fork();                rightAction.fork();                leftAction.join();                rightAction.join();            &#125;        &#125;    &#125;&#125;
+执行结果：
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十七)Java多线程之ForkJoin框架》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA多线程(十二)Java多线程之CountDownLatch</title>
+    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCountDownLatch/</url>
+    <content><![CDATA[1.JAVA多线程(十二)Java多线程之CountDownLatch1.1 CountDownLatch是什么?&emsp;&emsp; CountDownLatch 是一个同步工具类，它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。CountDownLatch是在java1.5被引入的，跟它一起被引入的并发工具类还有CyclicBarrier、Semaphore、ConcurrentHashMap和BlockingQueue，它们都存在于java.util.concurrent包下。CountDownLatch这个类能够使一个线程等待其他线程完成各自的工作后再执行。例如，应用程序的主线程希望在负责启动框架服务的线程已经启动所有的框架服务之后再执行。
+
+某一线程在开始运行前等待 n 个线程执行完毕。将 CountDownLatch 的计数器初始化为 n ：new CountDownLatch(n)，每当一个任务线程执行完毕，就将计数器减 1 countdownlatch.countDown()，当计数器的值变为 0 时，在CountDownLatch上 await() 的线程就会被唤醒。一个典型应用场景就是启动一个服务时，主线程需要等待多个组件加载完毕，之后再继续执行。
+
+实现多个线程开始执行任务的最大并行性。注意是并行性，不是并发，强调的是多个线程在某一时刻同时开始执行。类似于赛跑，将多个线程放到起点，等待发令枪响，然后同时开跑。做法是初始化一个共享的 CountDownLatch 对象，将其计数器初始化为 1 ：new CountDownLatch(1)，多个线程在开始执行任务前首先 coundownlatch.await()，当主线程调用 countDown() 时，计数器变为 0，多个线程同时被唤醒。
+
+CountDownLatch维护了一个计数器 cnt，每次调用 countDown() 方法会让计数器的值减 1，减到 0 的时候，那些因为调用 await() 方法而在等待的线程就会被唤醒。
+
+
+
+1.2 CountdownLatch使用例子package com.yuanxw.chapter12;import java.util.Random;import java.util.concurrent.CountDownLatch;import java.util.concurrent.ExecutorService;import java.util.concurrent.Executors;import java.util.stream.IntStream;public class CountdownLatchExample &#123;    /** 随机数：使用long参数的所有64位作为因子值。 **/    private static Random random = new Random(System.currentTimeMillis());    /** 总线程数 **/    private static final int TOTAL_THREAD_NUMBER = 5;    /** 通过线程池，创建5个线程 **/    private static ExecutorService executorService = Executors.newFixedThreadPool(TOTAL_THREAD_NUMBER);    /** 创建CountDownLatch对象 **/    private static CountDownLatch countDownLatch = new CountDownLatch(TOTAL_THREAD_NUMBER);    public static void main(String[] args) throws InterruptedException &#123;        IntStream.range(0,5).forEach(i-&gt;&#123;            executorService.execute(()-&gt;&#123;                doWorking();                /** 将count值减1 **/                countDownLatch.countDown();            &#125;);        &#125;);        /** 当前线程等到锁存器计数到零  **/        countDownLatch.await();        executorService.shutdown();        System.out.println(&quot;所有线程工作已经执行完成！！！&quot;);    &#125;    /**     * 模拟工作方法     */    private static void doWorking()&#123;        try &#123;            System.out.println(String.format(&quot;线程【%s】工作&gt;&gt;开始&quot;, Thread.currentThread().getName()));            Thread.sleep(random.nextInt(1000));            System.out.println(String.format(&quot;线程【%s】工作&lt;&lt;结束&quot;, Thread.currentThread().getName()));        &#125; catch (InterruptedException e) &#123;            e.printStackTrace();        &#125;    &#125;&#125;
+执行结果：
+线程【pool-1-thread-2】工作&gt;&gt;开始线程【pool-1-thread-5】工作&gt;&gt;开始线程【pool-1-thread-3】工作&gt;&gt;开始线程【pool-1-thread-4】工作&gt;&gt;开始线程【pool-1-thread-1】工作&gt;&gt;开始线程【pool-1-thread-4】工作&lt;&lt;结束线程【pool-1-thread-2】工作&lt;&lt;结束线程【pool-1-thread-3】工作&lt;&lt;结束线程【pool-1-thread-1】工作&lt;&lt;结束线程【pool-1-thread-5】工作&lt;&lt;结束所有线程工作已经执行完成！！！
+
+
+ &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十一)Java多线程之CountDownLatch》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
+]]></content>
+      <categories>
+        <category>Java多线程</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>多线程</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>JAVA 多线程(十九)Java 多线程之 CachedThreadPool 可缓存线程池</title>
     <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B9%9D)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BnewCachedThreadPool%E7%9A%84%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%B1%BB/</url>
     <content><![CDATA[1.JAVA 多线程(十九)Java 多线程之 CachedThreadPool 可缓存线程池1.1 可缓存线程池 CachedThreadPool&emsp;&emsp; 可缓存线程池 CachedThreadPool 是一个根据需要创建新线程的线程池。通过源代码查看 CachedThreadPool 实现：
@@ -5970,34 +5998,6 @@ CachedThreadPool 的 execute()方法的执行示意图（该图片来源：《Ja
 
 &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA 多线程(十九)Java 多线程之 CachedThreadPool 可缓存线程池》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。
   ——厚积薄发(yuanxw)
-]]></content>
-      <categories>
-        <category>Java多线程</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>多线程</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA多线程(十二)Java多线程之CountDownLatch</title>
-    <url>/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCountDownLatch/</url>
-    <content><![CDATA[1.JAVA多线程(十二)Java多线程之CountDownLatch1.1 CountDownLatch是什么?&emsp;&emsp; CountDownLatch 是一个同步工具类，它允许一个或多个线程一直等待，直到其他线程的操作执行完后再执行。CountDownLatch是在java1.5被引入的，跟它一起被引入的并发工具类还有CyclicBarrier、Semaphore、ConcurrentHashMap和BlockingQueue，它们都存在于java.util.concurrent包下。CountDownLatch这个类能够使一个线程等待其他线程完成各自的工作后再执行。例如，应用程序的主线程希望在负责启动框架服务的线程已经启动所有的框架服务之后再执行。
-
-某一线程在开始运行前等待 n 个线程执行完毕。将 CountDownLatch 的计数器初始化为 n ：new CountDownLatch(n)，每当一个任务线程执行完毕，就将计数器减 1 countdownlatch.countDown()，当计数器的值变为 0 时，在CountDownLatch上 await() 的线程就会被唤醒。一个典型应用场景就是启动一个服务时，主线程需要等待多个组件加载完毕，之后再继续执行。
-
-实现多个线程开始执行任务的最大并行性。注意是并行性，不是并发，强调的是多个线程在某一时刻同时开始执行。类似于赛跑，将多个线程放到起点，等待发令枪响，然后同时开跑。做法是初始化一个共享的 CountDownLatch 对象，将其计数器初始化为 1 ：new CountDownLatch(1)，多个线程在开始执行任务前首先 coundownlatch.await()，当主线程调用 countDown() 时，计数器变为 0，多个线程同时被唤醒。
-
-CountDownLatch维护了一个计数器 cnt，每次调用 countDown() 方法会让计数器的值减 1，减到 0 的时候，那些因为调用 await() 方法而在等待的线程就会被唤醒。
-
-
-
-1.2 CountdownLatch使用例子package com.yuanxw.chapter12;import java.util.Random;import java.util.concurrent.CountDownLatch;import java.util.concurrent.ExecutorService;import java.util.concurrent.Executors;import java.util.stream.IntStream;public class CountdownLatchExample &#123;    /** 随机数：使用long参数的所有64位作为因子值。 **/    private static Random random = new Random(System.currentTimeMillis());    /** 总线程数 **/    private static final int TOTAL_THREAD_NUMBER = 5;    /** 通过线程池，创建5个线程 **/    private static ExecutorService executorService = Executors.newFixedThreadPool(TOTAL_THREAD_NUMBER);    /** 创建CountDownLatch对象 **/    private static CountDownLatch countDownLatch = new CountDownLatch(TOTAL_THREAD_NUMBER);    public static void main(String[] args) throws InterruptedException &#123;        IntStream.range(0,5).forEach(i-&gt;&#123;            executorService.execute(()-&gt;&#123;                doWorking();                /** 将count值减1 **/                countDownLatch.countDown();            &#125;);        &#125;);        /** 当前线程等到锁存器计数到零  **/        countDownLatch.await();        executorService.shutdown();        System.out.println(&quot;所有线程工作已经执行完成！！！&quot;);    &#125;    /**     * 模拟工作方法     */    private static void doWorking()&#123;        try &#123;            System.out.println(String.format(&quot;线程【%s】工作&gt;&gt;开始&quot;, Thread.currentThread().getName()));            Thread.sleep(random.nextInt(1000));            System.out.println(String.format(&quot;线程【%s】工作&lt;&lt;结束&quot;, Thread.currentThread().getName()));        &#125; catch (InterruptedException e) &#123;            e.printStackTrace();        &#125;    &#125;&#125;
-执行结果：
-线程【pool-1-thread-2】工作&gt;&gt;开始线程【pool-1-thread-5】工作&gt;&gt;开始线程【pool-1-thread-3】工作&gt;&gt;开始线程【pool-1-thread-4】工作&gt;&gt;开始线程【pool-1-thread-1】工作&gt;&gt;开始线程【pool-1-thread-4】工作&lt;&lt;结束线程【pool-1-thread-2】工作&lt;&lt;结束线程【pool-1-thread-3】工作&lt;&lt;结束线程【pool-1-thread-1】工作&lt;&lt;结束线程【pool-1-thread-5】工作&lt;&lt;结束所有线程工作已经执行完成！！！
-
-
- &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十一)Java多线程之CountDownLatch》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。  ——厚积薄发(yuanxw)
 ]]></content>
       <categories>
         <category>Java多线程</category>
