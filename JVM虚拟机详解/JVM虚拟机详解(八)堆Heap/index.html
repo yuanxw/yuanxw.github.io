@@ -28,36 +28,36 @@
 <meta property="og:site_name" content="我的博客">
 <meta property="og:description" content="概述:Java 虚拟机有一个堆，它在所有 Java 虚拟机线程之间共享。堆是运行时数据区域，从中分配所有类实例和数组的内存。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%201.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%202.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%203.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%204.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%205.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%206.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%207.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%208.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%209.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2010.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2011.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2012.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2013.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2014.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image1.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image2.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image3.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image4.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image5.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image6.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image7.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image8.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image9.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image10.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image11.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image12.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image13.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image14.png">
 <meta property="og:image" content="https://yuanxw.github.io/Untitled.gif">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2015.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2016.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2017.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2018.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2019.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2020.png">
-<meta property="og:image" content="https://yuanxw.github.io/Untitled%2021.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image15.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image16.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image17.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image18.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image19.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image20.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image21.png">
 <meta property="article:published_time" content="2023-02-07T16:00:00.000Z">
-<meta property="article:modified_time" content="2025-09-03T15:17:12.886Z">
+<meta property="article:modified_time" content="2025-09-03T15:50:23.989Z">
 <meta property="article:author" content="Panda Yuan">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="JVM虚拟机详解">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://yuanxw.github.io/Untitled.png">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter8/image.png">
 
 
 <link rel="canonical" href="https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%85%AB)%E5%A0%86Heap/">
@@ -284,7 +284,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-09-03 23:17:12" itemprop="dateModified" datetime="2025-09-03T23:17:12+08:00">2025-09-03</time>
+      <time title="修改时间：2025-09-03 23:50:23" itemprop="dateModified" datetime="2025-09-03T23:50:23+08:00">2025-09-03</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
@@ -333,8 +333,8 @@
 </li>
 </ul>
 <p>官网：<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-2.html#jvms-2.5.6">Chapter 2. The Structure of the Java Virtual Machine (oracle.com)</a></p>
-<p><img src="/Untitled.png" alt="Untitled"></p>
-<p><img src="/Untitled%201.png" alt="Untitled"></p>
+<p><img src="/images/jvm_virtual_machine/chapter8/image.png" alt="Untitled"></p>
+<p><img src="/images/jvm_virtual_machine/chapter8/image1.png" alt="Untitled"></p>
 <ul>
 <li><p><strong>堆内存细分</strong></p>
 <p>  现代垃圾收集器大部分都基于分代收集理论设计，堆空间细分为：</p>
@@ -355,18 +355,18 @@
 <li>Old generation space 老年代</li>
 <li>Meta Space 元空间 Meta</li>
 </ul>
-<p>  <img src="/Untitled%202.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image2.png" alt="Untitled"></p>
 </li>
 </ul>
 <p>堆空间内部结构，JDK1.8之前从永久代 替换成 元空间</p>
-<p><img src="/Untitled%203.png" alt="Untitled"></p>
+<p><img src="/images/jvm_virtual_machine/chapter8/image3.png" alt="Untitled"></p>
 <h3 id="2-JVisualVM可视化查看堆内存"><a href="#2-JVisualVM可视化查看堆内存" class="headerlink" title="2.JVisualVM可视化查看堆内存"></a>2.<strong>JVisualVM可视化查看堆内存</strong></h3><p>运行代码</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa.heap;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HeapDemo</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;start...&quot;</span>);</span><br><span class="line">        TimeUnit.MINUTES.sleep(<span class="number">30</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;end...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>1、双击jdk目录下的这个文件</p>
-<p><img src="/Untitled%204.png" alt="Untitled"></p>
+<p><img src="/images/jvm_virtual_machine/chapter8/image4.png" alt="Untitled"></p>
 <p>2、工具 -&gt; 插件 -&gt; 安装Visual GC插件</p>
-<p><img src="/Untitled%205.png" alt="Untitled"></p>
+<p><img src="/images/jvm_virtual_machine/chapter8/image5.png" alt="Untitled"></p>
 <p>3、运行上面的代码</p>
 <h3 id="3-设置堆内存大小与OOM"><a href="#3-设置堆内存大小与OOM" class="headerlink" title="3.设置堆内存大小与OOM"></a>3.<strong>设置堆内存大小与OOM</strong></h3><ul>
 <li><p><strong>设置堆内存</strong></p>
@@ -407,9 +407,9 @@
 <li>OC: 老年代总共容量</li>
 <li>OU: 老年代使用的量</li>
 </ul>
-<p>  <img src="/Untitled%206.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image6.png" alt="Untitled"></p>
 <p>  <code>-XX:+PrintGCDetails</code></p>
-<p>  <img src="/Untitled%207.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image7.png" alt="Untitled"></p>
 </li>
 </ul>
 </li>
@@ -433,9 +433,9 @@
 <li>Java堆区进一步细分的话，可以划分为年轻代（YoungGen）和老年代（oldGen）</li>
 <li>其中年轻代又可以划分为Eden空间、Survivor0空间和Survivor1空间（有时也叫做from区、to区）</li>
 </ul>
-<p>  <img src="/Untitled%208.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image8.png" alt="Untitled"></p>
 <p>  下面这参数开发中一般不会调：</p>
-<p>  <img src="/Untitled%209.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image9.png" alt="Untitled"></p>
 <ul>
 <li>配置新生代与老年代在堆结构的占比<ul>
 <li>默认**-XX:NewRatio**&#x3D;2，表示新生代占1，老年代占2，新生代占整个堆的1&#x2F;3</li>
@@ -450,7 +450,7 @@
 <li>绝大部分的Java对象的销毁都在新生代进行了（有些大的对象在Eden区无法存储时候，将直接进入老年代），IBM公司的专门研究表明，新生代中80%的对象都是“朝生夕死”的。</li>
 <li>可以使用选项”-Xmn”设置新生代最大内存大小，但这个参数一般使用默认值就可以了。</li>
 </ol>
-<p>  <img src="/Untitled%2010.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image10.png" alt="Untitled"></p>
 </li>
 </ul>
 <h3 id="5-图解对象分配过程"><a href="#5-图解对象分配过程" class="headerlink" title="5.图解对象分配过程"></a>5.<strong>图解对象分配过程</strong></h3><ul>
@@ -471,12 +471,12 @@
 </li>
 <li><p><strong>图解过程</strong></p>
 <p>  我们创建的对象，一般都是存放在Eden区的，当我们Eden区满了后，就会触发GC操作，一般被称为 YGC &#x2F; Minor GC操作</p>
-<p>  <img src="/Untitled%2011.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image11.png" alt="Untitled"></p>
 <p>  当我们进行一次垃圾收集后，红色的将会被回收，而绿色的还会被占用着，存放在S0(Survivor From)区。同时我们给每个对象设置了一个年龄计数器，一次回收后就是1。</p>
 <p>  同时Eden区继续存放对象，当Eden区再次存满的时候，又会触发一个MinorGC操作，此时GC将会把 Eden和Survivor From中的对象 进行一次收集，把存活的对象放到 Survivor To区，同时让年龄 + 1</p>
-<p>  <img src="/Untitled%2012.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image12.png" alt="Untitled"></p>
 <p>  我们继续不断的进行对象生成 和 垃圾回收，当Survivor中的对象的年龄达到15的时候，将会触发一次 Promotion晋升的操作，也就是将年轻代中的对象 晋升到 老年代中</p>
-<p>  <img src="/Untitled%2013.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image13.png" alt="Untitled"></p>
 </li>
 <li><p><strong>幸存区区满了后？</strong></p>
 <p>  特别注意，在Eden区满了的时候，才会触发MinorGC，而幸存者区满了后，不会触发MinorGC操作</p>
@@ -496,7 +496,7 @@
 </li>
 <li>如果 Eden 区满了，将对象往幸存区拷贝时，发现幸存区放不下啦，那只能便宜了某些新对象，让他们直接晋升至老年区</li>
 </ol>
-<p>  <img src="/Untitled%2014.png" alt="Untitled">
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image14.png" alt="Untitled">
   </p>
 </li>
 <li><p><strong>代码演示对象分配过程</strong></p>
@@ -552,7 +552,7 @@
 <p>  当年轻代空间不足时，就会触发MinorGC，这里的年轻代满指的是Eden代满，Survivor满不会引发GC。（每次Minor GC会清理年轻代的内存。）</p>
 <p>  因为Java对象大多都具备 <strong>朝生夕灭</strong> 的特性，所以Minor GC非常频繁，一般回收速度也比较快。这一定义既清晰又易于理解。</p>
 <p>  Minor GC会引发STW，暂停其它用户的线程，等垃圾回收结束，用户线程才恢复运行</p>
-<p>  <img src="/Untitled%2015.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image15.png" alt="Untitled"></p>
 </li>
 <li><p><strong>老年代GC（MajorGC）触发机制</strong></p>
 <ol>
@@ -585,8 +585,8 @@
 <li>[PSYoungGen: 1964K-&gt;510K(2560K)]：年轻代总空间为 2560K ，当前占用 1964K ，经过垃圾回收后剩余510K****</li>
 <li>1964K-&gt;826K(9728K)：堆内存总空间为 9728K ，当前占用1964K，经过垃圾回收后剩余826K</li>
 </ul>
-<p>  <img src="/Untitled%2016.png" alt="Untitled"></p>
-<p>  <img src="/Untitled%2017.png" alt="Untitled">
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image16.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image17.png" alt="Untitled">
   </p>
 </li>
 <li><p><strong>堆空间分代思想</strong></p>
@@ -595,9 +595,9 @@
 <li>新生代：有Eden、两块大小相同的survivor（又称为from&#x2F;to或s0&#x2F;s1）构成，to总为空。</li>
 <li>老年代：存放新生代中经历多次GC仍然存活的对象。</li>
 </ul>
-<p>  <img src="/Untitled%2018.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image18.png" alt="Untitled"></p>
 <p>  其实不分代完全可以，分代的唯一理由就是优化GC性能。如果没有分代，那所有的对象都在一块，就如同把一个学校的人都关在一个教室。GC的时候要找到哪些对象没用，这样就会对堆的所有区域进行扫描。而很多对象都是朝生夕死的，如果分代的话，把新创建的对象放到某一地方，当GC的时候先把这块存储“朝生夕死”对象的区域进行回收，这样就会腾出很大的空间出来。</p>
-<p>  <img src="/Untitled%2019.png" alt="Untitled">
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image19.png" alt="Untitled">
   </p>
 </li>
 <li><p><strong>内存分配策略</strong></p>
@@ -633,7 +633,7 @@
 <p>  从内存模型而不是垃圾收集的角度，对Eden区域继续进行划分，JVM为每个线程分配了一个私有缓存区域，它包含在Eden空间内。</p>
 <p>  多线程同时分配内存时，使用TLAB可以避免一系列的非线程安全问题，同时还能够提升内存分配的吞吐量，因此我们可以将这种内存分配方式称之为快速分配策略。</p>
 <p>  据我所知所有OpenJDK衍生出来的JVM都提供了TLAB的设计。</p>
-<p>  <img src="/Untitled%2020.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image20.png" alt="Untitled"></p>
 <p>  尽管不是所有的对象实例都能够在TLAB中成功分配内存，但JVM确实是将TLAB作为内存分配的首选。</p>
 <p>  在程序中，开发人员可以通过选项“-Xx:UseTLAB”设置是否开启TLAB空间。</p>
 <p>  默认情况下，TLAB空间的内存非常小，仅占有整个Eden空间的1，当然我们可以通过选项“-Xx:TLABWasteTargetPercent”设置TLAB空间所占用Eden空间的百分比大小。</p>
@@ -641,7 +641,7 @@
 </li>
 <li><p><strong>TLAB分配过程</strong></p>
 <p>  对象首先是通过TLAB开辟空间，如果不能放入，那么需要通过Eden来进行分配</p>
-<p>  <img src="/Untitled%2021.png" alt="Untitled"></p>
+<p>  <img src="/images/jvm_virtual_machine/chapter8/image21.png" alt="Untitled"></p>
 </li>
 </ul>
 </li>
