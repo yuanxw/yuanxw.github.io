@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="dashboard命令">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门">
+<meta property="og:url" content="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%8C)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="dashboard命令">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/arthas/chapter2/image.png">
+<meta property="article:published_time" content="2023-03-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T15:38:38.827Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Arthas">
+<meta property="article:tag" content="Arthas诊断工具">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/arthas/chapter2/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%8C)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%8C)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/","path":"Arthas应用(Java)诊断利器/Arthas诊断工具(二)Arthas（阿尔萨斯）常用命令/","title":"Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%8C)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E4%BA%8C-Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">1.</span> <span class="nav-text">Arthas诊断工具(二)Arthas（阿尔萨斯）常用命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-dashboard%E5%91%BD%E4%BB%A4"><span class="nav-number">1.1.</span> <span class="nav-text">1. dashboard命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E6%95%B0%E6%8D%AE%E8%AF%B4%E6%98%8E"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 数据说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-JVM-%E5%86%85%E9%83%A8%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.2 JVM 内部线程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-thread-%E5%91%BD%E4%BB%A4"><span class="nav-number">1.2.</span> <span class="nav-text">2. thread 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-watch-%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">3. watch 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E9%80%80%E5%87%BA-arthas"><span class="nav-number">1.4.</span> <span class="nav-text">4.退出 arthas</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%B8%AE%E5%8A%A9Help"><span class="nav-number">1.4.1.</span> <span class="nav-text">5.帮助Help</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-group%E5%88%86%E7%BB%84"><span class="nav-number">1.4.2.</span> <span class="nav-text">6.group分组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E5%BF%AB%E6%8D%B7%E9%94%AE%E6%98%A0%E5%B0%84%E8%A1%A8keymap"><span class="nav-number">1.4.3.</span> <span class="nav-text">7.快捷键映射表keymap</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%8C)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门 | 我的博客">
+      <meta itemprop="description" content="dashboard命令">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-03-02 00:00:00" itemprop="dateCreated datePublished" datetime="2023-03-02T00:00:00+08:00">2023-03-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 23:38:38" itemprop="dateModified" datetime="2025-09-03T23:38:38+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Arthas/" itemprop="url" rel="index"><span itemprop="name">Arthas</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">dashboard命令</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Arthas诊断工具-二-Arthas（阿尔萨斯）常用命令"><a href="#Arthas诊断工具-二-Arthas（阿尔萨斯）常用命令" class="headerlink" title="Arthas诊断工具(二)Arthas（阿尔萨斯）常用命令"></a><strong>Arthas诊断</strong>工具(二)<strong>Arthas（阿尔萨斯）常用命令</strong></h1><h2 id="1-dashboard命令"><a href="#1-dashboard命令" class="headerlink" title="1. dashboard命令"></a>1. <strong>dashboard命令</strong></h2><h3 id="1-1-数据说明"><a href="#1-1-数据说明" class="headerlink" title="1.1 数据说明"></a><strong>1.1 数据说明</strong></h3><ul>
+<li>ID: Java 级别的线程 ID，注意这个 ID 不能跟 jstack 中的 nativeID 一一对应。</li>
+<li>NAME: 线程名</li>
+<li>GROUP: 线程组名</li>
+<li>PRIORITY: 线程优先级, 1~10 之间的数字，越大表示优先级越高</li>
+<li>STATE: 线程的状态</li>
+<li>CPU%: 线程的 cpu 使用率。比如采样间隔 1000ms，某个线程的增量 cpu 时间为 100ms，则 cpu 使用率&#x3D;100&#x2F;1000&#x3D;10%</li>
+<li>DELTA_TIME: 上次采样之后线程运行增量 CPU 时间，数据格式为<code>秒</code></li>
+<li>TIME: 线程运行总 CPU 时间，数据格式为<code>分:秒</code></li>
+<li>INTERRUPTED: 线程当前的中断位状态</li>
+<li>DAEMON: 是否是 daemon 线程</li>
+</ul>
+<h3 id="1-2-JVM-内部线程"><a href="#1-2-JVM-内部线程" class="headerlink" title="1.2 JVM 内部线程"></a><strong>1.2 JVM 内部线程</strong></h3><p>Java 8 之后支持获取 JVM 内部线程 CPU 时间，这些线程只有名称和 CPU 时间，没有 ID 及状态等信息（显示 ID 为-1）。 通过内部线程可以观测到 JVM 活动，如 GC、JIT 编译等占用 CPU 情况，方便了解 JVM 整体运行状况。</p>
+<ul>
+<li>当 JVM 堆(heap)&#x2F;元数据(metaspace)空间不足或 OOM 时，可以看到 GC 线程的 CPU 占用率明显高于其他的线程。</li>
+<li>当执行<code>trace/watch/tt/redefine</code>等命令后，可以看到 JIT 线程活动变得更频繁。因为 JVM 热更新 class 字节码时清除了此 class 相关的 JIT 编译结果，需要重新编译。</li>
+</ul>
+<p>JVM 内部线程包括下面几种：</p>
+<ul>
+<li>JIT 编译线程: 如 <code>C1 CompilerThread0</code>, <code>C2 CompilerThread0</code></li>
+<li>GC 线程: 如<code>GC Thread0</code>, <code>G1 Young RemSet Sampling</code></li>
+<li>其它内部线程: 如<code>VM Periodic Task Thread</code>, <code>VM Thread</code>, <code>Service Thread</code></li>
+</ul>
+<p><img src="/images/arthas/chapter2/image.png" alt="image.png"></p>
+<h2 id="2-thread-命令"><a href="#2-thread-命令" class="headerlink" title="2. thread 命令"></a>2. <strong>thread 命令</strong></h2><p>通过 thread 命令来获取到<code>math-game</code>进程的 Main Class。<code>thread 1</code>会打印线程 ID 1 的栈，通常是 main 函数的线程。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ **thread** </span><br><span class="line">Threads Total: 30, NEW: 0, RUNNABLE: 12, BLOCKED: 0, WAITING: 2, TIMED_WAITING: 4, TERMINATED: 0, Internal threads: 12                                                                                                                                                        </span><br><span class="line">ID         NAME                                                                GROUP                             PRIORITY              STATE                  %CPU                  DELTA_TIME             TIME                  INTERRUPTED            DAEMON                </span><br><span class="line">-1         C1 CompilerThread0                                                  -                                 -1                    -                      0.26                  0.000                  0:3.219               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">24         arthas-command-execute                                              system                            5                     RUNNABLE               0.15                  0.000                  0:0.016               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         VM Periodic Task Thread                                             -                                 -1                    -                      0.05                  0.000                  0:3.005               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         GC Thread#1                                                         -                                 -1                    -                      0.03                  0.000                  0:0.405               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         VM Thread                                                           -                                 -1                    -                      0.03                  0.000                  0:0.487               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         GC Thread#0                                                         -                                 -1                    -                      0.03                  0.000                  0:0.409               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Young RemSet Sampling                                            -                                 -1                    -                      0.02                  0.000                  0:0.879               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         C2 CompilerThread0                                                  -                                 -1                    -                      0.0                   0.000                  0:5.703               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">2          Reference Handler                                                   system                            10                    RUNNABLE               0.0                   0.000                  0:0.001               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">3          Finalizer                                                           system                            8                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">4          Signal Dispatcher                                                   system                            9                     RUNNABLE               0.0                   0.000                  0:0.003               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">11         Attach Listener                                                     system                            9                     RUNNABLE               0.0                   0.000                  0:0.119               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">13         arthas-timer                                                        system                            9                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">16         arthas-NettyHttpTelnetBootstrap-3-1                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.040               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">17         arthas-NettyWebsocketTtyBootstrap-4-1                               system                            5                     RUNNABLE               0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">18         arthas-NettyWebsocketTtyBootstrap-4-2                               system                            5                     RUNNABLE               0.0                   0.000                  0:0.001               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">19         arthas-shell-server                                                 system                            9                     TIMED_WAITING          0.0                   0.000                  0:0.020               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">20         arthas-session-manager                                              system                            9                     TIMED_WAITING          0.0                   0.000                  0:0.009               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">22         arthas-NettyHttpTelnetBootstrap-3-2                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.337               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">23         arthas-NettyHttpTelnetBootstrap-3-3                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.029               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">25         arthas-NettyHttpTelnetBootstrap-3-4                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.025               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">26         arthas-NettyHttpTelnetBootstrap-3-5                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.027               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">27         arthas-NettyHttpTelnetBootstrap-3-6                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.500               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">1          main                                                                main                              5                     TIMED_WAITING          0.0                   0.000                  0:1.265               <span class="literal">false</span>                  <span class="literal">false</span>                 </span><br><span class="line">10         Common-Cleaner                                                      InnocuousThreadGroup              8                     TIMED_WAITING          0.0                   0.000                  0:0.005               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         Sweeper thread                                                      -                                 -1                    -                      0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Conc#0                                                           -                                 -1                    -                      0.0                   0.000                  0:0.012               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Refine#0                                                         -                                 -1                    -                      0.0                   0.000                  0:0.003               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Main Marker                                                      -                                 -1                    -                      0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         Service Thread                                                      -                                 -1                    -                      0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">                                                                                                                                                                                                                                                                              </span><br><span class="line">[arthas@5167]$ **thread 1**</span><br><span class="line"><span class="string">&quot;main&quot;</span> Id=1 TIMED_WAITING</span><br><span class="line">    at java.base@11.0.16.1/java.lang.Thread.<span class="built_in">sleep</span>(Native Method)</span><br><span class="line">    at java.base@11.0.16.1/java.lang.Thread.<span class="built_in">sleep</span>(Thread.java:339)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.TimeUnit.<span class="built_in">sleep</span>(TimeUnit.java:446)</span><br><span class="line">    at app//demo.MathGame.main(MathGame.java:17)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>支持一键展示当前最忙的前 N 个线程并打印堆栈：</strong></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ thread -n 3</span><br><span class="line"><span class="string">&quot;arthas-command-execute&quot;</span> Id=24 cpuUsage=0.31% deltaTime=0ms <span class="keyword">time</span>=1521ms RUNNABLE</span><br><span class="line">    at java.management@11.0.16.1/sun.management.ThreadImpl.dumpThreads0(Native Method)</span><br><span class="line">    at java.management@11.0.16.1/sun.management.ThreadImpl.getThreadInfo(ThreadImpl.java:485)</span><br><span class="line">    at com.taobao.arthas.core.command.monitor200.ThreadCommand.processTopBusyThreads(ThreadCommand.java:206)</span><br><span class="line">    at com.taobao.arthas.core.command.monitor200.ThreadCommand.process(ThreadCommand.java:122)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.process(AnnotatedCommandImpl.java:82)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.access<span class="variable">$100</span>(AnnotatedCommandImpl.java:18)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:111)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:108)</span><br><span class="line">    at com.taobao.arthas.core.shell.system.impl.ProcessImpl<span class="variable">$CommandProcessTask</span>.run(ProcessImpl.java:385)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.Executors<span class="variable">$RunnableAdapter</span>.call(Executors.java:515)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.FutureTask.run(FutureTask.java:264)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ScheduledThreadPoolExecutor<span class="variable">$ScheduledFutureTask</span>.run(ScheduledThreadPoolExecutor.java:304)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ThreadPoolExecutor<span class="variable">$Worker</span>.run(ThreadPoolExecutor.java:628)</span><br><span class="line">    at java.base@11.0.16.1/java.lang.Thread.run(Thread.java:834)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>thread -b, 找出当前阻塞其他线程的线程</strong></li>
+</ul>
+<p>有时候我们发现应用卡住了， 通常是由于某个线程拿住了某个锁， 并且其他线程都在等待这把锁造成的。 为了排查这类问题， arthas 提供了<code>thread -b</code>， 一键找出那个罪魁祸首。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ thread -b</span><br><span class="line">No most blocking thread found!</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>thread -i, 指定采样时间间隔</strong></li>
+<li><code>thread -i 1000</code> : 统计最近 1000ms 内的线程 CPU 时间。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ thread -i 1000</span><br><span class="line">Threads Total: 32, NEW: 0, RUNNABLE: 14, BLOCKED: 0, WAITING: 2, TIMED_WAITING: 4, TERMINATED: 0, Internal threads: 12                                                                                                                                                        </span><br><span class="line">ID         NAME                                                                GROUP                             PRIORITY              STATE                  %CPU                  DELTA_TIME             TIME                  INTERRUPTED            DAEMON                </span><br><span class="line">-1         VM Periodic Task Thread                                             -                                 -1                    -                      0.08                  0.000                  0:29.457              <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         C1 CompilerThread0                                                  -                                 -1                    -                      0.04                  0.000                  0:6.510               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">24         arthas-command-execute                                              system                            5                     RUNNABLE               0.02                  0.000                  0:1.580               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Young RemSet Sampling                                            -                                 -1                    -                      0.02                  0.000                  0:10.490              <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">1          main                                                                main                              5                     TIMED_WAITING          0.01                  0.000                  0:9.671               <span class="literal">false</span>                  <span class="literal">false</span>                 </span><br><span class="line">-1         VM Thread                                                           -                                 -1                    -                      0.01                  0.000                  0:5.414               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         GC Thread#1                                                         -                                 -1                    -                      0.01                  0.000                  0:3.250               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         GC Thread#0                                                         -                                 -1                    -                      0.0                   0.000                  0:3.276               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">2          Reference Handler                                                   system                            10                    RUNNABLE               0.0                   0.000                  0:0.002               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">3          Finalizer                                                           system                            8                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">4          Signal Dispatcher                                                   system                            9                     RUNNABLE               0.0                   0.000                  0:0.003               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">11         Attach Listener                                                     system                            9                     RUNNABLE               0.0                   0.000                  0:0.119               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">13         arthas-timer                                                        system                            9                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">16         arthas-NettyHttpTelnetBootstrap-3-1                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.042               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">17         arthas-NettyWebsocketTtyBootstrap-4-1                               system                            5                     RUNNABLE               0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">18         arthas-NettyWebsocketTtyBootstrap-4-2                               system                            5                     RUNNABLE               0.0                   0.000                  0:0.001               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">19         arthas-shell-server                                                 system                            9                     TIMED_WAITING          0.0                   0.000                  0:0.106               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">20         arthas-session-manager                                              system                            9                     TIMED_WAITING          0.0                   0.000                  0:0.072               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">22         arthas-NettyHttpTelnetBootstrap-3-2                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.337               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">23         arthas-NettyHttpTelnetBootstrap-3-3                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.029               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">25         arthas-NettyHttpTelnetBootstrap-3-4                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.025               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">26         arthas-NettyHttpTelnetBootstrap-3-5                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.027               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">27         arthas-NettyHttpTelnetBootstrap-3-6                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.572               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">33         arthas-NettyHttpTelnetBootstrap-3-7                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.022               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">34         arthas-NettyHttpTelnetBootstrap-3-8                                 system                            5                     RUNNABLE               0.0                   0.000                  0:0.674               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">10         Common-Cleaner                                                      InnocuousThreadGroup              8                     TIMED_WAITING          0.0                   0.000                  0:0.044               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         Sweeper thread                                                      -                                 -1                    -                      0.0                   0.000                  0:0.008               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Conc#0                                                           -                                 -1                    -                      0.0                   0.000                  0:0.066               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Refine#0                                                         -                                 -1                    -                      0.0                   0.000                  0:0.005               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         C2 CompilerThread0                                                  -                                 -1                    -                      0.0                   0.000                  0:15.009              <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         G1 Main Marker                                                      -                                 -1                    -                      0.0                   0.000                  0:0.001               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">-1         Service Thread                                                      -                                 -1                    -                      0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>  </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>thread -n 3 -i 100</code> : 列出 100ms 内最忙的 3 个线程栈</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ thread -n 3 -i 100</span><br><span class="line"><span class="string">&quot;arthas-command-execute&quot;</span> Id=24 cpuUsage=0.26% deltaTime=0ms <span class="keyword">time</span>=1585ms RUNNABLE</span><br><span class="line">    at java.management@11.0.16.1/sun.management.ThreadImpl.dumpThreads0(Native Method)</span><br><span class="line">    at java.management@11.0.16.1/sun.management.ThreadImpl.getThreadInfo(ThreadImpl.java:485)</span><br><span class="line">    at com.taobao.arthas.core.command.monitor200.ThreadCommand.processTopBusyThreads(ThreadCommand.java:206)</span><br><span class="line">    at com.taobao.arthas.core.command.monitor200.ThreadCommand.process(ThreadCommand.java:122)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.process(AnnotatedCommandImpl.java:82)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.access<span class="variable">$100</span>(AnnotatedCommandImpl.java:18)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:111)</span><br><span class="line">    at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:108)</span><br><span class="line">    at com.taobao.arthas.core.shell.system.impl.ProcessImpl<span class="variable">$CommandProcessTask</span>.run(ProcessImpl.java:385)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.Executors<span class="variable">$RunnableAdapter</span>.call(Executors.java:515)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.FutureTask.run(FutureTask.java:264)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ScheduledThreadPoolExecutor<span class="variable">$ScheduledFutureTask</span>.run(ScheduledThreadPoolExecutor.java:304)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)</span><br><span class="line">    at java.base@11.0.16.1/java.util.concurrent.ThreadPoolExecutor<span class="variable">$Worker</span>.run(ThreadPoolExecutor.java:628)</span><br><span class="line">    at java.base@11.0.16.1/java.lang.Thread.run(Thread.java:834)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>thread –state ，查看指定状态的线程</strong></li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ thread --state WAITING</span><br><span class="line">Threads Total: 20, NEW: 0, RUNNABLE: 14, BLOCKED: 0, WAITING: 2, TIMED_WAITING: 4, TERMINATED: 0                                                                                                                                                                              </span><br><span class="line">ID         NAME                                                                GROUP                             PRIORITY              STATE                  %CPU                  DELTA_TIME             TIME                  INTERRUPTED            DAEMON                </span><br><span class="line">3          Finalizer                                                           system                            8                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>                  </span><br><span class="line">13         arthas-timer                                                        system                            9                     WAITING                0.0                   0.000                  0:0.000               <span class="literal">false</span>                  <span class="literal">true</span>         </span><br></pre></td></tr></table></figure>
+
+<h2 id="3-watch-命令"><a href="#3-watch-命令" class="headerlink" title="3. watch 命令"></a>3. <strong>watch 命令</strong></h2><p>通过<a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/watch.html"><strong>watch</strong></a>命令来查看<code>demo.MathGame#primeFactors</code>函数的返回值：</p>
+<p> watch demo.MathGame primeFactors returnObj </p>
+<ul>
+<li>demo.MathGame 全类名</li>
+<li>primeFactors 方法名</li>
+<li>返回对象</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">[arthas@5167]$ watch demo.MathGame primeFactors returnObj </span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 204 ms, listenerId: 1</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExit</span><br><span class="line">ts=2025-06-06 10:28:13.587; [cost=4.005634ms] result=@ArrayList[</span><br><span class="line">    @Integer[7],</span><br><span class="line">    @Integer[11],</span><br><span class="line">    @Integer[1301],</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=2025-06-06 10:28:14.591; [cost=0.129017ms] result=null</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExit</span><br><span class="line">ts=2025-06-06 10:28:15.602; [cost=8.688466ms] result=@ArrayList[</span><br><span class="line">    @Integer[2],</span><br><span class="line">    @Integer[3],</span><br><span class="line">    @Integer[12409],</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExit</span><br><span class="line">ts=2025-06-06 10:28:16.606; [cost=0.057975ms] result=@ArrayList[</span><br><span class="line">    @Integer[2],</span><br><span class="line">    @Integer[2],</span><br><span class="line">    @Integer[5],</span><br><span class="line">    @Integer[23],</span><br><span class="line">    @Integer[173],</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="4-退出-arthas"><a href="#4-退出-arthas" class="headerlink" title="4.退出 arthas"></a><strong>4.退出 arthas</strong></h2><p>如果只是退出当前的连接，可以用<code>quit</code>或者<code>exit</code>命令。Attach 到目标进程上的 arthas 还会继续运行，端口会保持开放，下次连接时可以直接连接上。</p>
+<p>如果想完全退出 arthas，可以执行<code>stop</code>命令。</p>
+<h3 id="5-帮助Help"><a href="#5-帮助Help" class="headerlink" title="5.帮助Help"></a>5.帮助Help</h3><p>查看命令帮助信息，可以查看当前 arthas 版本支持的指令，或者查看具体指令的使用说明。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ <span class="built_in">help</span></span><br><span class="line"> NAME         DESCRIPTION                                                                                                                                                                                                                                                     </span><br><span class="line"> <span class="built_in">help</span>         Display Arthas Help                                                                                                                                                                                                                                             </span><br><span class="line"> auth         Authenticates the current session                                                                                                                                                                                                                               </span><br><span class="line"> keymap       Display all the available keymap <span class="keyword">for</span> the specified connection.                                                                                                                                                                                                  </span><br><span class="line"> sc           Search all the classes loaded by JVM                                                                                                                                                                                                                            </span><br><span class="line"> sm           Search the method of classes loaded by JVM                                                                                                                                                                                                                      </span><br><span class="line"> classloader  Show classloader info                                                                                                                                                                                                                                           </span><br><span class="line"> jad          Decompile class                                                                                                                                                                                                                                                 </span><br><span class="line"> getstatic    Show the static field of a class                                                                                                                                                                                                                                </span><br><span class="line"> monitor      Monitor method execution statistics, e.g. total/success/failure count, average rt, fail rate, etc.                                                                                                                                                              </span><br><span class="line"> stack        Display the stack trace <span class="keyword">for</span> the specified class and method                                                                                                                                                                                                      </span><br><span class="line"> thread       Display thread info, thread stack                                                                                                                                                                                                                               </span><br><span class="line"> trace        Trace the execution <span class="keyword">time</span> of specified method invocation.                                                                                                                                                                                                        </span><br><span class="line"> watch        Display the input/output parameter, <span class="built_in">return</span> object, and thrown exception of specified method invocation                                                                                                                                                          </span><br><span class="line"> tt           Time Tunnel                                                                                                                                                                                                                                                     </span><br><span class="line"> jvm          Display the target JVM information                                                                                                                                                                                                                              </span><br><span class="line"> memory       Display jvm memory info.                                                                                                                                                                                                                                        </span><br><span class="line"> perfcounter  Display the perf counter information.                                                                                                                                                                                                                           </span><br><span class="line"> ognl         Execute ognl expression.                                                                                                                                                                                                                                        </span><br><span class="line"> mc           Memory compiler, compiles java files into bytecode and class files <span class="keyword">in</span> memory.                                                                                                                                                                                   </span><br><span class="line"> redefine     Redefine classes. @see Instrumentation#redefineClasses(ClassDefinition...)                                                                                                                                                                                      </span><br><span class="line"> retransform  Retransform classes. @see Instrumentation#retransformClasses(Class...)                                                                                                                                                                                          </span><br><span class="line"> dashboard    Overview of target jvm<span class="string">&#x27;s thread, memory, gc, vm, tomcat info.                                                                                                                                                                                                   </span></span><br><span class="line"><span class="string"> dump         Dump class byte array from JVM                                                                                                                                                                                                                                  </span></span><br><span class="line"><span class="string"> heapdump     Heap dump                                                                                                                                                                                                                                                       </span></span><br><span class="line"><span class="string"> options      View and change various Arthas options                                                                                                                                                                                                                          </span></span><br><span class="line"><span class="string"> cls          Clear the screen                                                                                                                                                                                                                                                </span></span><br><span class="line"><span class="string"> reset        Reset all the enhanced classes                                                                                                                                                                                                                                  </span></span><br><span class="line"><span class="string"> version      Display Arthas version                                                                                                                                                                                                                                          </span></span><br><span class="line"><span class="string"> session      Display current session information                                                                                                                                                                                                                             </span></span><br><span class="line"><span class="string"> sysprop      Display and change the system properties.                                                                                                                                                                                                                       </span></span><br><span class="line"><span class="string"> sysenv       Display the system env.                                                                                                                                                                                                                                         </span></span><br><span class="line"><span class="string"> vmoption     Display, and update the vm diagnostic options.                                                                                                                                                                                                                  </span></span><br><span class="line"><span class="string"> logger       Print logger info, and update the logger level                                                                                                                                                                                                                  </span></span><br><span class="line"><span class="string"> history      Display command history                                                                                                                                                                                                                                         </span></span><br><span class="line"><span class="string"> cat          Concatenate and print files                                                                                                                                                                                                                                     </span></span><br><span class="line"><span class="string"> base64       Encode and decode using Base64 representation                                                                                                                                                                                                                   </span></span><br><span class="line"><span class="string"> echo         write arguments to the standard output                                                                                                                                                                                                                          </span></span><br><span class="line"><span class="string"> pwd          Return working directory name                                                                                                                                                                                                                                   </span></span><br><span class="line"><span class="string"> mbean        Display the mbean information                                                                                                                                                                                                                                   </span></span><br><span class="line"><span class="string"> grep         grep command for pipes.                                                                                                                                                                                                                                         </span></span><br><span class="line"><span class="string"> tee          tee command for pipes.                                                                                                                                                                                                                                          </span></span><br><span class="line"><span class="string"> profiler     Async Profiler. https://github.com/jvm-profiling-tools/async-profiler                                                                                                                                                                                           </span></span><br><span class="line"><span class="string"> vmtool       jvm tool                                                                                                                                                                                                                                                        </span></span><br><span class="line"><span class="string"> stop         Stop/Shutdown Arthas server and exit the console.                                                                                                                                                                                                               </span></span><br><span class="line"><span class="string"> jfr          Java Flight Recorder Command</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="6-group分组"><a href="#6-group分组" class="headerlink" title="6.group分组"></a>6.group分组</h3><p>类似传统的<code>grep</code>命令。</p>
+<ul>
+<li>过滤包含java关键的数据</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 过滤包含java关键的数据</span></span><br><span class="line">[arthas@5167]$ sysprop | grep java</span><br><span class="line"> java.specification.version                            11</span><br><span class="line"> java.class.path                                       math-game.jar</span><br><span class="line"> java.vm.vendor                                        Oracle Corporation</span><br><span class="line"> java.vendor.url                                       https://openjdk.java.net/</span><br><span class="line"> java.vm.specification.version                         11</span><br><span class="line"> sun.java.launcher                                     SUN_STANDARD</span><br><span class="line"> sun.java.command                                      math-game.jar</span><br><span class="line"> java.specification.vendor                             Oracle Corporation</span><br><span class="line"> java.version.date                                     2022-08-18</span><br><span class="line"> java.home                                             /usr/local/software/jdk-11.0.16.1</span><br><span class="line"> java.vm.compressedOopsMode                            32-bit</span><br><span class="line"> java.specification.name                               Java Platform API Specification</span><br><span class="line"> java.vm.specification.vendor                          Oracle Corporation</span><br><span class="line"> java.awt.graphicsenv                                  sun.awt.X11GraphicsEnvironment</span><br><span class="line"> java.runtime.version                                  11.0.16.1+1-LTS-1</span><br><span class="line"> java.runtime.name                                     Java(TM) SE Runtime Environment</span><br><span class="line"> java.vm.name                                          Java HotSpot(TM) 64-Bit Server VM</span><br><span class="line"> java.vendor.version                                   18.9</span><br><span class="line"> java.vendor.url.bug                                   https://bugreport.java.com/bugreport/</span><br><span class="line"> java.io.tmpdir                                        /tmp</span><br><span class="line"> java.version                                          11.0.16.1</span><br><span class="line"> java.vm.specification.name                            Java Virtual Machine Specification</span><br><span class="line"> java.awt.printerjob                                   sun.print.PSPrinterJob</span><br><span class="line"> java.library.path                                     /usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib</span><br><span class="line"> java.vendor                                           Oracle Corporation</span><br><span class="line"> java.vm.info                                          mixed mode</span><br><span class="line"> java.vm.version                                       11.0.16.1+1-LTS-1</span><br><span class="line"> java.class.version                                    55.</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>过滤包含java关键的数据，并显示出对应的行号</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">[arthas@5167]$ sysprop | grep java -n</span><br><span class="line">4: java.specification.version                            11</span><br><span class="line">7: java.class.path                                       math-game.jar</span><br><span class="line">8: java.vm.vendor                                        Oracle Corporation</span><br><span class="line">10: java.vendor.url                                       https://openjdk.java.net/</span><br><span class="line">13: java.vm.specification.version                         11</span><br><span class="line">14: sun.java.launcher                                     SUN_STANDARD</span><br><span class="line">17: sun.java.command                                      math-game.jar</span><br><span class="line">22: java.specification.vendor                             Oracle Corporation</span><br><span class="line">23: java.version.date                                     2022-08-18</span><br><span class="line">24: java.home                                             /usr/local/software/jdk-11.0.16.1</span><br><span class="line">26: java.vm.compressedOopsMode                            32-bit</span><br><span class="line">28: java.specification.name                               Java Platform API Specification</span><br><span class="line">29: java.vm.specification.vendor                          Oracle Corporation</span><br><span class="line">30: java.awt.graphicsenv                                  sun.awt.X11GraphicsEnvironment</span><br><span class="line">32: java.runtime.version                                  11.0.16.1+1-LTS-1</span><br><span class="line">36: java.runtime.name                                     Java(TM) SE Runtime Environment</span><br><span class="line">38: java.vm.name                                          Java HotSpot(TM) 64-Bit Server VM</span><br><span class="line">39: java.vendor.version                                   18.9</span><br><span class="line">40: java.vendor.url.bug                                   https://bugreport.java.com/bugreport/</span><br><span class="line">41: java.io.tmpdir                                        /tmp</span><br><span class="line">42: java.version                                          11.0.16.1</span><br><span class="line">45: java.vm.specification.name                            Java Virtual Machine Specification</span><br><span class="line">46: java.awt.printerjob                                   sun.print.PSPrinterJob</span><br><span class="line">48: java.library.path                                     /usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib</span><br><span class="line">49: java.vendor                                           Oracle Corporation</span><br><span class="line">50: java.vm.info                                          mixed mode</span><br><span class="line">51: java.vm.version                                       11.0.16.1+1-LTS-1</span><br><span class="line">53: java.class.version                                    55.0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>过滤不包含java关键的数据</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ sysenv | grep -v JAVA</span><br><span class="line"> KEY                                                   VALUE                                                                                                                                                                                                                 </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> CLASSPATH                                             .:/usr/local/software/jdk-11.0.16.1/lib/dt.jar:/usr/local/software/jdk-11.0.16.1/lib/tools.jar</span><br><span class="line"> HISTCONTROL                                           ignoredups</span><br><span class="line"> HISTSIZE                                              1000</span><br><span class="line"> HOME                                                  /root</span><br><span class="line"> HOSTNAME                                              localhost.localdomain</span><br><span class="line"> LANG                                                  en_US.UTF-8</span><br><span class="line"> LESSOPEN                                              ||/usr/bin/lesspipe.sh %s</span><br><span class="line"> LOGNAME                                               root</span><br><span class="line"> LS_COLORS                                             rs=0:di=01;34:<span class="built_in">ln</span>=01;36:mh=00:pi=40;33:so=01;35:<span class="keyword">do</span>=01;35:bd=40;33;01:<span class="built_in">cd</span>=40;33;01:or=40;31;01:mi=01;05;37;41:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01</span><br><span class="line">                                                       ;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*</span><br><span class="line">                                                       .bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*</span><br><span class="line">                                                       .cab=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01</span><br><span class="line">                                                       ;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.<span class="built_in">rm</span>=01;35:*.rmvb=01;35:*.fl</span><br><span class="line">                                                       c=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=01;36:*.au=01;36:*.flac=01;36:*.mi</span><br><span class="line">                                                       d=01;36:*.midi=01;36:*.mka=01;36:*.mp3=01;36:*.mpc=01;36:*.ogg=01;36:*.ra=01;36:*.wav=01;36:*.axa=01;36:*.oga=01;36:*.spx=01;36:*.xspf=01;36:</span><br><span class="line"> MAIL                                                  /var/spool/mail/root</span><br><span class="line"> OLDPWD                                                /usr/local/software</span><br><span class="line"> PATH                                                  /usr/local/software/jdk-11.0.16.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin</span><br><span class="line"> PWD                                                   /usr/local/software/arthas</span><br><span class="line"> SELINUX_LEVEL_REQUESTED</span><br><span class="line"> SELINUX_ROLE_REQUESTED</span><br><span class="line"> SELINUX_USE_CURRENT_RANGE</span><br><span class="line"> SHELL                                                 /bin/bash</span><br><span class="line"> SHLVL                                                 1</span><br><span class="line"> SSH_CLIENT                                            192.168.3.74 6122 22</span><br><span class="line"> SSH_CONNECTION                                        192.168.3.74 6122 192.168.3.125 22</span><br><span class="line"> SSH_TTY                                               /dev/pts/1</span><br><span class="line"> TERM                                                  xterm</span><br><span class="line"> USER                                                  root</span><br><span class="line"> XDG_RUNTIME_DIR                                       /run/user/0</span><br><span class="line"> XDG_SESSION_ID                                        5</span><br><span class="line"> _                                                     /usr/local/software/jdk-11.0.16.1/bin/java</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用正则表达式过滤所需要数据</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ sysenv | grep -e <span class="string">&quot;(?i)(JAVA|sun)&quot;</span></span><br><span class="line"> JAVA_HOME                                             /usr/local/software/jdk-11.0.16.1</span><br><span class="line"> _                                                     /usr/local/software/jdk-11.0.16.1/bin/java</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="7-快捷键映射表keymap"><a href="#7-快捷键映射表keymap" class="headerlink" title="7.快捷键映射表keymap"></a>7.快捷键映射表keymap</h3><p><code>keymap</code>命令输出当前的快捷键映射表：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">[arthas@5167]$ keymap</span><br><span class="line"> Shortcut                                                            Description                                                        Name                                                                                                                                  </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> <span class="string">&quot;\C-a&quot;</span>                                                              Ctrl + a                                                            beginning-of-line                                                                                                                    </span><br><span class="line"> <span class="string">&quot;\C-e&quot;</span>                                                              Ctrl + e                                                            end-of-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\C-f&quot;</span>                                                              Ctrl + f                                                            forward-word                                                                                                                         </span><br><span class="line"> <span class="string">&quot;\C-b&quot;</span>                                                              Ctrl + b                                                            backward-word                                                                                                                        </span><br><span class="line"> <span class="string">&quot;\e[D&quot;</span>                                                              Left arrow                                                          backward-char                                                                                                                        </span><br><span class="line"> <span class="string">&quot;\e[C&quot;</span>                                                              Right arrow                                                         forward-char                                                                                                                         </span><br><span class="line"> <span class="string">&quot;\e[A&quot;</span>                                                              Up arrow                                                            history-search-backward                                                                                                              </span><br><span class="line"> <span class="string">&quot;\e[B&quot;</span>                                                              Down arrow                                                          history-search-forward                                                                                                               </span><br><span class="line"> <span class="string">&quot;\C-h&quot;</span>                                                              Ctrl + h                                                            backward-delete-char                                                                                                                 </span><br><span class="line"> <span class="string">&quot;\C-?&quot;</span>                                                              Ctrl + ?                                                            backward-delete-char                                                                                                                 </span><br><span class="line"> <span class="string">&quot;\C-u&quot;</span>                                                              Ctrl + u                                                            undo                                                                                                                                 </span><br><span class="line"> <span class="string">&quot;\C-d&quot;</span>                                                              Ctrl + d                                                            delete-char                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\C-k&quot;</span>                                                              Ctrl + k                                                            kill-line                                                                                                                            </span><br><span class="line"> <span class="string">&quot;\C-i&quot;</span>                                                              Ctrl + i                                                            complete                                                                                                                             </span><br><span class="line"> <span class="string">&quot;\C-j&quot;</span>                                                              Ctrl + j                                                            accept-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\C-m&quot;</span>                                                              Ctrl + m                                                            accept-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\C-w&quot;</span>                                                              Ctrl + w                                                            backward-delete-word                                                                                                                 </span><br><span class="line"> <span class="string">&quot;\C-x\e[3~&quot;</span>                                                         <span class="string">&quot;\C-x\e[3~&quot;</span>                                                         backward-kill-line                                                                                                                   </span><br><span class="line"> <span class="string">&quot;\e\C-?&quot;</span>                                                            <span class="string">&quot;\e\C-?&quot;</span>                                                            backward-kill-word                                                                                                                   </span><br><span class="line"> <span class="string">&quot;\e[1~&quot;</span>                                                             <span class="string">&quot;\e[1~&quot;</span>                                                             beginning-of-line                                                                                                                    </span><br><span class="line"> <span class="string">&quot;\e[4~&quot;</span>                                                             <span class="string">&quot;\e[4~&quot;</span>                                                             end-of-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\e[5~&quot;</span>                                                             <span class="string">&quot;\e[5~&quot;</span>                                                             beginning-of-history                                                                                                                 </span><br><span class="line"> <span class="string">&quot;\e[6~&quot;</span>                                                             <span class="string">&quot;\e[6~&quot;</span>                                                             end-of-history                                                                                                                       </span><br><span class="line"> <span class="string">&quot;\e[3~&quot;</span>                                                             <span class="string">&quot;\e[3~&quot;</span>                                                             delete-char                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\e[2~&quot;</span>                                                             <span class="string">&quot;\e[2~&quot;</span>                                                             quoted-insert                                                                                                                        </span><br><span class="line"> <span class="string">&quot;\e[7~&quot;</span>                                                             <span class="string">&quot;\e[7~&quot;</span>                                                             beginning-of-line                                                                                                                    </span><br><span class="line"> <span class="string">&quot;\e[8~&quot;</span>                                                             <span class="string">&quot;\e[8~&quot;</span>                                                             end-of-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\eOH&quot;</span>                                                              <span class="string">&quot;\eOH&quot;</span>                                                              beginning-of-line                                                                                                                    </span><br><span class="line"> <span class="string">&quot;\eOF&quot;</span>                                                              <span class="string">&quot;\eOF&quot;</span>                                                              end-of-line                                                                                                                          </span><br><span class="line"> <span class="string">&quot;\e[H&quot;</span>                                                              <span class="string">&quot;\e[H&quot;</span>                                                              beginning-of-line                                                                                                                    </span><br><span class="line"> <span class="string">&quot;\e[F&quot;</span>                                                              <span class="string">&quot;\e[F&quot;</span>                                                              end-of-lin</span><br></pre></td></tr></table></figure>
+
+<p>默认的快捷键如下：</p>
+<table>
+<thead>
+<tr>
+<th>快捷键</th>
+<th>快捷键说明</th>
+<th>命令名称</th>
+<th>命令说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&quot;\C-a&quot;</code></td>
+<td>ctrl + a</td>
+<td>beginning-of-line</td>
+<td>跳到行首</td>
+</tr>
+<tr>
+<td><code>&quot;\C-e&quot;</code></td>
+<td>ctrl + e</td>
+<td>end-of-line</td>
+<td>跳到行尾</td>
+</tr>
+<tr>
+<td><code>&quot;\C-f&quot;</code></td>
+<td>ctrl + f</td>
+<td>forward-word</td>
+<td>向前移动一个单词</td>
+</tr>
+<tr>
+<td><code>&quot;\C-b&quot;</code></td>
+<td>ctrl + b</td>
+<td>backward-word</td>
+<td>向后移动一个单词</td>
+</tr>
+<tr>
+<td><code>&quot;\e[D&quot;</code></td>
+<td>键盘左方向键</td>
+<td>backward-char</td>
+<td>光标向前移动一个字符</td>
+</tr>
+<tr>
+<td><code>&quot;\e[C&quot;</code></td>
+<td>键盘右方向键</td>
+<td>forward-char</td>
+<td>光标向后移动一个字符</td>
+</tr>
+<tr>
+<td><code>&quot;\e[B&quot;</code></td>
+<td>键盘下方向键</td>
+<td>next-history</td>
+<td>下翻显示下一个命令</td>
+</tr>
+<tr>
+<td><code>&quot;\e[A&quot;</code></td>
+<td>键盘上方向键</td>
+<td>previous-history</td>
+<td>上翻显示上一个命令</td>
+</tr>
+<tr>
+<td><code>&quot;\C-h&quot;</code></td>
+<td>ctrl + h</td>
+<td>backward-delete-char</td>
+<td>向后删除一个字符</td>
+</tr>
+<tr>
+<td><code>&quot;\C-?&quot;</code></td>
+<td>ctrl + shift + &#x2F;</td>
+<td>backward-delete-char</td>
+<td>向后删除一个字符</td>
+</tr>
+<tr>
+<td><code>&quot;\C-u&quot;</code></td>
+<td>ctrl + u</td>
+<td>undo</td>
+<td>撤销上一个命令，相当于清空当前行</td>
+</tr>
+<tr>
+<td><code>&quot;\C-d&quot;</code></td>
+<td>ctrl + d</td>
+<td>delete-char</td>
+<td>删除当前光标所在字符</td>
+</tr>
+<tr>
+<td><code>&quot;\C-k&quot;</code></td>
+<td>ctrl + k</td>
+<td>kill-line</td>
+<td>删除当前光标到行尾的所有字符</td>
+</tr>
+<tr>
+<td><code>&quot;\C-i&quot;</code></td>
+<td>ctrl + i</td>
+<td>complete</td>
+<td>自动补全，相当于敲<code>TAB</code></td>
+</tr>
+<tr>
+<td><code>&quot;\C-j&quot;</code></td>
+<td>ctrl + j</td>
+<td>accept-line</td>
+<td>结束当前行，相当于敲回车</td>
+</tr>
+<tr>
+<td><code>&quot;\C-m&quot;</code></td>
+<td>ctrl + m</td>
+<td>accept-line</td>
+<td>结束当前行，相当于敲回车</td>
+</tr>
+<tr>
+<td><code>&quot;\C-w&quot;</code></td>
+<td></td>
+<td>backward-delete-word</td>
+<td></td>
+</tr>
+<tr>
+<td><code>&quot;\C-x\e[3~&quot;</code></td>
+<td></td>
+<td>backward-kill-line</td>
+<td></td>
+</tr>
+<tr>
+<td><code>&quot;\e\C-?&quot;</code></td>
+<td></td>
+<td>backward-kill-word</td>
+<td></td>
+</tr>
+</tbody></table>
+<ul>
+<li>任何时候 <code>tab</code> 键，会根据当前的输入给出提示</li>
+<li>命令后敲  或 <code>-</code> ，然后按 <code>tab</code> 键，可以展示出此命令具体的选项</li>
+</ul>
+<p><strong>自定义快捷键</strong></p>
+<p>在当前用户目录下新建<code>$USER_HOME/.arthas/conf/inputrc</code>文件，加入自定义配置。</p>
+<p>假设我是 vim 的重度用户，我要把<code>ctrl+h</code>设置为光标向前一个字符，则设置如下，首先拷贝默认配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&quot;\C-a&quot;: beginning-of-line</span><br><span class="line">&quot;\C-e&quot;: end-of-line</span><br><span class="line">&quot;\C-f&quot;: forward-word</span><br><span class="line">&quot;\C-b&quot;: backward-word</span><br><span class="line">&quot;\e[D&quot;: backward-char</span><br><span class="line">&quot;\e[C&quot;: forward-char</span><br><span class="line">&quot;\e[B&quot;: next-history</span><br><span class="line">&quot;\e[A&quot;: previous-history</span><br><span class="line">&quot;\C-h&quot;: backward-delete-char</span><br><span class="line">&quot;\C-?&quot;: backward-delete-char</span><br><span class="line">&quot;\C-u&quot;: undo</span><br><span class="line">&quot;\C-d&quot;: delete-char</span><br><span class="line">&quot;\C-k&quot;: kill-line</span><br><span class="line">&quot;\C-i&quot;: complete</span><br><span class="line">&quot;\C-j&quot;: accept-line</span><br><span class="line">&quot;\C-m&quot;: accept-line</span><br><span class="line">&quot;\C-w&quot;: backward-delete-word</span><br><span class="line">&quot;\C-x\e[3~&quot;: backward-kill-line</span><br><span class="line">&quot;\e\C-?&quot;: backward-kill-word</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>然后把<code>&quot;\C-h&quot;: backward-delete-char</code>换成<code>&quot;\C-h&quot;: backward-char</code>，然后重新连接即可。</p>
+<p><strong>后台异步命令相关快捷键</strong></p>
+<ul>
+<li>ctrl + c: 终止当前命令</li>
+<li>ctrl + z: 挂起当前命令，后续可以 bg&#x2F;fg 重新支持此命令，或 kill 掉</li>
+<li>ctrl + a: 回到行首</li>
+<li>ctrl + e: 回到行尾</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Arthas/" rel="tag"># Arthas</a>
+              <a href="/tags/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7/" rel="tag"># Arthas诊断工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%80)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/" rel="prev" title="Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门">
+                  <i class="fa fa-angle-left"></i> Arthas诊断**工具(一)**Arthas（阿尔萨斯）快速入门
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%89)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89JVM%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/" rel="next" title="Arthas诊断**工具(三)**Arthas（阿尔萨斯）JVM相关命令">
+                  Arthas诊断**工具(三)**Arthas（阿尔萨斯）JVM相关命令 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

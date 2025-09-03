@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="profiler命令支持生成应用热点的火焰图。本质上是通过不断的采样，然后把收集到的采样结果生成火焰图。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Arthas诊断**工具(七)**Arthas（阿尔萨斯）profiler命令生成火焰图">
+<meta property="og:url" content="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%83)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="profiler命令支持生成应用热点的火焰图。本质上是通过不断的采样，然后把收集到的采样结果生成火焰图。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/arthas/chapter7/image.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/arthas/chapter7/image1.png">
+<meta property="article:published_time" content="2023-03-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T15:46:38.158Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Arthas">
+<meta property="article:tag" content="Arthas诊断工具">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/arthas/chapter7/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%83)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%83)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE/","path":"Arthas应用(Java)诊断利器/Arthas诊断工具(七)Arthas（阿尔萨斯）profiler命令生成火焰图/","title":"Arthas诊断**工具(七)**Arthas（阿尔萨斯）profiler命令生成火焰图"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Arthas诊断**工具(七)**Arthas（阿尔萨斯）profiler命令生成火焰图 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%83)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E4%B8%83-Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE"><span class="nav-number">1.</span> <span class="nav-text">Arthas诊断工具(七)Arthas（阿尔萨斯）profiler命令生成火焰图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-profiler%E5%91%BD%E4%BB%A4"><span class="nav-number">1.1.</span> <span class="nav-text">1. profiler命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%90%AF%E5%8A%A8-profiler-%E5%91%BD%E4%BB%A4"><span class="nav-number">1.2.</span> <span class="nav-text">2. 启动 profiler 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E8%8E%B7%E5%8F%96%E5%B7%B2%E9%87%87%E9%9B%86%E7%9A%84-sample-%E7%9A%84%E6%95%B0%E9%87%8F"><span class="nav-number">1.3.</span> <span class="nav-text">3. 获取已采集的 sample 的数量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%9F%A5%E7%9C%8B-profiling-%E7%8A%B6%E6%80%81"><span class="nav-number">1.4.</span> <span class="nav-text">4. 查看 profiling 状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E6%9F%A5%E7%9C%8B-profiler-%E8%87%AA%E8%BA%AB%E7%9A%84%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8"><span class="nav-number">1.5.</span> <span class="nav-text">5. 查看 profiler 自身的内存占用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%81%9C%E6%AD%A2-profiler"><span class="nav-number">1.6.</span> <span class="nav-text">6. 停止 profiler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-profiler-%E6%94%AF%E6%8C%81%E7%9A%84-events"><span class="nav-number">1.7.</span> <span class="nav-text">7. profiler 支持的 events</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%83)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89profiler%E5%91%BD%E4%BB%A4%E7%94%9F%E6%88%90%E7%81%AB%E7%84%B0%E5%9B%BE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Arthas诊断**工具(七)**Arthas（阿尔萨斯）profiler命令生成火焰图 | 我的博客">
+      <meta itemprop="description" content="profiler命令支持生成应用热点的火焰图。本质上是通过不断的采样，然后把收集到的采样结果生成火焰图。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Arthas诊断**工具(七)**Arthas（阿尔萨斯）profiler命令生成火焰图
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-03-07 00:00:00" itemprop="dateCreated datePublished" datetime="2023-03-07T00:00:00+08:00">2023-03-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 23:46:38" itemprop="dateModified" datetime="2025-09-03T23:46:38+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Arthas/" itemprop="url" rel="index"><span itemprop="name">Arthas</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">profiler命令支持生成应用热点的火焰图。本质上是通过不断的采样，然后把收集到的采样结果生成火焰图。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Arthas诊断工具-七-Arthas（阿尔萨斯）profiler命令生成火焰图"><a href="#Arthas诊断工具-七-Arthas（阿尔萨斯）profiler命令生成火焰图" class="headerlink" title="Arthas诊断工具(七)Arthas（阿尔萨斯）profiler命令生成火焰图"></a><strong>Arthas诊断</strong>工具(七)<strong>Arthas（阿尔萨斯）profiler命令生成火焰图</strong></h1><h2 id="1-profiler命令"><a href="#1-profiler命令" class="headerlink" title="1. profiler命令"></a>1. <strong>profiler命令</strong></h2><p><code>profiler</code> 命令支持生成应用热点的火焰图。本质上是通过不断的采样，然后把收集到的采样结果生成火焰图。</p>
+<p><code>profiler</code> 命令基本运行结构是 <code>profiler action [actionArg]</code></p>
+<p><code>profiler</code> 命令的格式基本与上游项目 <a target="_blank" rel="noopener" href="https://github.com/async-profiler/async-profiler"><strong>async-profiler在新窗口打开</strong></a> 保持一致，详细的使用方式可参考上游项目的 README、Github Disscussions 以及其他文档资料</p>
+<aside>
+💡
+
+<p>使用<a target="_blank" rel="noopener" href="https://github.com/jvm-profiling-tools/async-profiler"><strong>async-profiler在新窗口打开</strong></a>生成火焰图</p>
+</aside>
+
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>action</em></td>
+<td>要执行的操作</td>
+</tr>
+<tr>
+<td><em>actionArg</em></td>
+<td>属性名模式</td>
+</tr>
+<tr>
+<td>[i:]</td>
+<td>采样间隔（单位：ns）（默认值：10’000’000，即 10 ms）</td>
+</tr>
+<tr>
+<td>[f:]</td>
+<td>将输出转储到指定路径</td>
+</tr>
+<tr>
+<td>[d:]</td>
+<td>运行评测指定秒</td>
+</tr>
+<tr>
+<td>[e:]</td>
+<td>要跟踪哪个事件（cpu, alloc, lock, cache-misses 等），默认是 cpu</td>
+</tr>
+</tbody></table>
+<h2 id="2-启动-profiler-命令"><a href="#2-启动-profiler-命令" class="headerlink" title="2. 启动 profiler 命令"></a><strong>2. 启动 profiler 命令</strong></h2><aside>
+💡
+
+<p>默认情况下，生成的是 cpu 的火焰图，即 event 为<code>cpu</code>。可以用<code>--event</code>参数指定其他性能分析模式，见下文</p>
+</aside>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ profiler start</span><br><span class="line">Profiling started</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="3-获取已采集的-sample-的数量"><a href="#3-获取已采集的-sample-的数量" class="headerlink" title="3. 获取已采集的 sample 的数量"></a><strong>3. 获取已采集的 sample 的数量</strong></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ profiler getSamples </span><br><span class="line">34</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-查看-profiling-状态"><a href="#4-查看-profiling-状态" class="headerlink" title="4. 查看 profiling 状态"></a><strong>4. 查看 profiling 状态</strong></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ profiler status</span><br><span class="line">Profiling is running <span class="keyword">for</span> 230 seconds</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="5-查看-profiler-自身的内存占用"><a href="#5-查看-profiler-自身的内存占用" class="headerlink" title="5. 查看 profiler 自身的内存占用"></a><strong>5. 查看 profiler 自身的内存占用</strong></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ profiler meminfo </span><br><span class="line">Call trace storage:   10244 KB</span><br><span class="line">  Flight recording:       0 KB</span><br><span class="line">      Dictionaries:      72 KB</span><br><span class="line">        Code cache:   12685 KB</span><br><span class="line">------------------------------</span><br><span class="line">             Total:   23001 KB</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="6-停止-profiler"><a href="#6-停止-profiler" class="headerlink" title="6. 停止 profiler"></a><strong>6. 停止 profiler</strong></h2><ul>
+<li><strong>生成火焰图格式结果</strong></li>
+</ul>
+<p>默认情况下，结果是 <a target="_blank" rel="noopener" href="https://github.com/BrendanGregg/FlameGraph"><strong>Flame Graph在新窗口打开</strong></a> 格式的 <code>html</code> 文件，也可以用 <code>-o</code> 或 <code>--format</code> 参数指定其他内容格式，包括 flat、traces、collapsed、flamegraph、tree、jfr。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 停止采集数据，并生成火焰图</span></span><br><span class="line">[arthas@8161]$ profiler stop --format flamegraph</span><br><span class="line">OK</span><br><span class="line">profiler output file: /usr/local/software/arthas/arthas-output/20250607-110904.html</span><br><span class="line"></span><br><span class="line"><span class="comment">## 退出arthas</span></span><br><span class="line">[arthas@8161]$ stop</span><br><span class="line">Resetting all enhanced classes ...</span><br><span class="line">Affect(class count: 1 , method count: 0) cost <span class="keyword">in</span> 74 ms, listenerId: 0</span><br><span class="line">Arthas Server is going to shutdown...</span><br><span class="line">[arthas@8161]$ session (95b458b7-9c4b-4201-a619-de2dae2e85a7) is closed because server is going to shutdown.</span><br><span class="line"></span><br><span class="line"><span class="comment">## 下载火焰图</span></span><br><span class="line">[root@localhost arthas]# sz /usr/local/software/arthas/arthas-output/20250607-110904.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/arthas/chapter7/image.png" alt="image.png"></p>
+<p><img src="/images/arthas/chapter7/image1.png" alt="image.png"></p>
+<ol>
+<li>arthas 火焰图颜色说明：<ul>
+<li>绿色： java 代码</li>
+<li>黄色： jvm c++ 代码</li>
+<li>红色： 用户态 c 代码</li>
+<li>橙色： 内核态 c 代码</li>
+</ul>
+</li>
+<li>arthas 火焰图x-y轴<ul>
+<li>x轴代表的不是时间，而是采样总量</li>
+<li>y轴代表方法的调用栈深度，倘若方法调用得越多，火焰越高，顶部的栈就是当前正在执行的方法</li>
+</ul>
+</li>
+<li>栈宽含义（CPU时间）<ul>
+<li>宽度可以理解为CPU采样率的占比，越宽代表当前栈在采样数中占比高，其可能为三种含义<br> 该函数运行时间长<br> 该函数被调用次数多</li>
+</ul>
+</li>
+<li>平顶现象（一定要格外注意）<ul>
+<li>平顶现象是由于当前程序的采样数在总采样数中占用过高导致的，出现这种现象需要特意关注一下程序具体的调用栈，采样比例占用率过高，即代表方法在CPU中的占用率过高</li>
+</ul>
+</li>
+</ol>
+<p><strong>总结</strong>：</p>
+<p>火焰图只是用于辅助程序分析定位问题，查看程序在采样期间的大致情况，实际场景还需结合CPU占用率、查看JVM的DUMP快照等方式进行定位</p>
+<ul>
+<li>火焰图的顶部代表CPU消耗最高的方法，越往下方法的消耗越低。宽度过宽的方法表示其被调用频繁或自身执行时间长，是性能瓶颈的候选点。</li>
+<li>通过观察火焰图，你可以识别出哪些方法占用CPU最多，进而针对性地优化这些“热点”方法，提升程序性能。</li>
+</ul>
+<h2 id="7-profiler-支持的-events"><a href="#7-profiler-支持的-events" class="headerlink" title="7. profiler 支持的 events"></a><strong>7. profiler 支持的 events</strong></h2><p>在不同的平台，不同的 OS 下面，支持的 events 各有不同。比如在 centos下面：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ profiler list</span><br><span class="line">Basic events:</span><br><span class="line">  cpu</span><br><span class="line">  alloc</span><br><span class="line">  nativemem</span><br><span class="line">  lock</span><br><span class="line">  wall</span><br><span class="line">  itimer</span><br><span class="line">  ctimer</span><br><span class="line">Java method calls:</span><br><span class="line">  ClassName.methodName</span><br><span class="line">Perf events:</span><br><span class="line">  cpu-clock</span><br><span class="line">  page-faults</span><br><span class="line">  context-switches</span><br><span class="line">  cycles</span><br><span class="line">  instructions</span><br><span class="line">  cache-references</span><br><span class="line">  cache-misses</span><br><span class="line">  branch-instructions</span><br><span class="line">  branch-misses</span><br><span class="line">  bus-cycles</span><br><span class="line">  L1-dcache-load-misses</span><br><span class="line">  LLC-load-misses</span><br><span class="line">  dTLB-load-misses</span><br><span class="line">  rNNN</span><br><span class="line">  pmu/event-descriptor/</span><br><span class="line">  mem:breakpoint</span><br><span class="line">  trace:tracepoint</span><br><span class="line">  kprobe:func</span><br><span class="line">  uprobe:path</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Arthas/" rel="tag"># Arthas</a>
+              <a href="/tags/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7/" rel="tag"># Arthas诊断工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%85%AD)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89options%E5%85%A8%E5%B1%80%E5%BC%80%E5%85%B3/" rel="prev" title="Arthas诊断**工具(六)**Arthas（阿尔萨斯）options全局开关">
+                  <i class="fa fa-angle-left"></i> Arthas诊断**工具(六)**Arthas（阿尔萨斯）options全局开关
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

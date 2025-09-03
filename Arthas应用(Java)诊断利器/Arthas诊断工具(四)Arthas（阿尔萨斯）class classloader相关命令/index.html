@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="查看 JVM 已加载的类信息，“Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 &#96;[d]&#96;、&#96;[E]&#96;、&#96;[f]&#96; 和 &#96;[x:]&#96;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Arthas诊断**工具(四)**Arthas（阿尔萨斯）class&#x2F;classloader相关命令">
+<meta property="og:url" content="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="查看 JVM 已加载的类信息，“Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 &#96;[d]&#96;、&#96;[E]&#96;、&#96;[f]&#96; 和 &#96;[x:]&#96;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/source/images/arthas/chapter4/image.png">
+<meta property="article:published_time" content="2023-03-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T15:41:16.971Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Arthas">
+<meta property="article:tag" content="Arthas诊断工具">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/source/images/arthas/chapter4/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/","path":"Arthas应用(Java)诊断利器/Arthas诊断工具(四)Arthas（阿尔萨斯）class classloader相关命令/","title":"Arthas诊断**工具(四)**Arthas（阿尔萨斯）class/classloader相关命令"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Arthas诊断**工具(四)**Arthas（阿尔萨斯）class/classloader相关命令 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E5%9B%9B-Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class-classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4"><span class="nav-number">1.</span> <span class="nav-text">Arthas诊断工具(四)Arthas（阿尔萨斯）class&#x2F;classloader相关命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-sc%E5%91%BD%E4%BB%A4"><span class="nav-number">1.1.</span> <span class="nav-text">1. sc命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-sm-%E5%91%BD%E4%BB%A4"><span class="nav-number">1.2.</span> <span class="nav-text">2. sm 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-jad-%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">3. jad 命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-mc%E5%91%BD%E4%BB%A4"><span class="nav-number">1.4.</span> <span class="nav-text">4. mc命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-redefine%E5%91%BD%E4%BB%A4"><span class="nav-number">1.5.</span> <span class="nav-text">5.redefine命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-dump%E5%91%BD%E4%BB%A4"><span class="nav-number">1.6.</span> <span class="nav-text">6. dump命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-classloader%E5%91%BD%E4%BB%A4"><span class="nav-number">1.7.</span> <span class="nav-text">7. classloader命令</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Arthas诊断**工具(四)**Arthas（阿尔萨斯）class&#x2F;classloader相关命令 | 我的博客">
+      <meta itemprop="description" content="查看 JVM 已加载的类信息，“Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 &#96;[d]&#96;、&#96;[E]&#96;、&#96;[f]&#96; 和 &#96;[x:]&#96;">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Arthas诊断**工具(四)**Arthas（阿尔萨斯）class/classloader相关命令
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-03-04 00:00:00" itemprop="dateCreated datePublished" datetime="2023-03-04T00:00:00+08:00">2023-03-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 23:41:16" itemprop="dateModified" datetime="2025-09-03T23:41:16+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Arthas/" itemprop="url" rel="index"><span itemprop="name">Arthas</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">查看 JVM 已加载的类信息，“Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 `[d]`、`[E]`、`[f]` 和 `[x:]`</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Arthas诊断工具-四-Arthas（阿尔萨斯）class-classloader相关命令"><a href="#Arthas诊断工具-四-Arthas（阿尔萨斯）class-classloader相关命令" class="headerlink" title="Arthas诊断工具(四)Arthas（阿尔萨斯）class&#x2F;classloader相关命令"></a><strong>Arthas诊断</strong>工具(四)<strong>Arthas（阿尔萨斯）class&#x2F;classloader相关命令</strong></h1><h2 id="1-sc命令"><a href="#1-sc命令" class="headerlink" title="1. sc命令"></a>1. <strong>sc命令</strong></h2><p>查看 JVM 已加载的类信息，</p>
+<p>“Search-Class” 的简写，这个命令能搜索出所有已经加载到 JVM 中的 Class 信息，这个命令支持的参数有 <code>[d]</code>、<code>[E]</code>、<code>[f]</code> 和 <code>[x:]</code>。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>方法名表达式匹配</td>
+</tr>
+<tr>
+<td>[d]</td>
+<td>输出当前类的详细信息，包括这个类所加载的原始文件来源、类的声明、加载的 ClassLoader 等详细信息。如果一个类被多个 ClassLoader 所加载，则会出现多次</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td>[f]</td>
+<td>输出当前类的成员变量信息（需要配合参数-d 一起使用）</td>
+</tr>
+<tr>
+<td>[x:]</td>
+<td>指定输出静态变量时属性的遍历深度，默认为 0，即直接使用 <code>toString</code> 输出</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>指定 class 的 ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+<tr>
+<td><code>[n:]</code></td>
+<td>具有详细信息的匹配类的最大数量（默认为 100）</td>
+</tr>
+<tr>
+<td><code>[cs &lt;arg&gt;]</code></td>
+<td>指定 class 的 ClassLoader#toString() 返回值。长格式<code>[classLoaderStr &lt;arg&gt;]</code></td>
+</tr>
+</tbody></table>
+<ul>
+<li><p><strong>提示</strong></p>
+<ol>
+<li>class-pattern 支持全限定名，如 com.taobao.test.AAA，也支持 com&#x2F;taobao&#x2F;test&#x2F;AAA 这样的格式，这样，我们从异常堆栈里面把类名拷贝过来的时候，不需要在手动把<code>/</code>替换为<code>.</code>啦。</li>
+<li>sc 默认开启了子类匹配功能，也就是说所有当前类的子类也会被搜索出来，想要精确的匹配，请打开<code>options disable-sub-class true</code>开关</li>
+</ol>
+</li>
+<li><p><strong>使用参考</strong></p>
+<ul>
+<li>模糊搜索</li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[arthas@7339]$ sc demo.*</span><br><span class="line">demo.MathGame</span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 17 ms.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>打印类的详细信息</li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">[arthas@7339]$ sc -d demo.MathGame</span><br><span class="line"> class-info        demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> code-source       /usr/local/software/arthas/math-game.jar                                                                                                                                                                                                                   </span><br><span class="line"> name              demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> isInterface       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnnotation      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isEnum            <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnonymousClass  <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isArray           <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isLocalClass      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isMemberClass     <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isPrimitive       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isSynthetic       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> simple-name       MathGame                                                                                                                                                                                                                                                   </span><br><span class="line"> modifier          public                                                                                                                                                                                                                                                     </span><br><span class="line"> annotation                                                                                                                                                                                                                                                                   </span><br><span class="line"> interfaces                                                                                                                                                                                                                                                                   </span><br><span class="line"> super-class       +-java.lang.Object                                                                                                                                                                                                                                         </span><br><span class="line"> class-loader      +-jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c                                                                                                                                                                                                 </span><br><span class="line">                     +-jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@38755edd                                                                                                                                                                                          </span><br><span class="line"> classLoaderHash   4b85612c                                                                                                                                                                                                                                                   </span><br><span class="line"></span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 21 ms.</span><br></pre></td></tr></table></figure>
+<ul>
+<li>打印出类的 Field 信息</li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">[arthas@7339]$ sc -d -f demo.MathGame</span><br><span class="line"> class-info        demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> code-source       /usr/local/software/arthas/math-game.jar                                                                                                                                                                                                                   </span><br><span class="line"> name              demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> isInterface       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnnotation      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isEnum            <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnonymousClass  <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isArray           <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isLocalClass      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isMemberClass     <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isPrimitive       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isSynthetic       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> simple-name       MathGame                                                                                                                                                                                                                                                   </span><br><span class="line"> modifier          public                                                                                                                                                                                                                                                     </span><br><span class="line"> annotation                                                                                                                                                                                                                                                                   </span><br><span class="line"> interfaces                                                                                                                                                                                                                                                                   </span><br><span class="line"> super-class       +-java.lang.Object                                                                                                                                                                                                                                         </span><br><span class="line"> class-loader      +-jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c                                                                                                                                                                                                 </span><br><span class="line">                     +-jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@38755edd                                                                                                                                                                                          </span><br><span class="line"> classLoaderHash   4b85612c                                                                                                                                                                                                                                                   </span><br><span class="line"> fields            name     random                                                                                                                                                                                                                                            </span><br><span class="line">                   <span class="built_in">type</span>     java.util.Random                                                                                                                                                                                                                                  </span><br><span class="line">                   modifier private,static                                                                                                                                                                                                                                    </span><br><span class="line">                   value    java.util.Random@464dde8d                                                                                                                                                                                                                         </span><br><span class="line">                                                                                                                                                                                                                                                                              </span><br><span class="line">                   name     illegalArgumentCount                                                                                                                                                                                                                              </span><br><span class="line">                   <span class="built_in">type</span>     int                                                                                                                                                                                                                                               </span><br><span class="line">                   modifier private                                                                                                                                                                                                                                           </span><br><span class="line">                                                                                                                                                                                                                                                                              </span><br><span class="line"></span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 23 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="2-sm-命令"><a href="#2-sm-命令" class="headerlink" title="2. sm 命令"></a>2. <strong>sm 命令</strong></h2><p>查看已加载类的方法信息，“Search-Method” 的简写，这个命令能搜索出所有已经加载了 Class 信息的方法信息。</p>
+<p><code>sm</code> 命令只能看到由当前类所声明 (declaring) 的方法，父类则无法看到。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>方法名表达式匹配</td>
+</tr>
+<tr>
+<td>[d]</td>
+<td>展示每个方法的详细信息</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>指定 class 的 ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+<tr>
+<td><code>[n:]</code></td>
+<td>具有详细信息的匹配类的最大数量（默认为 100）</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">7339</span>]$ sm java.lang.String</span><br><span class="line">java.lang.String &lt;init&gt;([B)V</span><br><span class="line">java.lang.String &lt;init&gt;([BII)V</span><br><span class="line">java.lang.String &lt;init&gt;([BLjava/nio/charset/Charset;)V</span><br><span class="line">java.lang.String &lt;init&gt;([BLjava/lang/String;)V</span><br><span class="line">java.lang.String &lt;init&gt;([BIILjava/nio/charset/Charset;)V</span><br><span class="line">java.lang.String &lt;init&gt;([CIILjava/lang/Void;)V</span><br><span class="line">java.lang.String &lt;init&gt;(Ljava/lang/AbstractStringBuilder;Ljava/lang/Void;)V</span><br><span class="line">java.lang.String &lt;init&gt;(Ljava/lang/StringBuilder;)V</span><br><span class="line">java.lang.String &lt;init&gt;(Ljava/lang/StringBuffer;)V</span><br><span class="line">java.lang.String &lt;init&gt;([BB)V</span><br><span class="line">java.lang.String &lt;init&gt;([CII)V</span><br><span class="line">java.lang.String &lt;init&gt;([C)V</span><br><span class="line">java.lang.String &lt;init&gt;(Ljava/lang/String;)V</span><br><span class="line">java.lang.String &lt;init&gt;()V</span><br><span class="line">java.lang.String &lt;init&gt;([BIILjava/lang/String;)V</span><br><span class="line">java.lang.String &lt;init&gt;([BI)V</span><br><span class="line">java.lang.String &lt;init&gt;([BIII)V</span><br><span class="line">java.lang.String &lt;init&gt;([III)V</span><br><span class="line">java.lang.String <span class="title function_">value</span><span class="params">()</span>[B</span><br><span class="line">java.lang.String <span class="title function_">equals</span><span class="params">(Ljava/lang/Object;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">length</span><span class="params">()</span>I</span><br><span class="line">java.lang.String <span class="title function_">toString</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">hashCode</span><span class="params">()</span>I</span><br><span class="line">java.lang.String <span class="title function_">getChars</span><span class="params">(II[CI)</span>V</span><br><span class="line">java.lang.String <span class="title function_">compareTo</span><span class="params">(Ljava/lang/String;)</span>I</span><br><span class="line">java.lang.String <span class="title function_">compareTo</span><span class="params">(Ljava/lang/Object;)</span>I</span><br><span class="line">java.lang.String <span class="title function_">indexOf</span><span class="params">(Ljava/lang/String;I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">indexOf</span><span class="params">(I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">indexOf</span><span class="params">([BBILjava/lang/String;I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">indexOf</span><span class="params">(II)</span>I</span><br><span class="line">java.lang.String <span class="title function_">indexOf</span><span class="params">(Ljava/lang/String;)</span>I</span><br><span class="line">java.lang.String <span class="title function_">checkIndex</span><span class="params">(II)</span>V</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(I)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(F)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(Z)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(J)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(D)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(Ljava/lang/Object;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">(C)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">([C)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">valueOf</span><span class="params">([CII)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">coder</span><span class="params">()</span>B</span><br><span class="line">java.lang.String <span class="title function_">rangeCheck</span><span class="params">([CII)</span>Ljava/lang/Void;</span><br><span class="line">java.lang.String <span class="title function_">codePoints</span><span class="params">()</span>Ljava/util/stream/IntStream;</span><br><span class="line">java.lang.String <span class="title function_">isEmpty</span><span class="params">()</span>Z</span><br><span class="line">java.lang.String <span class="title function_">charAt</span><span class="params">(I)</span>C</span><br><span class="line">java.lang.String <span class="title function_">codePointAt</span><span class="params">(I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">codePointBefore</span><span class="params">(I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">codePointCount</span><span class="params">(II)</span>I</span><br><span class="line">java.lang.String <span class="title function_">offsetByCodePoints</span><span class="params">(II)</span>I</span><br><span class="line">java.lang.String <span class="title function_">getBytes</span><span class="params">(Ljava/nio/charset/Charset;)</span>[B</span><br><span class="line">java.lang.String <span class="title function_">getBytes</span><span class="params">(II[BI)</span>V</span><br><span class="line">java.lang.String <span class="title function_">getBytes</span><span class="params">(Ljava/lang/String;)</span>[B</span><br><span class="line">java.lang.String <span class="title function_">getBytes</span><span class="params">()</span>[B</span><br><span class="line">java.lang.String <span class="title function_">getBytes</span><span class="params">([BIB)</span>V</span><br><span class="line">java.lang.String <span class="title function_">contentEquals</span><span class="params">(Ljava/lang/StringBuffer;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">contentEquals</span><span class="params">(Ljava/lang/CharSequence;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">nonSyncContentEquals</span><span class="params">(Ljava/lang/AbstractStringBuilder;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">equalsIgnoreCase</span><span class="params">(Ljava/lang/String;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">compareToIgnoreCase</span><span class="params">(Ljava/lang/String;)</span>I</span><br><span class="line">java.lang.String <span class="title function_">regionMatches</span><span class="params">(ZILjava/lang/String;II)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">regionMatches</span><span class="params">(ILjava/lang/String;II)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">startsWith</span><span class="params">(Ljava/lang/String;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">startsWith</span><span class="params">(Ljava/lang/String;I)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">endsWith</span><span class="params">(Ljava/lang/String;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">lastIndexOf</span><span class="params">(I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">lastIndexOf</span><span class="params">([BBILjava/lang/String;I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">lastIndexOf</span><span class="params">(Ljava/lang/String;I)</span>I</span><br><span class="line">java.lang.String <span class="title function_">lastIndexOf</span><span class="params">(Ljava/lang/String;)</span>I</span><br><span class="line">java.lang.String <span class="title function_">lastIndexOf</span><span class="params">(II)</span>I</span><br><span class="line">java.lang.String <span class="title function_">substring</span><span class="params">(II)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">substring</span><span class="params">(I)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">subSequence</span><span class="params">(II)</span>Ljava/lang/CharSequence;</span><br><span class="line">java.lang.String <span class="title function_">concat</span><span class="params">(Ljava/lang/String;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">replace</span><span class="params">(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">replace</span><span class="params">(CC)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">matches</span><span class="params">(Ljava/lang/String;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">contains</span><span class="params">(Ljava/lang/CharSequence;)</span>Z</span><br><span class="line">java.lang.String <span class="title function_">replaceFirst</span><span class="params">(Ljava/lang/String;Ljava/lang/String;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">replaceAll</span><span class="params">(Ljava/lang/String;Ljava/lang/String;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">split</span><span class="params">(Ljava/lang/String;)</span>[Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">split</span><span class="params">(Ljava/lang/String;I)</span>[Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">join</span><span class="params">(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">join</span><span class="params">(Ljava/lang/CharSequence;Ljava/lang/Iterable;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">toLowerCase</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">toLowerCase</span><span class="params">(Ljava/util/Locale;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">toUpperCase</span><span class="params">(Ljava/util/Locale;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">toUpperCase</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">trim</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">strip</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">stripLeading</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">stripTrailing</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">isBlank</span><span class="params">()</span>Z</span><br><span class="line">java.lang.String <span class="title function_">indexOfNonWhitespace</span><span class="params">()</span>I</span><br><span class="line">java.lang.String <span class="title function_">lines</span><span class="params">()</span>Ljava/util/stream/Stream;</span><br><span class="line">java.lang.String <span class="title function_">chars</span><span class="params">()</span>Ljava/util/stream/IntStream;</span><br><span class="line">java.lang.String <span class="title function_">toCharArray</span><span class="params">()</span>[C</span><br><span class="line">java.lang.String <span class="title function_">format</span><span class="params">(Ljava/lang/String;[Ljava/lang/Object;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">format</span><span class="params">(Ljava/util/Locale;Ljava/lang/String;[Ljava/lang/Object;)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">copyValueOf</span><span class="params">([CII)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">copyValueOf</span><span class="params">([C)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">intern</span><span class="params">()</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">repeat</span><span class="params">(I)</span>Ljava/lang/String;</span><br><span class="line">java.lang.String <span class="title function_">isLatin1</span><span class="params">()</span>Z</span><br><span class="line">java.lang.String <span class="title function_">checkOffset</span><span class="params">(II)</span>V</span><br><span class="line">java.lang.String <span class="title function_">checkBoundsOffCount</span><span class="params">(III)</span>V</span><br><span class="line">java.lang.String <span class="title function_">checkBoundsBeginEnd</span><span class="params">(III)</span>V</span><br><span class="line">java.lang.String <span class="title function_">valueOfCodePoint</span><span class="params">(I)</span>Ljava/lang/String;</span><br><span class="line">Affect(row-cnt:<span class="number">108</span>) cost in <span class="number">29</span> ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>展示每个方法的详细信息</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">[arthas@7339]$ sm -d java.lang.String toString</span><br><span class="line"> declaring-class  java.lang.String                                                                                                                                                                                                                                            </span><br><span class="line"> method-name      toString                                                                                                                                                                                                                                                    </span><br><span class="line"> modifier         public                                                                                                                                                                                                                                                      </span><br><span class="line"> annotation                                                                                                                                                                                                                                                                   </span><br><span class="line"> parameters                                                                                                                                                                                                                                                                   </span><br><span class="line"> <span class="built_in">return</span>           java.lang.String                                                                                                                                                                                                                                            </span><br><span class="line"> exceptions                                                                                                                                                                                                                                                                   </span><br><span class="line"> classLoaderHash  null                                                                                                                                                                                                                                                        </span><br><span class="line"></span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 14 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="3-jad-命令"><a href="#3-jad-命令" class="headerlink" title="3. jad 命令"></a>3. <strong>jad 命令</strong></h2><p>反编译指定已加载类的源码</p>
+<p><code>jad</code> 命令将 JVM 中实际运行的 class 的 byte code 反编译成 java 代码，便于你理解业务逻辑；如需批量下载指定包的目录的 class 字节码可以参考 <a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/dump.html"><strong>dump</strong></a>。</p>
+<ul>
+<li>在 Arthas Console 上，反编译出来的源码是带语法高亮的，阅读更方便</li>
+<li>当然，反编译出来的 java 代码可能会存在语法错误，但不影响你进行阅读理解</li>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>类所属 ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>使用参考</strong></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">5167</span>]$ jad demo.MathGame </span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用的类加载器</span></span><br><span class="line">ClassLoader:                                                                                                                                                                                                                                                                  </span><br><span class="line">+-jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c                                                                                                                                                                                                                    </span><br><span class="line">  +-jdk.internal.loader.ClassLoaders$PlatformClassLoader<span class="meta">@f98fa20</span>                                                                                                                                                                                                              </span><br><span class="line"></span><br><span class="line"><span class="comment">// Main Class的位置在math-game.jar文件中</span></span><br><span class="line">Location:                                                                                                                                                                                                                                                                     </span><br><span class="line">/usr/local/software/arthas/math-game.jar                                                                                                                                                                                                                                      </span><br><span class="line"></span><br><span class="line">       <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * Decompiled with CFR.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">       <span class="keyword">package</span> demo;</span><br><span class="line">       </span><br><span class="line">       <span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line">       <span class="keyword">import</span> java.util.List;</span><br><span class="line">       <span class="keyword">import</span> java.util.Random;</span><br><span class="line">       <span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line">       </span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MathGame</span> &#123;</span><br><span class="line">           <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">           <span class="keyword">private</span> <span class="type">int</span> <span class="variable">illegalArgumentCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">       </span><br><span class="line">           <span class="keyword">public</span> List&lt;Integer&gt; <span class="title function_">primeFactors</span><span class="params">(<span class="type">int</span> number)</span> &#123;</span><br><span class="line"><span class="comment">/*44*/</span>         <span class="keyword">if</span> (number &lt; <span class="number">2</span>) &#123;</span><br><span class="line"><span class="comment">/*45*/</span>             ++<span class="built_in">this</span>.illegalArgumentCount;</span><br><span class="line">                   <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;number is: &quot;</span> + number + <span class="string">&quot;, need &gt;= 2&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">               ArrayList&lt;Integer&gt; result = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line"><span class="comment">/*50*/</span>         <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line"><span class="comment">/*51*/</span>         <span class="keyword">while</span> (i &lt;= number) &#123;</span><br><span class="line"><span class="comment">/*52*/</span>             <span class="keyword">if</span> (number % i == <span class="number">0</span>) &#123;</span><br><span class="line"><span class="comment">/*53*/</span>                 result.add(i);</span><br><span class="line"><span class="comment">/*54*/</span>                 number /= i;</span><br><span class="line"><span class="comment">/*55*/</span>                 i = <span class="number">2</span>;</span><br><span class="line">                       <span class="keyword">continue</span>;</span><br><span class="line">                   &#125;</span><br><span class="line"><span class="comment">/*57*/</span>             ++i;</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*61*/</span>         <span class="keyword">return</span> result;</span><br><span class="line">           &#125;</span><br><span class="line">       </span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">               <span class="type">MathGame</span> <span class="variable">game</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MathGame</span>();</span><br><span class="line">               <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line"><span class="comment">/*16*/</span>             game.run();</span><br><span class="line"><span class="comment">/*17*/</span>             TimeUnit.SECONDS.sleep(<span class="number">1L</span>);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       </span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">               <span class="keyword">try</span> &#123;</span><br><span class="line"><span class="comment">/*23*/</span>             <span class="type">int</span> <span class="variable">number</span> <span class="operator">=</span> random.nextInt() / <span class="number">10000</span>;</span><br><span class="line"><span class="comment">/*24*/</span>             List&lt;Integer&gt; primeFactors = <span class="built_in">this</span>.primeFactors(number);</span><br><span class="line"><span class="comment">/*25*/</span>             MathGame.print(number, primeFactors);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line"><span class="comment">/*28*/</span>             System.out.println(String.format(<span class="string">&quot;illegalArgumentCount:%3d, &quot;</span>, <span class="built_in">this</span>.illegalArgumentCount) + e.getMessage());</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">       </span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">print</span><span class="params">(<span class="type">int</span> number, List&lt;Integer&gt; primeFactors)</span> &#123;</span><br><span class="line">               <span class="type">StringBuffer</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuffer</span>(number + <span class="string">&quot;=&quot;</span>);</span><br><span class="line"><span class="comment">/*34*/</span>         <span class="keyword">for</span> (<span class="type">int</span> factor : primeFactors) &#123;</span><br><span class="line"><span class="comment">/*35*/</span>             sb.append(factor).append(<span class="string">&#x27;*&#x27;</span>);</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*37*/</span>         <span class="keyword">if</span> (sb.charAt(sb.length() - <span class="number">1</span>) == <span class="string">&#x27;*&#x27;</span>) &#123;</span><br><span class="line"><span class="comment">/*38*/</span>             sb.deleteCharAt(sb.length() - <span class="number">1</span>);</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*40*/</span>         System.out.println(sb);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br><span class="line"><span class="comment">// 耗时1238 ms.</span></span><br><span class="line">Affect(row-cnt:<span class="number">1</span>) cost in <span class="number">1238</span> ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="4-mc命令"><a href="#4-mc命令" class="headerlink" title="4. mc命令"></a>4. mc<strong>命令</strong></h2><p>Memory Compiler&#x2F;内存编译器，编译<code>.java</code>文件生成<code>.class</code>。默认位置在arthas位置</p>
+<p>可以通过<code>-d</code>命令指定输出目录：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 查看Hello.java的内容</span></span><br><span class="line">[arthas@<span class="number">7339</span>]$ cat /usr/local/software/arthas/Hello.java </span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Hello</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span>&#123;</span><br><span class="line">		System.out.println(<span class="string">&quot;Hello&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用mc命令编译文件</span></span><br><span class="line">[arthas@<span class="number">7339</span>]$ mc -d /usr/local/software/arthas/output /usr/local/software/arthas/Hello.java </span><br><span class="line">Memory compiler output:</span><br><span class="line">/usr/local/software/arthas/output/Hello.<span class="keyword">class</span></span><br><span class="line"><span class="title class_">Affect</span>(row-cnt:<span class="number">1</span>) cost in <span class="number">738</span> ms.</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-redefine命令"><a href="#5-redefine命令" class="headerlink" title="5.redefine命令"></a>5.<strong>redefine命令</strong></h2><p>加载外部的<code>.class</code>文件，redefine jvm 已加载的类。</p>
+<ul>
+<li>redefine 的 class 不能修改、添加、删除类的 field 和 method，包括方法参数、方法名称及返回值</li>
+<li>如果 mc 失败，可以在本地开发环境编译好 class 文件，上传到目标系统，使用 redefine 热加载 class</li>
+<li>目前 redefine 和 watch&#x2F;trace&#x2F;jad&#x2F;tt 等命令冲突，以后重新实现 redefine 功能会解决此问题</li>
+</ul>
+<aside>
+💡
+
+<p>注意， redefine 后的原来的类不能恢复，redefine 有可能失败（比如增加了新的 field），参考 jdk 本身的文档。</p>
+<p><code>reset</code>命令对<code>redefine</code>的类无效。如果想重置，需要<code>redefine</code>原始的字节码。</p>
+<p><code>redefine</code>命令和<code>jad</code>&#x2F;<code>watch</code>&#x2F;<code>trace</code>&#x2F;<code>monitor</code>&#x2F;<code>tt</code>等命令会冲突。执行完<code>redefine</code>之后，如果再执行上面提到的命令，则会把<code>redefine</code>的字节码重置。 原因是 jdk 本身 redefine 和 Retransform 是不同的机制，同时使用两种机制来更新字节码，只有最后修改的会生效。</p>
+</aside>
+
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>[c:]</td>
+<td>ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+</tbody></table>
+<p>案例：</p>
+<ul>
+<li>使用jad反编译demo.MathGame输出到&#x2F;root&#x2F;MathGame.java</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## jad 命令反编译</span></span><br><span class="line">[arthas@7339]$ jad demo.MathGame --source-only &gt; /root/MathGame.java</span><br><span class="line">redirect output file will be: /root/MathGame.java</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>打开新的窗口，使用vim 来修改源码</li>
+</ul>
+<p>vim &#x2F;root&#x2F;MathGame.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">       <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * Decompiled with CFR.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">       <span class="keyword">package</span> demo;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line">       <span class="keyword">import</span> java.util.List;</span><br><span class="line">       <span class="keyword">import</span> java.util.Random;</span><br><span class="line">       <span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MathGame</span> &#123;</span><br><span class="line">           <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">Random</span> <span class="variable">random</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line">           <span class="keyword">private</span> <span class="type">int</span> <span class="variable">illegalArgumentCount</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">public</span> List&lt;Integer&gt; <span class="title function_">primeFactors</span><span class="params">(<span class="type">int</span> number)</span> &#123;</span><br><span class="line"><span class="comment">/*44*/</span>         <span class="keyword">if</span> (number &lt; <span class="number">2</span>) &#123;</span><br><span class="line"><span class="comment">/*45*/</span>             ++<span class="built_in">this</span>.illegalArgumentCount;</span><br><span class="line">                   <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;number is: &quot;</span> + number + <span class="string">&quot;, need &gt;= 2&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">               ArrayList&lt;Integer&gt; result = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Integer&gt;();</span><br><span class="line"><span class="comment">/*50*/</span>         <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line"><span class="comment">/*51*/</span>         <span class="keyword">while</span> (i &lt;= number) &#123;</span><br><span class="line"><span class="comment">/*52*/</span>             <span class="keyword">if</span> (number % i == <span class="number">0</span>) &#123;</span><br><span class="line"><span class="comment">/*53*/</span>                 result.add(i);</span><br><span class="line"><span class="comment">/*54*/</span>                 number /= i;</span><br><span class="line"><span class="comment">/*55*/</span>                 i = <span class="number">2</span>;</span><br><span class="line">                       <span class="keyword">continue</span>;</span><br><span class="line">                   &#125;</span><br><span class="line"><span class="comment">/*57*/</span>             ++i;</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*61*/</span>         <span class="keyword">return</span> result;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">               <span class="type">MathGame</span> <span class="variable">game</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MathGame</span>();</span><br><span class="line">               <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line"><span class="comment">/*16*/</span>             game.run();</span><br><span class="line"><span class="comment">/*17*/</span>             TimeUnit.SECONDS.sleep(<span class="number">1L</span>);</span><br><span class="line">                   System.out.println(<span class="string">&quot;在main方法循环体内执行&quot;</span>);</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;在run方法中执行&quot;</span>);</span><br><span class="line">               <span class="keyword">try</span> &#123;</span><br><span class="line"><span class="comment">/*23*/</span>             <span class="type">int</span> <span class="variable">number</span> <span class="operator">=</span> random.nextInt() / <span class="number">10000</span>;</span><br><span class="line"><span class="comment">/*24*/</span>             List&lt;Integer&gt; primeFactors = <span class="built_in">this</span>.primeFactors(number);</span><br><span class="line"><span class="comment">/*25*/</span>             MathGame.print(number, primeFactors);</span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line"><span class="comment">/*28*/</span>             System.out.println(String.format(<span class="string">&quot;illegalArgumentCount:%3d, &quot;</span>, <span class="built_in">this</span>.illegalArgumentCount) + e.getMessage());</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line"></span><br><span class="line">           <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">print</span><span class="params">(<span class="type">int</span> number, List&lt;Integer&gt; primeFactors)</span> &#123;</span><br><span class="line">               <span class="type">StringBuffer</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuffer</span>(number + <span class="string">&quot;=&quot;</span>);</span><br><span class="line"><span class="comment">/*34*/</span>         <span class="keyword">for</span> (<span class="type">int</span> factor : primeFactors) &#123;</span><br><span class="line"><span class="comment">/*35*/</span>             sb.append(factor).append(<span class="string">&#x27;*&#x27;</span>);</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*37*/</span>         <span class="keyword">if</span> (sb.charAt(sb.length() - <span class="number">1</span>) == <span class="string">&#x27;*&#x27;</span>) &#123;</span><br><span class="line"><span class="comment">/*38*/</span>             sb.deleteCharAt(sb.length() - <span class="number">1</span>);</span><br><span class="line">               &#125;</span><br><span class="line"><span class="comment">/*40*/</span>         System.out.println(sb);</span><br><span class="line">           &#125;</span><br><span class="line">       &#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>mc 命令来内存编译修改过的代码</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">7339</span>]$ mc /root/MathGame.java -d /root</span><br><span class="line">Memory compiler output:</span><br><span class="line">/root/demo/MathGame.<span class="keyword">class</span></span><br><span class="line"><span class="title class_">Affect</span>(row-cnt:<span class="number">1</span>) cost in <span class="number">253</span> ms.</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用redefine命令加载新字节码文件</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">7339</span>]$ redefine /root/demo/MathGame.<span class="keyword">class</span> </span><br><span class="line"><span class="title class_">redefine</span> success, size: <span class="number">1</span>, classes:</span><br><span class="line">demo.MathGame</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>执行结果</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">190754</span>=<span class="number">2</span>*<span class="number">127</span>*<span class="number">751</span></span><br><span class="line"><span class="number">160050</span>=<span class="number">2</span>*<span class="number">3</span>*<span class="number">5</span>*<span class="number">5</span>*<span class="number">11</span>*<span class="number">97</span></span><br><span class="line"><span class="number">171397</span>=<span class="number">101</span>*<span class="number">1697</span></span><br><span class="line"><span class="number">69692</span>=<span class="number">2</span>*<span class="number">2</span>*<span class="number">7</span>*<span class="number">19</span>*<span class="number">131</span></span><br><span class="line">illegalArgumentCount:<span class="number">8140</span>, number is: -<span class="number">77511</span>, need &gt;= <span class="number">2</span></span><br><span class="line">illegalArgumentCount:<span class="number">8141</span>, number is: -<span class="number">126748</span>, need &gt;= <span class="number">2</span></span><br><span class="line"><span class="number">75490</span>=<span class="number">2</span>*<span class="number">5</span>*<span class="number">7549</span></span><br><span class="line">illegalArgumentCount:<span class="number">8142</span>, number is: -<span class="number">125543</span>, need &gt;= <span class="number">2</span></span><br><span class="line">illegalArgumentCount:<span class="number">8143</span>, number is: -<span class="number">125902</span>, need &gt;= <span class="number">2</span></span><br><span class="line"><span class="number">87103</span>=<span class="number">87103</span></span><br><span class="line"><span class="number">73353</span>=<span class="number">3</span>*<span class="number">7</span>*<span class="number">7</span>*<span class="number">499</span></span><br><span class="line"><span class="number">189859</span>=<span class="number">189859</span></span><br><span class="line">在run方法中执行</span><br><span class="line"><span class="number">28098</span>=<span class="number">2</span>*<span class="number">3</span>*<span class="number">3</span>*<span class="number">7</span>*<span class="number">223</span></span><br><span class="line">在run方法中执行</span><br><span class="line">illegalArgumentCount:<span class="number">8144</span>, number is: -<span class="number">45234</span>, need &gt;= <span class="number">2</span></span><br><span class="line">在run方法中执行</span><br><span class="line"><span class="number">78004</span>=<span class="number">2</span>*<span class="number">2</span>*<span class="number">19501</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/source/images/arthas/chapter4/image.png" alt="image.png"></p>
+<h2 id="6-dump命令"><a href="#6-dump命令" class="headerlink" title="6. dump命令"></a>6. <strong>dump命令</strong></h2><p>dump 已加载类的 bytecode 到特定目录，</p>
+<p>dump 命令将 JVM 中实际运行的 class 的 byte code dump 到指定目录，适用场景批量下载指定包目录的 class 字节码；如需反编译单一类、实时查看类信息，可参考 <a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/jad.html"><strong>jad</strong></a>。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>类所属 ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+<tr>
+<td><code>[d:]</code></td>
+<td>设置类文件的目标目录</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹</td>
+</tr>
+</tbody></table>
+<p>dump java.lang.String</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ dump java.lang.String</span><br><span class="line"> HASHCODE  CLASSLOADER  LOCATION                                                                                                                                                                                                                                              </span><br><span class="line"> null                   /root/logs/arthas/classdump/java/lang/String.class                                                                                                                                                                                                    </span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 45 ms.</span><br><span class="line"></span><br><span class="line">[arthas@8161]$ dump demo.*</span><br><span class="line"> HASHCODE  CLASSLOADER                                                       LOCATION                                                                                                                                                                                         </span><br><span class="line"> 4b85612c  +-jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c        /root/logs/arthas/classdump/jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>-4b85612c/demo/MathGame.class                                                                                         </span><br><span class="line">             +-jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                                                                                                   </span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 22 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="7-classloader命令"><a href="#7-classloader命令" class="headerlink" title="7. classloader命令"></a>7. <strong>classloader命令</strong></h2><p>查看 classloader 的继承树，urls，类加载信息</p>
+<p><code>classloader</code> 命令将 JVM 中所有的 classloader 的信息统计出来，并可以展示继承树，urls 等。</p>
+<p>可以让指定的 classloader 去 getResources，打印出所有查找到的 resources 的 url。对于<code>ResourceNotFoundException</code>比较有用。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>[l]</td>
+<td>按类加载实例进行统计</td>
+</tr>
+<tr>
+<td>[t]</td>
+<td>打印所有 ClassLoader 的继承树</td>
+</tr>
+<tr>
+<td>[a]</td>
+<td>列出所有 ClassLoader 加载的类，请谨慎使用</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>ClassLoader 的 hashcode</td>
+</tr>
+<tr>
+<td><code>[classLoaderClass:]</code></td>
+<td>指定执行表达式的 ClassLoader 的 class name</td>
+</tr>
+<tr>
+<td><code>[c: r:]</code></td>
+<td>用 ClassLoader 去查找 resource</td>
+</tr>
+<tr>
+<td><code>[c: load:]</code></td>
+<td>用 ClassLoader 去加载指定的类</td>
+</tr>
+</tbody></table>
+<ul>
+<li><p><strong>使用参考</strong></p>
+<ul>
+<li><strong>按类加载类型查看统计信息</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader</span><br><span class="line"> name                                                  numberOfInstances  loadedCountTotal                                                                                                                                                                                    </span><br><span class="line"> com.taobao.arthas.agent.ArthasClassloader             2                  4420                                                                                                                                                                                                </span><br><span class="line"> BootstrapClassLoader                                  1                  3487                                                                                                                                                                                                </span><br><span class="line"> jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>  1                  60                                                                                                                                                                                                  </span><br><span class="line"> jdk.internal.reflect.DelegatingClassLoader            21                 21                                                                                                                                                                                                  </span><br><span class="line"> jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>       1                  4                                                                                                                                                                                                   </span><br><span class="line">Affect(row-cnt:5) cost <span class="keyword">in</span> 10 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>按类加载实例查看统计信息</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -l</span><br><span class="line"> name                                                          loadedCount  <span class="built_in">hash</span>      parent                                                                                                                                                                                  </span><br><span class="line"> BootstrapClassLoader                                          3487         null      null                                                                                                                                                                                    </span><br><span class="line"> com.taobao.arthas.agent.ArthasClassloader@369500c6            2696         369500c6  jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                            </span><br><span class="line"> com.taobao.arthas.agent.ArthasClassloader@6489d91             1727         6489d91   jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                            </span><br><span class="line"> jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c      4            4b85612c  jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                            </span><br><span class="line"> jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0  60           17bb5c0   null                                                                                                                                                                                    </span><br><span class="line">Affect(row-cnt:5) cost <span class="keyword">in</span> 10 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>查看 ClassLoader 的继承树</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -t</span><br><span class="line">+-BootstrapClassLoader                                                                                                                                                                                                                                                        </span><br><span class="line">+-jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                                                                                                                </span><br><span class="line">  +-com.taobao.arthas.agent.ArthasClassloader@369500c6                                                                                                                                                                                                                        </span><br><span class="line">  +-com.taobao.arthas.agent.ArthasClassloader@6489d91                                                                                                                                                                                                                         </span><br><span class="line">  +-jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c                                                                                                                                                                                                                  </span><br><span class="line">Affect(row-cnt:5) cost <span class="keyword">in</span> 13 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>查看 URLClassLoader 实际的 urls</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -c 369500c6</span><br><span class="line">file:/root/.arthas/lib/4.0.5/arthas/arthas-core.jar                                                                                                                                                                                                                           </span><br><span class="line">Affect(row-cnt:2) cost <span class="keyword">in</span> 1 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>使用 ClassLoader 去查找 resource</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -c 369500c6  -r META-INF/MANIFEST.MF</span><br><span class="line"> jar:file:/root/.arthas/lib/4.0.5/arthas/arthas-core.jar!/META-INF/MANIFEST.MF                                                                                                                                                                                                </span><br><span class="line"></span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 1 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>也可以尝试查找类的 class 文件</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -c 369500c6   -r java/lang/String.class</span><br><span class="line"> jrt:/java.base/java/lang/String.class                                                                                                                                                                                                                                        </span><br><span class="line"></span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 1 ms.</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>使用 ClassLoader 去加载类</strong></li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ classloader -c 369500c6 --load java.lang.String</span><br><span class="line">load class success.</span><br><span class="line"> class-info        java.lang.String                                                                                                                                                                                                                                           </span><br><span class="line"> code-source                                                                                                                                                                                                                                                                  </span><br><span class="line"> name              java.lang.String                                                                                                                                                                                                                                           </span><br><span class="line"> isInterface       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnnotation      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isEnum            <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnonymousClass  <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isArray           <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isLocalClass      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isMemberClass     <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isPrimitive       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isSynthetic       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> simple-name       String                                                                                                                                                                                                                                                     </span><br><span class="line"> modifier          final,public                                                                                                                                                                                                                                               </span><br><span class="line"> annotation                                                                                                                                                                                                                                                                   </span><br><span class="line"> interfaces        java.io.Serializable,java.lang.Comparable,java.lang.CharSequence                                                                                                                                                                                           </span><br><span class="line"> super-class       +-java.lang.Object                                                                                                                                                                                                                                         </span><br><span class="line"> class-loader                                                                                                                                                                                                                                                                 </span><br><span class="line"> classLoaderHash   null  </span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"> [arthas@8161]$ classloader -c 4b85612c --load demo.MathGame</span><br><span class="line">load class success.</span><br><span class="line"> class-info        demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> code-source       /usr/local/software/arthas/math-game.jar                                                                                                                                                                                                                   </span><br><span class="line"> name              demo.MathGame                                                                                                                                                                                                                                              </span><br><span class="line"> isInterface       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnnotation      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isEnum            <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isAnonymousClass  <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isArray           <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isLocalClass      <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isMemberClass     <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isPrimitive       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> isSynthetic       <span class="literal">false</span>                                                                                                                                                                                                                                                      </span><br><span class="line"> simple-name       MathGame                                                                                                                                                                                                                                                   </span><br><span class="line"> modifier          public                                                                                                                                                                                                                                                     </span><br><span class="line"> annotation                                                                                                                                                                                                                                                                   </span><br><span class="line"> interfaces                                                                                                                                                                                                                                                                   </span><br><span class="line"> super-class       +-java.lang.Object                                                                                                                                                                                                                                         </span><br><span class="line"> class-loader      +-jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c                                                                                                                                                                                                 </span><br><span class="line">                     +-jdk.internal.loader.ClassLoaders<span class="variable">$PlatformClassLoader</span>@17bb5c0                                                                                                                                                                                           </span><br><span class="line"> classLoaderHash   4b85612c   </span><br></pre></td></tr></table></figure></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Arthas/" rel="tag"># Arthas</a>
+              <a href="/tags/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7/" rel="tag"># Arthas诊断工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%B8%89)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89JVM%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/" rel="prev" title="Arthas诊断**工具(三)**Arthas（阿尔萨斯）JVM相关命令">
+                  <i class="fa fa-angle-left"></i> Arthas诊断**工具(三)**Arthas（阿尔萨斯）JVM相关命令
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/" rel="next" title="Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令">
+                  Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor/watch/trace/stack/tt相关命令 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

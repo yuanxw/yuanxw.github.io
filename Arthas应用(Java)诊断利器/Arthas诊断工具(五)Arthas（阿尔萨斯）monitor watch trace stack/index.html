@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="方法执行监控">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令">
+<meta property="og:url" content="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="方法执行监控">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-03-04T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T15:42:07.893Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Arthas">
+<meta property="article:tag" content="Arthas诊断工具">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/","path":"Arthas应用(Java)诊断利器/Arthas诊断工具(五)Arthas（阿尔萨斯）monitor watch trace stack/","title":"Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor/watch/trace/stack/tt相关命令"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor/watch/trace/stack/tt相关命令 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7-%E4%BA%94-Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor-watch-trace-stack-tt%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4"><span class="nav-number">1.</span> <span class="nav-text">Arthas诊断工具(五)Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-monitor%E5%91%BD%E4%BB%A4"><span class="nav-number">1.1.</span> <span class="nav-text">1. monitor命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-watch%E5%91%BD%E4%BB%A4"><span class="nav-number">1.2.</span> <span class="nav-text">2. watch命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E8%A7%82%E5%AF%9F%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E8%BF%94%E5%9B%9E%E6%97%B6%E7%9A%84%E5%8F%82%E6%95%B0%E3%80%81this-%E5%AF%B9%E8%B1%A1%E5%92%8C%E8%BF%94%E5%9B%9E%E5%80%BC"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 观察函数调用返回时的参数、this 对象和返回值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E8%B0%83%E6%95%B4-x%E7%9A%84%E5%80%BC%EF%BC%8C%E8%A7%82%E5%AF%9F%E5%85%B7%E4%BD%93%E7%9A%84%E5%87%BD%E6%95%B0%E5%8F%82%E6%95%B0%E5%80%BC"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.2 调整-x的值，观察具体的函数参数值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E6%9D%A1%E4%BB%B6%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="nav-number">1.2.3.</span> <span class="nav-text">2.3 条件表达式的例子</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-trace%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.</span> <span class="nav-text">3. trace命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-trace%E4%B8%8D%E5%B8%A6%E5%8F%82%E6%95%B0%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.1.</span> <span class="nav-text">3.1 trace不带参数命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-trace%E5%B8%A6%E5%8F%82%E6%95%B0%E5%91%BD%E4%BB%A4"><span class="nav-number">1.3.2.</span> <span class="nav-text">3.2 trace带参数命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E6%A0%B9%E6%8D%AE%E8%B0%83%E7%94%A8%E8%80%97%E6%97%B6%E8%BF%87%E6%BB%A4"><span class="nav-number">1.3.3.</span> <span class="nav-text">3.3 根据调用耗时过滤</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-stack%E5%91%BD%E4%BB%A4"><span class="nav-number">1.4.</span> <span class="nav-text">4. stack命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-tt%E5%91%BD%E4%BB%A4"><span class="nav-number">1.5.</span> <span class="nav-text">5. tt命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%EF%BC%9Att-t-demo-MathGame-primeFactors"><span class="nav-number">1.5.1.</span> <span class="nav-text">5.1 执行命令：tt -t demo.MathGame primeFactors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-%E6%9F%A5%E7%9C%8B%E8%B0%83%E7%94%A8%E4%BF%A1%E6%81%AF"><span class="nav-number">1.5.2.</span> <span class="nav-text">5.2 查看调用信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-%E9%87%8D%E5%81%9A%E4%B8%80%E6%AC%A1%E8%B0%83%E7%94%A8"><span class="nav-number">1.5.3.</span> <span class="nav-text">5.3 重做一次调用</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E4%BA%94)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89monitor%20watch%20trace%20stack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令 | 我的博客">
+      <meta itemprop="description" content="方法执行监控">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Arthas诊断**工具(五)**Arthas（阿尔萨斯）monitor/watch/trace/stack/tt相关命令
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-03-05 00:00:00" itemprop="dateCreated datePublished" datetime="2023-03-05T00:00:00+08:00">2023-03-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 23:42:07" itemprop="dateModified" datetime="2025-09-03T23:42:07+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Arthas/" itemprop="url" rel="index"><span itemprop="name">Arthas</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">方法执行监控</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Arthas诊断工具-五-Arthas（阿尔萨斯）monitor-watch-trace-stack-tt相关命令"><a href="#Arthas诊断工具-五-Arthas（阿尔萨斯）monitor-watch-trace-stack-tt相关命令" class="headerlink" title="Arthas诊断工具(五)Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令"></a><strong>Arthas诊断</strong>工具(五)<strong>Arthas（阿尔萨斯）monitor&#x2F;watch&#x2F;trace&#x2F;stack&#x2F;tt相关命令</strong></h1><h2 id="1-monitor命令"><a href="#1-monitor命令" class="headerlink" title="1. monitor命令"></a>1. <strong>monitor命令</strong></h2><p>方法执行监控</p>
+<p>对匹配 <code>class-pattern</code>／<code>method-pattern</code>／<code>condition-express</code>的类、方法的调用进行监控。</p>
+<p><code>monitor</code> 命令是一个非实时返回命令.</p>
+<p>实时返回命令是输入之后立即返回，而非实时返回的命令，则是不断的等待目标 Java 进程返回信息，直到用户输入 <code>Ctrl+C</code> 为止。</p>
+<p>服务端是以任务的形式在后台跑任务，植入的代码随着任务的中止而不会被执行，所以任务关闭后，不会对原有性能产生太大影响，而且原则上，任何 Arthas 命令不会引起原有业务逻辑的改变。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<p>方法拥有一个命名参数 <code>[c:]</code>，意思是统计周期（cycle of output），拥有一个整型的参数值</p>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>方法名表达式匹配</td>
+</tr>
+<tr>
+<td><em>condition-express</em></td>
+<td>条件表达式</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td><code>[c:]</code></td>
+<td>统计周期，默认值为 120 秒</td>
+</tr>
+<tr>
+<td>[b]</td>
+<td>在<strong>方法调用之前</strong>计算 condition-express</td>
+</tr>
+<tr>
+<td><code>[m &lt;arg&gt;]</code></td>
+<td>指定 Class 最大匹配数量，默认值为 50。长格式为<code>[maxMatch &lt;arg&gt;]</code></td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>监控的维度说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>监控项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>timestamp</td>
+<td>时间戳</td>
+</tr>
+<tr>
+<td>class</td>
+<td>Java 类</td>
+</tr>
+<tr>
+<td>method</td>
+<td>方法（构造方法、普通方法）</td>
+</tr>
+<tr>
+<td>total</td>
+<td>调用次数</td>
+</tr>
+<tr>
+<td>success</td>
+<td>成功次数</td>
+</tr>
+<tr>
+<td>fail</td>
+<td>失败次数</td>
+</tr>
+<tr>
+<td>rt</td>
+<td>平均 RT</td>
+</tr>
+<tr>
+<td>fail-rate</td>
+<td>失败率</td>
+</tr>
+</tbody></table>
+<ul>
+<li>监控<code>demo.MathGame primeFactors</code>，每5秒返回一个结果</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ monitor demo.MathGame primeFactors -c 5</span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 204 ms, listenerId: 1</span><br><span class="line"> timestamp                                 class                                                         method                                                        total                success              fail                avg-rt(ms)           fail-rate           </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> 2025-06-07 05:32:53.378                   demo.MathGame                                                 primeFactors                                                  5                    1                    4                   3.12                 80.00%              </span><br><span class="line"></span><br><span class="line"> timestamp                                 class                                                         method                                                        total                success              fail                avg-rt(ms)           fail-rate           </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> 2025-06-07 05:32:58.441                   demo.MathGame                                                 primeFactors                                                  5                    0                    5                   0.17                 100.00%             </span><br><span class="line"></span><br><span class="line"> timestamp                                 class                                                         method                                                        total                success              fail                avg-rt(ms)           fail-rate           </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> 2025-06-07 05:33:02.655                   demo.MathGame                                                 primeFactors                                                  4                    3                    1                   0.16                 25.00%              </span><br><span class="line"></span><br><span class="line"> timestamp                                 class                                                         method                                                        total                success              fail                avg-rt(ms)           fail-rate           </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> 2025-06-07 05:33:07.664                   demo.MathGame                                                 primeFactors                                                  5                    2                    3                   0.96                 60.00%              </span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="2-watch命令"><a href="#2-watch命令" class="headerlink" title="2. watch命令"></a>2. <strong>watch命令</strong></h2><p>函数执行数据观测</p>
+<p>让你能方便的观察到指定函数的调用情况。能观察到的范围为：<code>返回值</code>、<code>抛出异常</code>、<code>入参</code>，通过编写 OGNL 表达式进行对应变量的查看。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<p>watch 的参数比较多，主要是因为它能在 4 个不同的场景观察对象</p>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>函数名表达式匹配</td>
+</tr>
+<tr>
+<td><em>express</em></td>
+<td>观察表达式，默认值：<code>&#123;params, target, returnObj&#125;</code></td>
+</tr>
+<tr>
+<td><em>condition-express</em></td>
+<td>条件表达式</td>
+</tr>
+<tr>
+<td>[b]</td>
+<td>在<strong>函数调用之前</strong>观察</td>
+</tr>
+<tr>
+<td>[e]</td>
+<td>在<strong>函数异常之后</strong>观察</td>
+</tr>
+<tr>
+<td>[s]</td>
+<td>在<strong>函数返回之后</strong>观察</td>
+</tr>
+<tr>
+<td>[f]</td>
+<td>在<strong>函数结束之后</strong>(正常返回和异常返回)观察</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td>[x:]</td>
+<td>指定输出结果的属性遍历深度，默认为 1，最大值是 4</td>
+</tr>
+<tr>
+<td><code>[m &lt;arg&gt;]</code></td>
+<td>指定 Class 最大匹配数量，默认值为 50。长格式为<code>[maxMatch &lt;arg&gt;]</code>。</td>
+</tr>
+</tbody></table>
+<p>这里重点要说明的是观察表达式，观察表达式的构成主要由 ognl 表达式组成，所以你可以这样写<code>&quot;&#123;params,returnObj&#125;&quot;</code>，只要是一个合法的 ognl 表达式，都能被正常支持。</p>
+<p>观察的维度也比较多，主要体现在参数 <code>advice</code> 的数据结构上。<code>Advice</code> 参数最主要是封装了通知节点的所有信息。请参考<a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/advice-class.html"><strong>表达式核心变量</strong></a>中关于该节点的描述。</p>
+<ul>
+<li>特殊用法请参考：<a target="_blank" rel="noopener" href="https://github.com/alibaba/arthas/issues/71"><strong>https://github.com/alibaba/arthas/issues/71</strong></a></li>
+<li>OGNL 表达式官网：<a target="_blank" rel="noopener" href="https://commons.apache.org/dormant/commons-ognl/language-guide.html"><strong>https://commons.apache.org/dormant/commons-ognl/language-guide.html</strong></a></li>
+</ul>
+<p><strong>特别说明</strong>：</p>
+<ul>
+<li>watch 命令定义了 4 个观察事件点，即 <code>b</code> 函数调用前，<code>e</code> 函数异常后，<code>s</code> 函数返回后，<code>f</code> 函数结束后</li>
+<li>4 个观察事件点 <code>b</code>、<code>e</code>、<code>s</code> 默认关闭，<code>f</code> 默认打开，当指定观察点被打开后，在相应事件点会对观察表达式进行求值并输出</li>
+<li>这里要注意<code>函数入参</code>和<code>函数出参</code>的区别，有可能在中间被修改导致前后不一致，除了 <code>b</code> 事件点 <code>params</code> 代表函数入参外，其余事件都代表函数出参</li>
+<li>当使用 <code>b</code> 时，由于观察事件点是在函数调用前，此时返回值或异常均不存在</li>
+<li>在 watch 命令的结果里，会打印出<code>location</code>信息。<code>location</code>有三种可能值：<code>AtEnter</code>，<code>AtExit</code>，<code>AtExceptionExit</code>。对应函数入口，函数正常 return，函数抛出异常。</li>
+</ul>
+<h3 id="2-1-观察函数调用返回时的参数、this-对象和返回值"><a href="#2-1-观察函数调用返回时的参数、this-对象和返回值" class="headerlink" title="2.1 观察函数调用返回时的参数、this 对象和返回值"></a><strong>2.1 观察函数调用返回时的参数、this 对象和返回值</strong></h3><p>观察表达式，默认值是<code>&#123;params, target, returnObj&#125;</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">8161</span>]$ watch demo.MathGame primeFactors -x <span class="number">2</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">73</span> ms, listenerId: <span class="number">2</span></span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">51</span>:<span class="number">10.663</span>; [cost=<span class="number">1.</span>015159ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Object</span>[][</span><br><span class="line">        <span class="meta">@Integer</span>[-<span class="number">93162</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="meta">@MathGame</span>[</span><br><span class="line">        random=<span class="meta">@Random</span>[java.util.Random@51efea79],</span><br><span class="line">        illegalArgumentCount=<span class="meta">@Integer</span>[<span class="number">2327</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="literal">null</span>,</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">48</span>:<span class="number">55.377</span>; [cost=<span class="number">0.</span>064295ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Object</span>[][</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">1</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="meta">@MathGame</span>[</span><br><span class="line">        random=<span class="meta">@Random</span>[java.util.Random@51efea79],</span><br><span class="line">        illegalArgumentCount=<span class="meta">@Integer</span>[<span class="number">2256</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="meta">@ArrayList</span>[</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">2</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">3</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">13</span>],</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">41</span>],</span><br><span class="line">    ],</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>上面的结果里，说明函数被执行了两次，第一次结果是<code>location=AtExceptionExit</code>，说明函数抛出异常了，因此<code>returnObj</code>是 null</li>
+<li>在第二次结果里是<code>location=AtExit</code>，说明函数正常返回，因此可以看到<code>returnObj</code>结果是一个 ArrayList</li>
+</ul>
+<h3 id="2-2-调整-x的值，观察具体的函数参数值"><a href="#2-2-调整-x的值，观察具体的函数参数值" class="headerlink" title="2.2 调整-x的值，观察具体的函数参数值"></a><strong>2.2 调整<code>-x</code>的值，观察具体的函数参数值</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">8161</span>]$ watch demo.MathGame primeFactors <span class="string">&quot;&#123;params,target&#125;&quot;</span> -x <span class="number">3</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">69</span> ms, listenerId: <span class="number">4</span></span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">52</span>:<span class="number">36.258</span>; [cost=<span class="number">0.</span>313869ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Object</span>[][</span><br><span class="line">        <span class="meta">@Integer</span>[-<span class="number">162367</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="meta">@MathGame</span>[</span><br><span class="line">        random=<span class="meta">@Random</span>[</span><br><span class="line">            serialVersionUID=<span class="meta">@Long</span>[<span class="number">3905348978240129619</span>],</span><br><span class="line">            seed=<span class="meta">@AtomicLong</span>[<span class="number">175065596875740</span>],</span><br><span class="line">            multiplier=<span class="meta">@Long</span>[<span class="number">25214903917</span>],</span><br><span class="line">            addend=<span class="meta">@Long</span>[<span class="number">11</span>],</span><br><span class="line">            mask=<span class="meta">@Long</span>[<span class="number">281474976710655</span>],</span><br><span class="line">            DOUBLE_UNIT=<span class="meta">@Double</span>[<span class="number">1.1102230246251565E-16</span>],</span><br><span class="line">            BadBound=<span class="meta">@String</span>[bound must be positive],</span><br><span class="line">            BadRange=<span class="meta">@String</span>[bound must be greater than origin],</span><br><span class="line">            BadSize=<span class="meta">@String</span>[size must be non-negative],</span><br><span class="line">            seedUniquifier=<span class="meta">@AtomicLong</span>[-<span class="number">2942033378085796212</span>],</span><br><span class="line">            nextNextGaussian=<span class="meta">@Double</span>[<span class="number">0.0</span>],</span><br><span class="line">            haveNextNextGaussian=<span class="meta">@Boolean</span>[<span class="literal">false</span>],</span><br><span class="line">            serialPersistentFields=<span class="meta">@ObjectStreamField</span>[][isEmpty=<span class="literal">false</span>;size=<span class="number">3</span>],</span><br><span class="line">            unsafe=<span class="meta">@Unsafe</span>[jdk.internal.misc.Unsafe@5419f379],</span><br><span class="line">            seedOffset=<span class="meta">@Long</span>[<span class="number">24</span>],</span><br><span class="line">        ],</span><br><span class="line">        illegalArgumentCount=<span class="meta">@Integer</span>[<span class="number">2371</span>],</span><br><span class="line">    ],</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">52</span>:<span class="number">37.298</span>; [cost=<span class="number">0.</span>214619ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Object</span>[][</span><br><span class="line">        <span class="meta">@Integer</span>[<span class="number">1</span>],</span><br><span class="line">    ],</span><br><span class="line">    <span class="meta">@MathGame</span>[</span><br><span class="line">        random=<span class="meta">@Random</span>[</span><br><span class="line">            serialVersionUID=<span class="meta">@Long</span>[<span class="number">3905348978240129619</span>],</span><br><span class="line">            seed=<span class="meta">@AtomicLong</span>[<span class="number">102106958650551</span>],</span><br><span class="line">            multiplier=<span class="meta">@Long</span>[<span class="number">25214903917</span>],</span><br><span class="line">            addend=<span class="meta">@Long</span>[<span class="number">11</span>],</span><br><span class="line">            mask=<span class="meta">@Long</span>[<span class="number">281474976710655</span>],</span><br><span class="line">            DOUBLE_UNIT=<span class="meta">@Double</span>[<span class="number">1.1102230246251565E-16</span>],</span><br><span class="line">            BadBound=<span class="meta">@String</span>[bound must be positive],</span><br><span class="line">            BadRange=<span class="meta">@String</span>[bound must be greater than origin],</span><br><span class="line">            BadSize=<span class="meta">@String</span>[size must be non-negative],</span><br><span class="line">            seedUniquifier=<span class="meta">@AtomicLong</span>[-<span class="number">2942033378085796212</span>],</span><br><span class="line">            nextNextGaussian=<span class="meta">@Double</span>[<span class="number">0.0</span>],</span><br><span class="line">            haveNextNextGaussian=<span class="meta">@Boolean</span>[<span class="literal">false</span>],</span><br><span class="line">            serialPersistentFields=<span class="meta">@ObjectStreamField</span>[][isEmpty=<span class="literal">false</span>;size=<span class="number">3</span>],</span><br><span class="line">            unsafe=<span class="meta">@Unsafe</span>[jdk.internal.misc.Unsafe@5419f379],</span><br><span class="line">            seedOffset=<span class="meta">@Long</span>[<span class="number">24</span>],</span><br><span class="line">        ],</span><br><span class="line">        illegalArgumentCount=<span class="meta">@Integer</span>[<span class="number">2371</span>],</span><br><span class="line">    ],</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-条件表达式的例子"><a href="#2-3-条件表达式的例子" class="headerlink" title="2.3 条件表达式的例子"></a><strong>2.3 条件表达式的例子</strong></h3><ul>
+<li>只有满足条件的调用，才会有响应。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">8161</span>]$ watch demo.MathGame primeFactors <span class="string">&quot;&#123;params[0],target&#125;&quot;</span> <span class="string">&quot;params[0]&lt;0&quot;</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">70</span> ms, listenerId: <span class="number">5</span></span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">57</span>:<span class="number">45.251</span>; [cost=<span class="number">0.</span>640813ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Integer</span>[-<span class="number">152032</span>],</span><br><span class="line">    <span class="meta">@MathGame</span>[demo.MathGame@589838eb],</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">57</span>:<span class="number">49.265</span>; [cost=<span class="number">0.</span>09171ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Integer</span>[-<span class="number">106952</span>],</span><br><span class="line">    <span class="meta">@MathGame</span>[demo.MathGame@589838eb],</span><br><span class="line">]</span><br><span class="line">method=demo.MathGame.primeFactors location=AtExceptionExit</span><br><span class="line">ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">05</span>:<span class="number">57</span>:<span class="number">50.271</span>; [cost=<span class="number">0.</span>058582ms] result=<span class="meta">@ArrayList</span>[</span><br><span class="line">    <span class="meta">@Integer</span>[-<span class="number">181262</span>],</span><br><span class="line">    <span class="meta">@MathGame</span>[demo.MathGame@589838eb],</span><br><span class="line">]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="3-trace命令"><a href="#3-trace命令" class="headerlink" title="3. trace命令"></a>3. <strong>trace命令</strong></h2><p>方法内部调用路径，并输出方法路径上的每个节点上耗时</p>
+<p><code>trace</code> 命令能主动搜索 <code>class-pattern</code>／<code>method-pattern</code> 对应的方法调用路径，渲染和统计整个调用链路上的所有性能开销和追踪调用链路。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>方法名表达式匹配</td>
+</tr>
+<tr>
+<td><em>condition-express</em></td>
+<td>条件表达式</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td><code>[n:]</code></td>
+<td>命令执行次数，默认值为 100。</td>
+</tr>
+<tr>
+<td><code>#cost</code></td>
+<td>方法执行耗时，单位毫秒</td>
+</tr>
+<tr>
+<td><code>[m &lt;arg&gt;]</code></td>
+<td>指定 Class 最大匹配数量，默认值为 50。长格式为<code>[maxMatch &lt;arg&gt;]</code>。</td>
+</tr>
+</tbody></table>
+<p>这里重点要说明的是<code>条件表达式</code>，<code>条件表达式</code>的构成主要由 ognl 表达式组成，所以你可以这样写<code>&quot;params[0]&lt;0&quot;</code>，只要是一个合法的 ognl 表达式，都能被正常支持。</p>
+<p>请参考<a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/advice-class.html"><strong>表达式核心变量</strong></a>中关于该节点的描述。</p>
+<ul>
+<li>特殊用法请参考：<a target="_blank" rel="noopener" href="https://github.com/alibaba/arthas/issues/71"><strong>https://github.com/alibaba/arthas/issues/71</strong></a></li>
+<li>OGNL 表达式官网：<a target="_blank" rel="noopener" href="https://commons.apache.org/dormant/commons-ognl/language-guide.html"><strong>https://commons.apache.org/dormant/commons-ognl/language-guide.html</strong></a></li>
+</ul>
+<p>很多时候我们只想看到某个方法的 rt 大于某个时间之后的 trace 结果，现在 Arthas 可以按照方法执行的耗时来进行过滤了，例如<code>trace *StringUtils isBlank &#39;#cost&gt;100&#39;</code>表示当执行时间超过 100ms 的时候，才会输出 trace 的结果。</p>
+<p>watch&#x2F;stack&#x2F;trace 这个三个命令都支持<code>#cost</code></p>
+<aside>
+💡
+
+<ul>
+<li><strong>注意事项</strong><ol>
+<li><p><code>trace</code> 能方便的帮助你定位和发现因 RT 高而导致的性能问题缺陷，但其每次只能跟踪一级方法的调用链路。</p>
+<p> 参考：<a target="_blank" rel="noopener" href="https://github.com/alibaba/arthas/issues/597"><strong>Trace 命令的实现原理在新窗口打开</strong></a></p>
+</li>
+<li><p>3.3.0 版本后，可以使用动态 Trace 功能，不断增加新的匹配类，参考下面的示例。</p>
+</li>
+<li><p>目前不支持 <code>trace java.lang.Thread getName</code>，参考 issue: <a target="_blank" rel="noopener" href="https://github.com/alibaba/arthas/issues/1610"><strong>#1610在新窗口打开</strong></a> ，考虑到不是非常必要场景，且修复有一定难度，因此当前暂不修复</p>
+</li>
+</ol>
+</li>
+</ul>
+</aside>
+
+<h3 id="3-1-trace不带参数命令"><a href="#3-1-trace不带参数命令" class="headerlink" title="3.1 trace不带参数命令"></a><strong>3.1 trace不带参数命令</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">8161</span>]$ trace demo.MathGame run</span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">100</span> ms, listenerId: <span class="number">6</span></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">06</span>:<span class="number">02</span>:<span class="number">53.872</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">1.</span>431047ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">17.69</span>% <span class="number">0.</span>25315ms ] demo.MathGame:primeFactors() #<span class="number">24</span></span><br><span class="line">        `---[<span class="number">38.56</span>% <span class="number">0.</span>551755ms ] demo.MathGame:print() #<span class="number">25</span></span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">06</span>:<span class="number">02</span>:<span class="number">54.895</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">0.</span>421141ms] demo.MathGame:run()</span><br><span class="line">        `---[<span class="number">42.03</span>% <span class="number">0.</span>177003ms ] demo.MathGame:primeFactors() #<span class="number">24</span> [<span class="keyword">throws</span> Exception]</span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> <span class="number">06</span>:<span class="number">02</span>:<span class="number">55.897</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">0.</span>108631ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">21.72</span>% <span class="number">0.</span>023592ms ] demo.MathGame:primeFactors() #<span class="number">24</span></span><br><span class="line">        `---[<span class="number">49.07</span>% <span class="number">0.</span>053301ms ] demo.MathGame:print() #<span class="number">25</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>结果里的 <code>#24</code>，表示在 run 函数里，在源文件的第<code>24</code>行调用了<code>primeFactors()</code>函数。</p>
+<h3 id="3-2-trace带参数命令"><a href="#3-2-trace带参数命令" class="headerlink" title="3.2 trace带参数命令"></a><strong>3.2 trace带参数命令</strong></h3><ul>
+<li><code>-skipJDKMethod &lt;value&gt;</code> skip jdk method trace, default value true.</li>
+</ul>
+<p>默认情况下，trace 不会包含 jdk 里的函数调用，如果希望 trace jdk 里的函数，需要显式设置<code>--skipJDKMethod false</code>。</p>
+<ul>
+<li>如果方法调用的次数很多，那么可以用-n参数指定捕捉结果的次数。比如下面的例子里，捕捉到一次调用就退出命令。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">[arthas@<span class="number">8161</span>]$ trace --skipJDKMethod <span class="literal">false</span> demo.MathGame run -n <span class="number">3</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">108</span> ms, listenerId: <span class="number">9</span></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">33</span>:<span class="number">22.964</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    +---[<span class="number">0.</span>040626ms] java.util.Random:nextInt() #<span class="number">23</span></span><br><span class="line">    +---[<span class="number">0.</span>152629ms] demo.MathGame:primeFactors() #<span class="number">24</span></span><br><span class="line">    +---[<span class="number">0.</span>032551ms] demo.MathGame:print() #<span class="number">25</span></span><br><span class="line">    `---[<span class="number">3.</span>440639ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">9.98</span>% <span class="number">0.</span>343288ms ] java.util.Random:nextInt() #<span class="number">23</span></span><br><span class="line">        +---[<span class="number">17.64</span>% <span class="number">0.</span>607089ms ] demo.MathGame:primeFactors() #<span class="number">24</span> [<span class="keyword">throws</span> Exception]</span><br><span class="line">        +---[<span class="number">0.64</span>% <span class="number">0.</span>021935ms ] java.lang.StringBuilder:&lt;init&gt;() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">7.40</span>% <span class="number">0.</span>254695ms ] java.lang.String:format() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">1.37</span>% min=<span class="number">0.</span>01411ms,max=<span class="number">0.</span>03298ms,total=<span class="number">0.</span>04709ms,count=<span class="number">2</span>] java.lang.StringBuilder:append() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">1.20</span>% <span class="number">0.</span>041169ms ] java.lang.Exception:getMessage() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">0.64</span>% <span class="number">0.</span>022185ms ] java.lang.StringBuilder:toString() #<span class="number">28</span></span><br><span class="line">        `---[<span class="number">16.69</span>% <span class="number">0.</span>574324ms ] java.io.PrintStream:println() #<span class="number">28</span></span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">33</span>:<span class="number">25.119</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">1.</span>504503ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">1.70</span>% <span class="number">0.</span>025535ms ] java.util.Random:nextInt() #<span class="number">23</span></span><br><span class="line">        +---[<span class="number">5.34</span>% <span class="number">0.</span>080385ms ] demo.MathGame:primeFactors() #<span class="number">24</span> [<span class="keyword">throws</span> Exception]</span><br><span class="line">        +---[<span class="number">0.97</span>% <span class="number">0.</span>01455ms ] java.lang.StringBuilder:&lt;init&gt;() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">3.14</span>% <span class="number">0.</span>04719ms ] java.lang.String:format() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">1.90</span>% min=<span class="number">0.</span>014215ms,max=<span class="number">0.</span>01436ms,total=<span class="number">0.</span>028575ms,count=<span class="number">2</span>] java.lang.StringBuilder:append() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">7.98</span>% <span class="number">0.</span>12012ms ] java.lang.Exception:getMessage() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">0.88</span>% <span class="number">0.</span>013255ms ] java.lang.StringBuilder:toString() #<span class="number">28</span></span><br><span class="line">        `---[<span class="number">25.35</span>% <span class="number">0.</span>381384ms ] java.io.PrintStream:println() #<span class="number">28</span></span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">33</span>:<span class="number">26.136</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">0.</span>357443ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">2.92</span>% <span class="number">0.</span>01043ms ] java.util.Random:nextInt() #<span class="number">23</span></span><br><span class="line">        +---[<span class="number">12.37</span>% <span class="number">0.</span>044215ms ] demo.MathGame:primeFactors() #<span class="number">24</span> [<span class="keyword">throws</span> Exception]</span><br><span class="line">        +---[<span class="number">1.46</span>% <span class="number">0.</span>00521ms ] java.lang.StringBuilder:&lt;init&gt;() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">9.13</span>% <span class="number">0.</span>032649ms ] java.lang.String:format() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">2.90</span>% min=<span class="number">0.</span>004825ms,max=<span class="number">0.</span>00555ms,total=<span class="number">0.</span>010375ms,count=<span class="number">2</span>] java.lang.StringBuilder:append() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">1.49</span>% <span class="number">0.</span>00532ms ] java.lang.Exception:getMessage() #<span class="number">28</span></span><br><span class="line">        +---[<span class="number">1.34</span>% <span class="number">0.</span>004785ms ] java.lang.StringBuilder:toString() #<span class="number">28</span></span><br><span class="line">        `---[<span class="number">18.75</span>% <span class="number">0.</span>067035ms ] java.io.PrintStream:println() #<span class="number">28</span></span><br><span class="line"></span><br><span class="line">Command execution times exceed limit: <span class="number">3</span>, so command will exit. You can set it with -n option.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-根据调用耗时过滤"><a href="#3-3-根据调用耗时过滤" class="headerlink" title="3.3 根据调用耗时过滤"></a><strong>3.3 根据调用耗时过滤</strong></h3><p>只会展示耗时大于 2ms 的调用路径，有助于在排查问题的时候，只关注异常情况</p>
+<aside>
+💡
+
+<ul>
+<li>是不是很眼熟，没错，在 JProfiler 等收费软件中你曾经见识类似的功能，这里你将可以通过命令就能打印出指定调用路径。 友情提醒下，<code>trace</code> 在执行的过程中本身是会有一定的性能开销，在统计的报告中并未像 JProfiler 一样预先减去其自身的统计开销。所以这统计出来有些许的不准，渲染路径上调用的类、方法越多，性能偏差越大。但还是能让你看清一些事情的。</li>
+<li>[12.033735ms] 的含义，<code>12.033735</code> 的含义是：当前节点在当前步骤的耗时，单位为毫秒</li>
+<li>[0,0,0ms,11]xxx:yyy() [throws Exception]，对该方法中相同的方法调用进行了合并，<code>0,0,0ms,11</code> 表示方法调用耗时，<code>min,max,total,count</code>；<code>throws Exception</code> 表明该方法调用中存在异常返回</li>
+<li>这里存在一个统计不准确的问题，就是所有方法耗时加起来可能会小于该监测方法的总耗时，这个是由于 Arthas 本身的逻辑会有一定的耗时</aside></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[arthas@<span class="number">8161</span>]$ trace demo.MathGame run <span class="string">&#x27;#cost &gt; 0.5&#x27;</span> -n <span class="number">3</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(<span class="keyword">class</span> <span class="title class_">count</span>: <span class="number">1</span> , method count: <span class="number">1</span>) cost in <span class="number">87</span> ms, listenerId: <span class="number">12</span></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">36</span>:<span class="number">31.428</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">0.</span>575073ms] demo.MathGame:run()</span><br><span class="line">        `---[<span class="number">56.12</span>% <span class="number">0.</span>322722ms ] demo.MathGame:primeFactors() #<span class="number">24</span> [<span class="keyword">throws</span> Exception]</span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">36</span>:<span class="number">33.467</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">2.</span>125056ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">65.45</span>% <span class="number">1.</span>390877ms ] demo.MathGame:primeFactors() #<span class="number">24</span></span><br><span class="line">        `---[<span class="number">23.98</span>% <span class="number">0.</span>509524ms ] demo.MathGame:print() #<span class="number">25</span></span><br><span class="line"></span><br><span class="line">`---ts=<span class="number">2025</span>-<span class="number">06</span>-<span class="number">07</span> 09:<span class="number">36</span>:<span class="number">37.491</span>;thread_name=main;id=<span class="number">1</span>;is_daemon=<span class="literal">false</span>;priority=<span class="number">5</span>;TCCL=jdk.internal.loader.ClassLoaders$AppClassLoader@4b85612c</span><br><span class="line">    `---[<span class="number">7.</span>300126ms] demo.MathGame:run()</span><br><span class="line">        +---[<span class="number">99.21</span>% <span class="number">7.</span>242667ms ] demo.MathGame:primeFactors() #<span class="number">24</span></span><br><span class="line">        `---[<span class="number">0.44</span>% <span class="number">0.</span>031904ms ] demo.MathGame:print() #<span class="number">25</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="4-stack命令"><a href="#4-stack命令" class="headerlink" title="4. stack命令"></a>4. <strong>stack命令</strong></h2><p>输出当前方法被调用的调用路径</p>
+<p>很多时候我们都知道一个方法被执行，但这个方法被执行的路径非常多，或者你根本就不知道这个方法是从那里被执行了，此时你需要的是 stack 命令。</p>
+<ul>
+<li><strong>参数说明</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数名称</th>
+<th>参数说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><em>class-pattern</em></td>
+<td>类名表达式匹配</td>
+</tr>
+<tr>
+<td><em>method-pattern</em></td>
+<td>方法名表达式匹配</td>
+</tr>
+<tr>
+<td><em>condition-express</em></td>
+<td>条件表达式</td>
+</tr>
+<tr>
+<td>[E]</td>
+<td>开启正则表达式匹配，默认为通配符匹配</td>
+</tr>
+<tr>
+<td><code>[n:]</code></td>
+<td>执行次数限制</td>
+</tr>
+<tr>
+<td><code>[m &lt;arg&gt;]</code></td>
+<td>指定 Class 最大匹配数量，默认值为 50。长格式为<code>[maxMatch &lt;arg&gt;]</code>。</td>
+</tr>
+</tbody></table>
+<aside>
+💡
+
+<p>这里重点要说明的是观察表达式，观察表达式的构成主要由 ognl 表达式组成，所以你可以这样写<code>&quot;&#123;params,returnObj&#125;&quot;</code>，只要是一个合法的 ognl 表达式，都能被正常支持。</p>
+<p>观察的维度也比较多，主要体现在参数 <code>advice</code> 的数据结构上。<code>Advice</code> 参数最主要是封装了通知节点的所有信息。</p>
+<p>请参考<a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/advice-class.html"><strong>表达式核心变量</strong></a>中关于该节点的描述。</p>
+<ul>
+<li><p>特殊用法请参考：<a target="_blank" rel="noopener" href="https://github.com/alibaba/arthas/issues/71"><strong>https://github.com/alibaba/arthas/issues/71</strong></a></p>
+</li>
+<li><p>OGNL 表达式官网：<a target="_blank" rel="noopener" href="https://commons.apache.org/dormant/commons-ognl/language-guide.html"><strong>https://commons.apache.org/dormant/commons-ognl/language-guide.html</strong></a></p>
+</aside>
+</li>
+<li><p><strong>使用案例</strong></p>
+</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 使用stack命令跟踪primeFactors方法</span></span><br><span class="line">[arthas@8161]$ stack demo.MathGame primeFactors</span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 88 ms, listenerId: 14</span><br><span class="line">ts=2025-06-07 09:53:24.073;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br><span class="line">ts=2025-06-07 09:53:25.077;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br><span class="line"><span class="comment">## 使用OGNL表达式，过滤第一个参数值小于0的方法调用情况，并且只打印两个信息数据</span></span><br><span class="line">[arthas@8161]$ stack demo.MathGame primeFactors <span class="string">&#x27;params[0]&lt;0&#x27;</span> -n 2</span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 85 ms, listenerId: 15</span><br><span class="line">ts=2025-06-07 09:53:57.220;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br><span class="line">ts=2025-06-07 09:53:58.223;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br><span class="line">Command execution <span class="built_in">times</span> exceed <span class="built_in">limit</span>: 2, so <span class="built_in">command</span> will <span class="built_in">exit</span>. You can <span class="built_in">set</span> it with -n option.</span><br><span class="line"></span><br><span class="line"><span class="comment">## 使用OGNL表达式，过滤耗时大于2毫秒的信息</span></span><br><span class="line">[arthas@8161]$ stack demo.MathGame primeFactors <span class="string">&#x27;#cost&gt;2&#x27;</span></span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 84 ms, listenerId: 17</span><br><span class="line">ts=2025-06-07 09:56:40.903;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br><span class="line">ts=2025-06-07 09:56:44.919;thread_name=main;<span class="built_in">id</span>=1;is_daemon=<span class="literal">false</span>;priority=5;TCCL=jdk.internal.loader.ClassLoaders<span class="variable">$AppClassLoader</span>@4b85612c</span><br><span class="line">    @demo.MathGame.primeFactors()</span><br><span class="line">        at demo.MathGame.run(MathGame.java:24)</span><br><span class="line">        at demo.MathGame.main(null:16)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="5-tt命令"><a href="#5-tt命令" class="headerlink" title="5. tt命令"></a>5. <strong>tt命令</strong></h2><p>方法执行数据的时空隧道，记录下指定方法每次调用的入参和返回信息，并能对这些不同的时间下调用进行观测</p>
+<p><code>watch</code> 虽然很方便和灵活，但需要提前想清楚观察表达式的拼写，这对排查问题而言要求太高，因为很多时候我们并不清楚问题出自于何方，只能靠蛛丝马迹进行猜测。</p>
+<p>这个时候如果能记录下当时方法调用的所有入参和返回值、抛出的异常会对整个问题的思考与判断非常有帮助。</p>
+<p>于是乎，TimeTunnel 命令就诞生了。</p>
+<aside>
+💡
+
+<ol>
+<li>tt 命令的实现是：把函数的入参&#x2F;返回值等，保存到一个<code>Map&lt;Integer, TimeFragment&gt;</code>里，默认的大小是 100。</li>
+<li>tt 相关功能在使用完之后，需要手动释放内存，否则长时间可能导致OOM。退出 arthas 不会自动清除 tt 的缓存 map</aside></li>
+</ol>
+<ul>
+<li>命令参数解析<ul>
+<li><p><code>t</code></p>
+<p>  tt 命令有很多个主参数，<code>-t</code> 就是其中之一。这个参数的表明希望记录下类 <code>*Test</code> 的 <code>print</code> 方法的每次执行情况。</p>
+</li>
+<li><p><code>n 3</code></p>
+<p>  当你执行一个调用量不高的方法时可能你还能有足够的时间用 <code>CTRL+C</code> 中断 tt 命令记录的过程，但如果遇到调用量非常大的方法，瞬间就能将你的 JVM 内存撑爆。</p>
+<p>  此时你可以通过 <code>-n</code> 参数指定你需要记录的次数，当达到记录次数时 Arthas 会主动中断 tt 命令的记录过程，避免人工操作无法停止的情况。</p>
+</li>
+<li><p><code>m 1</code></p>
+<p>  通过 <code>-m</code> 参数指定 Class 匹配的最大数量，防止匹配到的 Class 数量太多导致 JVM 挂起，默认值是 50。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-1-执行命令：tt-t-demo-MathGame-primeFactors"><a href="#5-1-执行命令：tt-t-demo-MathGame-primeFactors" class="headerlink" title="5.1 执行命令：tt -t demo.MathGame primeFactors"></a>5.1 执行命令：tt -t demo.MathGame primeFactors</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ tt -t demo.MathGame primeFactors</span><br><span class="line">Press Q or Ctrl+C to abort.</span><br><span class="line">Affect(class count: 1 , method count: 1) cost <span class="keyword">in</span> 85 ms, listenerId: 18</span><br><span class="line"> INDEX            TIMESTAMP                                 COST(ms)             IS-RET          IS-EXP           OBJECT                         CLASS                                                          METHOD                                                        </span><br><span class="line">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> 1000             2025-06-07 10:07:44.617                   0.227622             <span class="literal">false</span>           <span class="literal">true</span>             0x589838eb                     MathGame                                                       primeFactors                                                  </span><br><span class="line"> 1001             2025-06-07 10:07:45.621                   0.07812              <span class="literal">false</span>           <span class="literal">true</span>             0x589838eb                     MathGame                                                       primeFactors                                                  </span><br><span class="line"> 1002             2025-06-07 10:07:46.623                   0.091644             <span class="literal">false</span>           <span class="literal">true</span>             0x589838eb                     MathGame                                                       primeFactors                                                  </span><br><span class="line"> 1003             2025-06-07 10:07:47.628                   3.676343             <span class="literal">true</span>            <span class="literal">false</span>            0x589838eb                     MathGame                                                       primeFactors                                                  </span><br><span class="line"> 1004             2025-06-07 10:07:48.631                   0.05122              <span class="literal">false</span>           <span class="literal">true</span>             0x589838eb                     MathGame                                                       primeFactors  </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>表格字段说明</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>表格字段</th>
+<th>字段解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INDEX</td>
+<td>时间片段记录编号，每一个编号代表着一次调用，后续 tt 还有很多命令都是基于此编号指定记录操作，非常重要。</td>
+</tr>
+<tr>
+<td>TIMESTAMP</td>
+<td>方法执行的本机时间，记录了这个时间片段所发生的本机时间</td>
+</tr>
+<tr>
+<td>COST(ms)</td>
+<td>方法执行的耗时</td>
+</tr>
+<tr>
+<td>IS-RET</td>
+<td>方法是否以正常返回的形式结束</td>
+</tr>
+<tr>
+<td>IS-EXP</td>
+<td>方法是否以抛异常的形式结束</td>
+</tr>
+<tr>
+<td>OBJECT</td>
+<td>执行对象的<code>hashCode()</code>，注意，曾经有人误认为是对象在 JVM 中的内存地址，但很遗憾他不是。但他能帮助你简单的标记当前执行方法的类实体</td>
+</tr>
+<tr>
+<td>CLASS</td>
+<td>执行的类名</td>
+</tr>
+<tr>
+<td>METHOD</td>
+<td>执行的方法名</td>
+</tr>
+</tbody></table>
+<ul>
+<li><p>条件表达式</p>
+<p>  不知道大家是否有在使用过程中遇到以下困惑</p>
+<ul>
+<li>Arthas 似乎很难区分出重载的方法</li>
+<li>我只需要观察特定参数，但是 tt 却全部都给我记录了下来</li>
+</ul>
+<p>  条件表达式也是用 <code>OGNL</code> 来编写，核心的判断对象依然是 <code>Advice</code> 对象。除了 <code>tt</code> 命令之外，<code>watch</code>、<code>trace</code>、<code>stack</code> 命令也都支持条件表达式。
+  </p>
+</li>
+<li><p>解决方法重载</p>
+<p>  <code>tt -t *Test print params.length==1</code></p>
+<p>  通过制定参数个数的形式解决不同的方法签名，如果参数个数一样，你还可以这样写</p>
+<p>  <code>tt -t *Test print &#39;params[1] instanceof Integer&#39;</code></p>
+</li>
+<li><p>解决指定参数</p>
+<p>  <code>tt -t *Test print params[0].mobile==&quot;13989838402&quot;</code></p>
+</li>
+<li><p>构成条件表达式的 <code>Advice</code> 对象</p>
+<p>  前边看到了很多条件表达式中，都使用了 <code>params[0]</code>，有关这个变量的介绍，请参考<a target="_blank" rel="noopener" href="https://arthas.aliyun.com/doc/advice-class.html"><strong>表达式核心变量</strong></a></p>
+</li>
+</ul>
+<h3 id="5-2-查看调用信息"><a href="#5-2-查看调用信息" class="headerlink" title="5.2 查看调用信息"></a>5.2 <strong>查看调用信息</strong></h3><p>对于具体一个时间片的信息而言，你可以通过 <code>-i</code> 参数后边跟着对应的 <code>INDEX</code> 编号查看到他的详细信息。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ tt -i 1004</span><br><span class="line"> INDEX            1004                                                                                                                                                                                                                                                        </span><br><span class="line"> GMT-CREATE       2025-06-07 10:07:48.631                                                                                                                                                                                                                                     </span><br><span class="line"> COST(ms)         0.05122                                                                                                                                                                                                                                                     </span><br><span class="line"> OBJECT           0x589838eb                                                                                                                                                                                                                                                  </span><br><span class="line"> CLASS            demo.MathGame                                                                                                                                                                                                                                               </span><br><span class="line"> METHOD           primeFactors                                                                                                                                                                                                                                                </span><br><span class="line"> IS-RETURN        <span class="literal">false</span>                                                                                                                                                                                                                                                       </span><br><span class="line"> IS-EXCEPTION     <span class="literal">true</span>                                                                                                                                                                                                                                                        </span><br><span class="line"> PARAMETERS[0]    @Integer[-67793]                                                                                                                                                                                                                                            </span><br><span class="line"> THROW-EXCEPTION  java.lang.IllegalArgumentException: number is: -67793, need &gt;= 2                                                                                                                                                                                            </span><br><span class="line">                  	at demo.MathGame.primeFactors(MathGame.java:46)                                                                                                                                                                                                            </span><br><span class="line">                  	at demo.MathGame.run(MathGame.java:24)                                                                                                                                                                                                                     </span><br><span class="line">                  	at demo.MathGame.main(Unknown Source)                                                                                                                                                                                                                      </span><br><span class="line">Affect(row-cnt:1) cost <span class="keyword">in</span> 3 ms.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-重做一次调用"><a href="#5-3-重做一次调用" class="headerlink" title="5.3 重做一次调用"></a><strong>5.3 重做一次调用</strong></h3><p>当你稍稍做了一些调整之后，你可能需要前端系统重新触发一次你的调用，此时得求爷爷告奶奶的需要前端配合联调的同学再次发起一次调用。而有些场景下，这个调用不是这么好触发的。</p>
+<p><code>tt</code> 命令由于保存了当时调用的所有现场信息，所以我们可以自己主动对一个 <code>INDEX</code> 编号的时间片自主发起一次调用，从而解放你的沟通成本。此时你需要 <code>-p</code> 参数。通过 <code>--replay-times</code> 指定 调用次数，通过 <code>--replay-interval</code> 指定多次调用间隔(单位 ms, 默认 1000ms)</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">[arthas@8161]$ tt -i 1004 -p</span><br><span class="line"> RE-INDEX         1004                                                                                                                                                                                                                                                        </span><br><span class="line"> GMT-REPLAY       2025-06-07 10:15:36.439                                                                                                                                                                                                                                     </span><br><span class="line"> OBJECT           0x589838eb                                                                                                                                                                                                                                                  </span><br><span class="line"> CLASS            demo.MathGame                                                                                                                                                                                                                                               </span><br><span class="line"> METHOD           primeFactors                                                                                                                                                                                                                                                </span><br><span class="line"> PARAMETERS[0]    @Integer[-67793]                                                                                                                                                                                                                                            </span><br><span class="line"> IS-RETURN        <span class="literal">false</span>                                                                                                                                                                                                                                                       </span><br><span class="line"> IS-EXCEPTION     <span class="literal">true</span>                                                                                                                                                                                                                                                        </span><br><span class="line"> THROW-EXCEPTION  java.lang.IllegalArgumentException: number is: -67793, need &gt;= 2                                                                                                                                                                                            </span><br><span class="line">                  	at demo.MathGame.primeFactors(MathGame.java:46)                                                                                                                                                                                                            </span><br><span class="line">                  	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)                                                                                                                                                                          </span><br><span class="line">                  	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)                                                                                                                                                        </span><br><span class="line">                  	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)                                                                                                                                                </span><br><span class="line">                  	at java.base/java.lang.reflect.Method.invoke(Method.java:566)                                                                                                                                                                                              </span><br><span class="line">                  	at com.taobao.arthas.core.advisor.ArthasMethod.invoke(ArthasMethod.java:155)                                                                                                                                                                               </span><br><span class="line">                  	at com.taobao.arthas.core.command.monitor200.TimeTunnelCommand.processPlay(TimeTunnelCommand.java:517)                                                                                                                                                     </span><br><span class="line">                  	at com.taobao.arthas.core.command.monitor200.TimeTunnelCommand.process(TimeTunnelCommand.java:278)                                                                                                                                                         </span><br><span class="line">                  	at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.process(AnnotatedCommandImpl.java:82)                                                                                                                                                    </span><br><span class="line">                  	at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl.access<span class="variable">$100</span>(AnnotatedCommandImpl.java:18)                                                                                                                                                 </span><br><span class="line">                  	at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:111)                                                                                                                                     </span><br><span class="line">                  	at com.taobao.arthas.core.shell.command.impl.AnnotatedCommandImpl<span class="variable">$ProcessHandler</span>.handle(AnnotatedCommandImpl.java:108)                                                                                                                                     </span><br><span class="line">                  	at com.taobao.arthas.core.shell.system.impl.ProcessImpl<span class="variable">$CommandProcessTask</span>.run(ProcessImpl.java:385)                                                                                                                                                       </span><br><span class="line">                  	at java.base/java.util.concurrent.Executors<span class="variable">$RunnableAdapter</span>.call(Executors.java:515)                                                                                                                                                                       </span><br><span class="line">                  	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)                                                                                                                                                                                      </span><br><span class="line">                  	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor<span class="variable">$ScheduledFutureTask</span>.run(ScheduledThreadPoolExecutor.java:304)                                                                                                                                </span><br><span class="line">                  	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)                                                                                                                                                               </span><br><span class="line">                  	at java.base/java.util.concurrent.ThreadPoolExecutor<span class="variable">$Worker</span>.run(ThreadPoolExecutor.java:628)                                                                                                                                                               </span><br><span class="line">                  	at java.base/java.lang.Thread.run(Thread.java:834)                                                                                                                                                                                                         </span><br><span class="line">Time fragment[1004] successfully replayed 1 <span class="built_in">times</span>.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Arthas/" rel="tag"># Arthas</a>
+              <a href="/tags/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7/" rel="tag"># Arthas诊断工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%9B%9B)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89class%20classloader%E7%9B%B8%E5%85%B3%E5%91%BD%E4%BB%A4/" rel="prev" title="Arthas诊断**工具(四)**Arthas（阿尔萨斯）class&#x2F;classloader相关命令">
+                  <i class="fa fa-angle-left"></i> Arthas诊断**工具(四)**Arthas（阿尔萨斯）class/classloader相关命令
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Arthas%E5%BA%94%E7%94%A8(Java)%E8%AF%8A%E6%96%AD%E5%88%A9%E5%99%A8/Arthas%E8%AF%8A%E6%96%AD%E5%B7%A5%E5%85%B7(%E5%85%AD)Arthas%EF%BC%88%E9%98%BF%E5%B0%94%E8%90%A8%E6%96%AF%EF%BC%89options%E5%85%A8%E5%B1%80%E5%BC%80%E5%85%B3/" rel="next" title="Arthas诊断**工具(六)**Arthas（阿尔萨斯）options全局开关">
+                  Arthas诊断**工具(六)**Arthas（阿尔萨斯）options全局开关 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
