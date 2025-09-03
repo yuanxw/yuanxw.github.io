@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="源码的思路是先分析老版本，再分析新版本。因为老版本的架构是稳定的，基础特性都是有的。最后我们对比Feature提升对Kafka理解。由浅入深：假设我们认为Kafka是一个单体的，首先分析一条消息从Producer发到Kafka再到Consumer的一个消费，再到集群的处理的消费。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kafka源码分析(一)环境搭建">
+<meta property="og:url" content="https://yuanxw.github.io/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%B8%80)%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="源码的思路是先分析老版本，再分析新版本。因为老版本的架构是稳定的，基础特性都是有的。最后我们对比Feature提升对Kafka理解。由浅入深：假设我们认为Kafka是一个单体的，首先分析一条消息从Producer发到Kafka再到Consumer的一个消费，再到集群的处理的消费。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/kafak_source/chapter1/image.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/kafak_source/chapter1/image1.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/kafak_source/chapter1/image2.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/kafak_source/chapter1/image3.png">
+<meta property="article:published_time" content="2025-06-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T16:42:04.609Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="Kafka源码分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/kafak_source/chapter1/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%B8%80)%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%B8%80)%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/","path":"Kafka源码分析/Kafka源码分析(一)环境搭建/","title":"Kafka源码分析(一)环境搭建"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Kafka源码分析(一)环境搭建 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.9.0/mermaid.min.js","integrity":"sha256-Cz7UN0EXNjgV2u/a38wg/3BNfdRRO1XtgDq93L2GqJg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%B8%80)%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E4%B8%80-%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA"><span class="nav-number">1.</span> <span class="nav-text">Kafka源码分析(一)环境搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">一、前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%89%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.2.</span> <span class="nav-text">二、前置条件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E5%AE%89%E8%A3%85%E5%92%8C%E9%85%8D%E7%BD%AEJDK"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 安装和配置JDK</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-%E4%B8%8B%E8%BD%BD%E5%B9%B6%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AEGradle"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.2 下载并安装配置Gradle</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-%E4%B8%8B%E8%BD%BD%E5%B9%B6%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AEScala"><span class="nav-number">1.2.3.</span> <span class="nav-text">2.3 下载并安装配置Scala</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-%E6%9E%84%E5%BB%BAKafka%E6%BA%90%E7%A0%81%E7%8E%AF%E5%A2%83"><span class="nav-number">1.2.4.</span> <span class="nav-text">2.4 构建Kafka源码环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-Idea%E9%85%8D%E7%BD%AEKafka%E6%BA%90%E7%A0%81%E7%8E%AF%E5%A2%83"><span class="nav-number">1.2.5.</span> <span class="nav-text">2.5 Idea配置Kafka源码环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-Zookeeper%E7%9A%84%E5%AE%89%E8%A3%85%E3%80%81%E9%85%8D%E7%BD%AE%E5%8F%8A%E5%90%AF%E5%8A%A8"><span class="nav-number">1.2.6.</span> <span class="nav-text">2.6 Zookeeper的安装、配置及启动</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">64</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%B8%80)%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Kafka源码分析(一)环境搭建 | 我的博客">
+      <meta itemprop="description" content="源码的思路是先分析老版本，再分析新版本。因为老版本的架构是稳定的，基础特性都是有的。最后我们对比Feature提升对Kafka理解。由浅入深：假设我们认为Kafka是一个单体的，首先分析一条消息从Producer发到Kafka再到Consumer的一个消费，再到集群的处理的消费。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Kafka源码分析(一)环境搭建
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-07-01 00:00:00" itemprop="dateCreated datePublished" datetime="2025-07-01T00:00:00+08:00">2025-07-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-04 00:42:04" itemprop="dateModified" datetime="2025-09-04T00:42:04+08:00">2025-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Kafka/" itemprop="url" rel="index"><span itemprop="name">Kafka</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">源码的思路是先分析老版本，再分析新版本。因为老版本的架构是稳定的，基础特性都是有的。最后我们对比Feature提升对Kafka理解。由浅入深：假设我们认为Kafka是一个单体的，首先分析一条消息从Producer发到Kafka再到Consumer的一个消费，再到集群的处理的消费。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Kafka源码分析-一-环境搭建"><a href="#Kafka源码分析-一-环境搭建" class="headerlink" title="Kafka源码分析(一)环境搭建"></a>Kafka源码分析(一)环境搭建</h1><h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>源码的思路是先分析老版本，再分析新版本。因为老版本的架构是稳定的，基础特性都是有的。最后我们对比Feature提升对Kafka理解。<br>由浅入深：假设我们认为Kafka是一个单体的，首先分析一条消息从Producer发到Kafka再到Consumer的一个消费，再到集群的处理的消费。</p>
+<h2 id="二、前置条件"><a href="#二、前置条件" class="headerlink" title="二、前置条件"></a>二、前置条件</h2><h3 id="2-1-安装和配置JDK"><a href="#2-1-安装和配置JDK" class="headerlink" title="2.1 安装和配置JDK"></a>2.1 <strong>安装和配置JDK</strong></h3><ul>
+<li><p>JDK配置要求JDK1.8，使用java -version命令来查看当前JDK的版本，示例如下：</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\yuanxw&gt;java -version</span><br><span class="line">java version <span class="string">&quot;1.8.0_241&quot;</span></span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_241-b07)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.241-b07, mixed mode)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-2-下载并安装配置Gradle"><a href="#2-2-下载并安装配置Gradle" class="headerlink" title="2.2 下载并安装配置Gradle"></a><strong>2.2 下载并安装配置Gradle</strong></h3><ul>
+<li><p>下载地址为：<a target="_blank" rel="noopener" href="https://gradle.org/releases/">https://gradle.org/releases/</a>，笔者使用的版本是5.6.4。一般只需要将下载的包解压，然后再将GRADLE_HOME&#x2F;bin的路径添加到环境变量Path中即可，其中;GRADLE_HOME指的是Gradle的根目录。可以使用gradle -v命令来验证Gradle是否已经配置完成，示例如下：</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\yuanxw&gt;gradle -v</span><br><span class="line"></span><br><span class="line">Welcome to Gradle 5.6.4!</span><br><span class="line"></span><br><span class="line">Here are the highlights of this release:</span><br><span class="line"> - Incremental Groovy compilation</span><br><span class="line"> - Groovy compile avoidance</span><br><span class="line"> - Test fixtures <span class="keyword">for</span> Java projects</span><br><span class="line"> - Manage plugin versions via settings script</span><br><span class="line"></span><br><span class="line">For more details see https://docs.gradle.org/5.6.4/release-notes.html</span><br><span class="line"></span><br><span class="line">------------------------------------------------------------</span><br><span class="line">Gradle 5.6.4</span><br><span class="line">------------------------------------------------------------</span><br><span class="line"></span><br><span class="line">Build <span class="keyword">time</span>:   2019-11-01 20:42:00 UTC</span><br><span class="line">Revision:     dd870424f9bd8e195d614dc14bb140f43c22da98</span><br><span class="line"></span><br><span class="line">Kotlin:       1.3.41</span><br><span class="line">Groovy:       2.5.4</span><br><span class="line">Ant:          Apache Ant(TM) version 1.9.14 compiled on March 12 2019</span><br><span class="line">JVM:          1.8.0_241 (Oracle Corporation 25.241-b07)</span><br><span class="line">OS:           Windows 10 10.0 amd64</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-3-下载并安装配置Scala"><a href="#2-3-下载并安装配置Scala" class="headerlink" title="2.3 下载并安装配置Scala"></a><strong>2.3 下载并安装配置Scala</strong></h3><ul>
+<li><p>在win上安装Scala 2.10.6，上官网找到2.10.6版本对应的下载地址，kafka的服务器端的源码是scala写的，但是新版本的客户端的源码是java写的<a target="_blank" rel="noopener" href="https://www.scala-lang.org/download/2.10.6.html">https://www.scala-lang.org/download/2.10.6.html</a>然后就可以下载win上的安装包，scala.msi，下载好之后傻瓜式安装就可以了，接着必须配置SCALA_HOME和PATH两个环境变量，首先必须得有Java和Scala两种编程语言的支持才可以。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\yuanxw&gt;scala -version</span><br><span class="line">Scala code runner version 2.10.6 -- Copyright 2002-2013, LAMP/EPFL</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-4-构建Kafka源码环境"><a href="#2-4-构建Kafka源码环境" class="headerlink" title="2.4 构建Kafka源码环境"></a><strong>2.4 构建Kafka源码环境</strong></h3><ul>
+<li><p>在GitHub上fork一份kafka源码到自已仓库，从自己的仓库中下载，下载地址：<a target="_blank" rel="noopener" href="https://github.com/apache/kafka.git">https://github.com/apache/kafka.git</a></p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 E： 盘新建一个 kafka 目录，然后把 Kafka 项目 Clone 到这里。(作者位置：E:\workspace\IdeaWork\github)</span></span><br><span class="line">E:\workspace\IdeaWork\github&gt;**git <span class="built_in">clone</span> git@github.com:yuanxw/kafka.git**</span><br><span class="line">Cloning into <span class="string">&#x27;kafka&#x27;</span>...</span><br><span class="line">remote: Enumerating objects: 451197, <span class="keyword">done</span>.</span><br><span class="line">remote: Total 451197 (delta 0), reused 0 (delta 0), pack-reused 451197 (from 1)</span><br><span class="line">Receiving objects: 100% (451197/451197), 227.47 MiB | 81.00 KiB/s, <span class="keyword">done</span>.</span><br><span class="line">Resolving deltas: 100% (220962/220962), <span class="keyword">done</span>.</span><br><span class="line">Updating files: 100% (6890/6890), <span class="keyword">done</span>.</span><br><span class="line"></span><br><span class="line"><span class="comment"># 切换到 0.10.2 版本*</span></span><br><span class="line">git checkout origin/0.10.2</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Gradle 构建 Kafka 项目之前确认事项：</p>
+<ol>
+<li><p>确保 gradle.properties 配置文件中的 scalaVersion 与 Windows 中 Scala 版本一致，0.10.2 版本的 Kafka 是 2.10.6 版本的 Scala。</p>
+ <figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">group=org.apache.kafka</span><br><span class="line"># <span class="attr">NOTE:</span> When you change <span class="variable language_">this</span> version number, you should also make sure to update</span><br><span class="line"># the version numbers <span class="keyword">in</span> tests<span class="regexp">/kafkatest/</span>__init__.py and kafka-merge-pr.py.</span><br><span class="line">version=<span class="number">0.10</span><span class="number">.2</span><span class="number">.3</span>-SNAPSHOT</span><br><span class="line">scalaVersion=<span class="number">2.10</span><span class="number">.6</span></span><br><span class="line">task=build</span><br><span class="line">org.gradle.jvmargs=-<span class="attr">XX:</span>MaxPermSize=<span class="number">512</span>m -Xmx1024m -Xss2m</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>配置 Gradle 的仓库为阿里的镜像仓库</p>
+<ul>
+<li>改之前遇到的错误：</li>
+</ul>
+ <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">E:\workspace\IdeaWork\github\kafka&gt;gradle idea</span><br><span class="line">Starting a Gradle Daemon (subsequent builds will be faster)</span><br><span class="line"></span><br><span class="line">&gt; Configure project :</span><br><span class="line">[<span class="type">Fatal</span> <span class="type">Error</span>] gradle<span class="literal">-versions-plugin-0</span>.<span class="number">13.0</span>.pom:<span class="number">7</span>:<span class="number">3</span>: 元素类型 <span class="string">&quot;hr&quot;</span> 必须由匹配的结束标记 <span class="string">&quot;&lt;/hr&gt;&quot;</span> 终止。</span><br><span class="line"></span><br><span class="line">FAILURE: Build failed with an exception.</span><br><span class="line"></span><br><span class="line">* What went wrong:</span><br><span class="line">A problem occurred configuring root project <span class="string">&#x27;kafka&#x27;</span>.</span><br><span class="line">&gt; Could not resolve all artifacts <span class="keyword">for</span> configuration <span class="string">&#x27;:classpath&#x27;</span>.</span><br><span class="line">   &gt; Could not resolve com.github.ben<span class="literal">-manes</span>:gradle<span class="literal">-versions-plugin</span>:<span class="number">0.13</span>.<span class="number">0</span>.</span><br><span class="line">     Required by:</span><br><span class="line">         project :</span><br><span class="line">      &gt; Could not resolve com.github.ben<span class="literal">-manes</span>:gradle<span class="literal">-versions-plugin</span>:<span class="number">0.13</span>.<span class="number">0</span>.</span><br><span class="line">         &gt; Could not parse POM http://dl.bintray.com/content/netflixoss/external<span class="literal">-gradle-plugins</span>/com/github/ben<span class="literal">-manes</span>/gradle<span class="literal">-versions-plugin</span>/<span class="number">0.13</span>.<span class="number">0</span>/gradle<span class="literal">-versions-plugin-0</span>.<span class="number">13.0</span>.pom</span><br><span class="line">            &gt; 元素类型 <span class="string">&quot;hr&quot;</span> 必须由匹配的结束标记 <span class="string">&quot;&lt;/hr&gt;&quot;</span> 终止。</span><br><span class="line"></span><br><span class="line">* <span class="keyword">Try</span>:</span><br><span class="line">Run with <span class="literal">--stacktrace</span> option to get the stack trace. Run with <span class="literal">--info</span> or <span class="literal">--debug</span> option to get more log output. Run with <span class="literal">--scan</span> to get full insights.</span><br><span class="line"></span><br><span class="line">* Get more help at https://help.gradle.org</span><br><span class="line"></span><br><span class="line">BUILD FAILED <span class="keyword">in</span> <span class="number">12</span>s</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改 org.scoverage:gradle-scoverage 的版本号</p>
+ <figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">  <span class="comment">// For Apache Rat plugin to ignore non-Git files</span></span><br><span class="line">  classpath <span class="string">&quot;org.ajoberstar:grgit:1.7.0&quot;</span></span><br><span class="line">  classpath <span class="string">&#x27;com.github.ben-manes:gradle-versions-plugin:0.13.0&#x27;</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 这里原来是 2.1.0 修改为 2.5.0</span></span><br><span class="line">  <span class="comment">// classpath &#x27;org.scoverage:gradle-scoverage:2.1.0&#x27;</span></span><br><span class="line">  classpath <span class="string">&#x27;org.scoverage:gradle-scoverage:2.5.0&#x27;</span>  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>改之前遇到的错误：</li>
+</ul>
+ <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&gt; Configure project :\github\kafka&gt;gradle idea</span><br><span class="line">Building project <span class="string">&#x27;core&#x27;</span> with Scala version <span class="number">2.10</span>.<span class="number">6</span></span><br><span class="line"></span><br><span class="line">FAILURE: Build failed with an exception.</span><br><span class="line"></span><br><span class="line">* <span class="built_in">Where</span>:</span><br><span class="line">Build file <span class="string">&#x27;E:\workspace\IdeaWork\github\kafka\build.gradle&#x27;</span> line: <span class="number">388</span></span><br><span class="line"></span><br><span class="line">* What went wrong:</span><br><span class="line">A problem occurred evaluating root project <span class="string">&#x27;kafka&#x27;</span>.</span><br><span class="line">&gt; Failed to apply plugin [<span class="type">id</span> <span class="string">&#x27;org.scoverage&#x27;</span>]</span><br><span class="line">   &gt; Could not create an instance of <span class="built_in">type</span> org.scoverage.ScoverageExtension.</span><br><span class="line">      &gt; You can<span class="string">&#x27;t map a property that does not exist: propertyName=testClassesDir</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">* Try:</span></span><br><span class="line"><span class="string">Run with --stacktrace option to get the stack trace. Run with --info or --debug option to get more log output. Run with --scan to get full insights.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">* Get more help at https://help.gradle.org</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Deprecated Gradle features were used in this build, making it incompatible with Gradle 6.0.</span></span><br><span class="line"><span class="string">Use &#x27;</span><span class="literal">--warning-mode</span> all<span class="string">&#x27; to show the individual deprecation warnings.</span></span><br><span class="line"><span class="string">See https://docs.gradle.org/5.6.4/userguide/command_line_interface.html#sec:command_line_warnings</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">BUILD FAILED in 1s</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改好上面的文件之后就可以在 kafka 根目录直接执行 <code>gradle idea</code>，等成功之后就可以用 IDEA 打开了。</p>
+ <figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">E:</span>\workspace\IdeaWork\github\kafka&gt;gradle idea</span><br><span class="line"></span><br><span class="line">&gt; Configure <span class="attr">project :</span></span><br><span class="line">Building project <span class="string">&#x27;core&#x27;</span> with Scala version <span class="number">2.10</span><span class="number">.6</span></span><br><span class="line"></span><br><span class="line">&gt; <span class="attr">Task :</span>idea</span><br><span class="line">Generated IDEA project at <span class="attr">file:</span><span class="comment">///E:/workspace/IdeaWork/github/kafka/kafka.ipr</span></span><br><span class="line"></span><br><span class="line">Deprecated Gradle features were used <span class="keyword">in</span> <span class="variable language_">this</span> build, making it incompatible with Gradle <span class="number">6.0</span>.</span><br><span class="line">Use <span class="string">&#x27;--warning-mode all&#x27;</span> to show the individual deprecation warnings.</span><br><span class="line">See <span class="attr">https:</span><span class="comment">//docs.gradle.org/5.6.4/userguide/command_line_interface.html#sec:command_line_warnings</span></span><br><span class="line"></span><br><span class="line">BUILD SUCCESSFUL <span class="keyword">in</span> <span class="number">3</span>m <span class="number">19</span>s</span><br><span class="line"><span class="number">19</span> actionable <span class="attr">tasks:</span> <span class="number">19</span> executed</span><br></pre></td></tr></table></figure>
+<p> <img src="/images/kafak_source/chapter1/image.png" alt="image.png"></p>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="2-5-Idea配置Kafka源码环境"><a href="#2-5-Idea配置Kafka源码环境" class="headerlink" title="2.5 Idea配置Kafka源码环境"></a><strong>2.5 Idea配置Kafka源码环境</strong></h3><ul>
+<li><p>IDEA 安装 Scala 插件，在 File -&gt; Settings -&gt; Plugin 中搜索 Scala 并安装。</p>
+<p>  <img src="/images/kafak_source/chapter1/image1.png" alt="image.png"></p>
+</li>
+<li><p>配置 Scala SDK，在 File -&gt; Settings -&gt; ProjectStructure</p>
+<p>  <img src="/images/kafak_source/chapter1/image2.png" alt="image.png"></p>
+</li>
+<li><p>将 config 目录下的 log4j.properties 文件拷贝到 core&#x2F;src&#x2F;main&#x2F;scala 目录下，这样可以让 Kafka 在运行时能够输出日志信息。</p>
+<p>  <img src="/images/kafak_source/chapter1/image3.png" alt="image.png"></p>
+</li>
+<li><p>配置 server.properties 文件</p>
+  <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 开启这个功能方便Kafka在运行一段时间之后，能够删除一些不需要的临时topic</span></span><br><span class="line"><span class="string">delete.topic.enable=true</span></span><br><span class="line"><span class="comment"># 禁用自动创建topic的功能</span></span><br><span class="line"><span class="string">auto.create.topics.enable=false</span></span><br><span class="line"><span class="comment"># 在Windows环境下运行，所以需要修改这个配置，注意这里的双反斜杠</span></span><br><span class="line"><span class="string">log.dirs=E:\\workspace\\IdeaWork\\github\\kafka\\tmp\\kafka-logs</span></span><br><span class="line"><span class="comment"># 配置kafka依赖的zookeeper路径地址，这里的前提是在本地开启了一个zookeeper的服务</span></span><br><span class="line"><span class="string">zookeeper.connect=localhost:2181/kafka</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-6-Zookeeper的安装、配置及启动"><a href="#2-6-Zookeeper的安装、配置及启动" class="headerlink" title="2.6 Zookeeper的安装、配置及启动"></a><strong>2.6 Zookeeper的安装、配置及启动</strong></h3><p>Kafka需要使用Zookeeper来管理元数据，比如记录topic、partitions（分区）以及replica（副本）的分配信息。由于这里只是阐述如何构建Kafka的源码环境搭建，所以这里的Zookeeper的安装也以极简为主，即采用单机配置。Zookeeper下载地址为：<a target="_blank" rel="noopener" href="http://zookeeper.apache.org/releases.html">http://zookeeper.apache.org/releases.html</a>，下载之后解压，然后将**$ZOOKEEPER_HOME<strong>目录下的conf&#x2F;zoo_sample.cfg重命名为zoo.cfg，其中</strong>$ZOOKEEPER_HOME**指的是ZooKeeper的根目录。</p>
+<p>修改**$ZOOKEEPER_HOME**&#x2F;conf&#x2F;zoo.cfg配置，示例配置如下（其余配置可以不做修改）：</p>
+<ul>
+<li><p>本地下载Zookeeper</p>
+<ul>
+<li>下载版本：apache-zookeeper-3.6.1</li>
+<li>修改配置：dataDir&#x3D;D:\software\apache-zookeeper-3.6.1\data</li>
+</ul>
+</li>
+<li><p>配置zookeeper环境变量</p>
+<p>  将$ZOOKEEPER_HOME&#x2F;bin配置到Path中，之后直接运行zkServer命令即可开启Zookeeper服务。示例如下：</p>
+  <figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\yuanxw&gt;zkServer</span><br><span class="line"></span><br><span class="line">C:\Users\yuanxw&gt;call <span class="string">&quot;D:\software\Java\jdk1.8\jdk1.8.0_241&quot;</span>\bin\java <span class="string">&quot;-Dzookeeper.log.dir=D:\software\apache-zookeeper-3.6.1\bin\..\logs&quot;</span> <span class="string">&quot;-Dzookeeper.root.logger=INFO,CONSOLE&quot;</span> <span class="string">&quot;-Dzookeeper.log.file=zookeeper-yuanxw-server-DESKTOP-EDMKNEI.log&quot;</span> <span class="string">&quot;-XX:+HeapDumpOnOutOfMemoryError&quot;</span> <span class="string">&quot;-XX:OnOutOfMemoryError=cmd /c taskkill /pid %%p /t /f&quot;</span> -cp <span class="string">&quot;D:\software\apache-zookeeper-3.6.1\bin\..\build\classes;D:\software\apache-zookeeper-3.6.1\bin\..\build\lib\*;D:\software\apache-zookeeper-3.6.1\bin\..\*;D:\software\apache-zookeeper-3.6.1\bin\..\lib\*;D:\software\apache-zookeeper-3.6.1\bin\..\conf&quot;</span> org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.server</span><span class="variable">.quorum</span><span class="variable">.QuorumPeerMain</span> <span class="string">&quot;D:\software\apache-zookeeper-3.6.1\bin\..\conf\zoo.cfg&quot;</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">539</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">173</span>] - Reading configuration from: D:\software\apache-zookeeper-<span class="number">3</span><span class="variable">.6</span><span class="variable">.1</span>\bin\..\conf\zoo<span class="variable">.cfg</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">566</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">459</span>] - clientPortAddress is <span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>:<span class="number">2181</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">567</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">463</span>] - secureClientPort is <span class="keyword">not</span> set</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">567</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">479</span>] - observerMasterPort is <span class="keyword">not</span> set</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">569</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">496</span>] - metricsProvider<span class="variable">.className</span> is org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.metrics</span><span class="variable">.impl</span><span class="variable">.DefaultMetricsProvider</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">570</span> [myid:] - INFO  [main:DatadirCleanupManager@<span class="number">78</span>] - autopurge<span class="variable">.snapRetainCount</span> set to <span class="number">3</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">570</span> [myid:] - INFO  [main:DatadirCleanupManager@<span class="number">79</span>] - autopurge<span class="variable">.purgeInterval</span> set to <span class="number">0</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">570</span> [myid:] - INFO  [main:DatadirCleanupManager@<span class="number">101</span>] - Purge <span class="keyword">task</span> is <span class="keyword">not</span> scheduled.</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">570</span> [myid:] - WARN  [main:QuorumPeerMain@<span class="number">138</span>] - Either no <span class="keyword">config</span> <span class="keyword">or</span> no quorum defined in <span class="keyword">config</span>, running in standalone mode</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">574</span> [myid:] - INFO  [main:ManagedUtil@<span class="number">44</span>] - Log4j <span class="number">1</span><span class="variable">.2</span> jmx support found <span class="keyword">and</span> enabled.</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">630</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">173</span>] - Reading configuration from: D:\software\apache-zookeeper-<span class="number">3</span><span class="variable">.6</span><span class="variable">.1</span>\bin\..\conf\zoo<span class="variable">.cfg</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">631</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">459</span>] - clientPortAddress is <span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>:<span class="number">2181</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">631</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">463</span>] - secureClientPort is <span class="keyword">not</span> set</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">632</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">479</span>] - observerMasterPort is <span class="keyword">not</span> set</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">632</span> [myid:] - INFO  [main:QuorumPeerConfig@<span class="number">496</span>] - metricsProvider<span class="variable">.className</span> is org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.metrics</span><span class="variable">.impl</span><span class="variable">.DefaultMetricsProvider</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">632</span> [myid:] - INFO  [main:ZooKeeperServerMain@<span class="number">122</span>] - Starting server</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">680</span> [myid:] - INFO  [main:ServerMetrics@<span class="number">62</span>] - ServerMetrics initialized <span class="keyword">with</span> provider org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.metrics</span><span class="variable">.impl</span><span class="variable">.DefaultMetricsProvider</span>@<span class="number">7</span>a92922</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">683</span> [myid:] - INFO  [main:FileTxnSnapLog@<span class="number">124</span>] - zookeeper<span class="variable">.snapshot</span><span class="variable">.trust</span><span class="variable">.empty</span> : false</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">691</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">691</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -   ______                  _</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">691</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -  |___  /                 | |</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">692</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -     / /    ___     ___   | | __   ___    ___   _ __     ___   _ __</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">692</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -    / /    / _ \   / _ \  | |/ /  / _ \  / _ \ | &#x27;_ \   / _ \ | &#x27;__|</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">692</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -   / /__  | (_) | | (_) | |   &lt;  |  __/ |  __/ | |_) | |  __/ | |</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">693</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -  /_____|  \___/   \___/  |_|\_\  \___|  \___| | <span class="variable">.__</span>/   \___| |_|</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">693</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -                                               | |</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">693</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -                                               |_|</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">694</span> [myid:] - INFO  [main:ZookeeperBanner@<span class="number">42</span>] -</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">705</span> [myid:] - INFO  [main:Environment@<span class="number">98</span>] - Server environment:zookeeper<span class="variable">.version</span>=<span class="number">3</span><span class="variable">.6</span><span class="variable">.1</span>--<span class="number">104</span>dcb3e3fb464b30c5186d229e00af9f332524b, built on <span class="number">04</span>/<span class="number">21</span>/<span class="number">2020</span> <span class="number">15</span>:<span class="number">01</span> GMT</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">705</span> [myid:] - INFO  [main:Environment@<span class="number">98</span>] - Server environment:host<span class="variable">.name</span>=DESKTOP-EDMKNEI</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">705</span> [myid:] - INFO  [main:Environment@<span class="number">98</span>] - Server environment:java<span class="variable">.version</span>=<span class="number">1</span><span class="variable">.8</span><span class="variable">.0_241</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">706</span> [myid:] - INFO  [main:Environment@<span class="number">98</span>] - Server environment:java<span class="variable">.vendor</span>=Oracle Corporation</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">708</span> [myid:] - INFO  [main:Environment@<span class="number">98</span>] - Server environment:java<span class="variable">.home</span>=D:\software\Java\jdk1<span class="variable">.8</span>\jdk1<span class="variable">.8</span><span class="variable">.0_241</span>\jre</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">32</span>,<span class="number">874</span> [myid:] - INFO  [main:ContextHandler@<span class="number">825</span>] - Started o<span class="variable">.e</span><span class="variable">.j</span><span class="variable">.s</span><span class="variable">.ServletContextHandler</span>@<span class="number">887</span>af79&#123;/,<span class="literal">null</span>,AVAILABLE&#125;</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">262</span> [myid:] - INFO  [main:AbstractConnector@<span class="number">330</span>] - Started ServerConnector@<span class="number">57</span>baeedf&#123;HTTP/<span class="number">1</span><span class="variable">.1</span>,[http/<span class="number">1</span><span class="variable">.1</span>]&#125;&#123;<span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>:<span class="number">8080</span>&#125;</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">263</span> [myid:] - INFO  [main:Server@<span class="number">399</span>] - Started @<span class="number">925</span>ms</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">264</span> [myid:] - INFO  [main:JettyAdminServer@<span class="number">178</span>] - Started AdminServer on address <span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>, port <span class="number">8080</span> <span class="keyword">and</span> command URL /commands</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">268</span> [myid:] - INFO  [main:ServerCnxnFactory@<span class="number">169</span>] - Using org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.server</span><span class="variable">.NIOServerCnxnFactory</span> as server connection factory</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">269</span> [myid:] - WARN  [main:ServerCnxnFactory@<span class="number">309</span>] - maxCnxns is <span class="keyword">not</span> configured, using <span class="keyword">default</span> value <span class="number">0</span>.</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">271</span> [myid:] - INFO  [main:NIOServerCnxnFactory@<span class="number">666</span>] - Configuring NIO connection handler <span class="keyword">with</span> <span class="number">10</span>s sessionless connection timeout, <span class="number">2</span> selector thread(s), <span class="number">16</span> worker threads, <span class="keyword">and</span> <span class="number">64</span> kB direct buffers.</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">272</span> [myid:] - INFO  [main:NIOServerCnxnFactory@<span class="number">674</span>] - binding to port <span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>/<span class="number">0</span><span class="variable">.0</span><span class="variable">.0</span><span class="variable">.0</span>:<span class="number">2181</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">285</span> [myid:] - INFO  [main:WatchManagerFactory@<span class="number">42</span>] - Using org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.server</span><span class="variable">.watch</span><span class="variable">.WatchManager</span> as watch manager</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">286</span> [myid:] - INFO  [main:WatchManagerFactory@<span class="number">42</span>] - Using org<span class="variable">.apache</span><span class="variable">.zookeeper</span><span class="variable">.server</span><span class="variable">.watch</span><span class="variable">.WatchManager</span> as watch manager</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">286</span> [myid:] - INFO  [main:ZKDatabase@<span class="number">132</span>] - zookeeper<span class="variable">.snapshotSizeFactor</span> = <span class="number">0</span><span class="variable">.33</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">286</span> [myid:] - INFO  [main:ZKDatabase@<span class="number">152</span>] - zookeeper<span class="variable">.commitLogCount</span>=<span class="number">500</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">290</span> [myid:] - INFO  [main:SnapStream@<span class="number">61</span>] - zookeeper<span class="variable">.snapshot</span><span class="variable">.compression</span><span class="variable">.method</span> = CHECKED</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">291</span> [myid:] - INFO  [main:FileSnap@<span class="number">85</span>] - Reading snapshot D:\software\apache-zookeeper-<span class="number">3</span><span class="variable">.6</span><span class="variable">.1</span>\data\version-<span class="number">2\s</span>napshot<span class="variable">.0</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">293</span> [myid:] - INFO  [main:DataTree@<span class="number">1737</span>] - The digest value is empty in snapshot</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">298</span> [myid:] - INFO  [main:ZKDatabase@<span class="number">289</span>] - Snapshot loaded in <span class="number">11</span> ms, highest zxid is <span class="number">0</span>x0, digest is <span class="number">1371985504</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">299</span> [myid:] - INFO  [main:FileTxnSnapLog@<span class="number">470</span>] - Snapshotting: <span class="number">0</span>x0 to D:\software\apache-zookeeper-<span class="number">3</span><span class="variable">.6</span><span class="variable">.1</span>\data\version-<span class="number">2\s</span>napshot<span class="variable">.0</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">301</span> [myid:] - INFO  [main:ZooKeeperServer@<span class="number">519</span>] - Snapshot taken in <span class="number">2</span> ms</span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">315</span> [myid:] - INFO  [main:RequestThrottler@<span class="number">74</span>] - zookeeper<span class="variable">.request_throttler</span><span class="variable">.shutdownTimeout</span> = <span class="number">10000</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">326</span> [myid:] - INFO  [main:ContainerManager@<span class="number">83</span>] - Using checkIntervalMs=<span class="number">60000</span> maxPerMinute=<span class="number">10000</span> maxNeverUsedIntervalMs=<span class="number">0</span></span><br><span class="line"><span class="number">2025</span>-<span class="number">07</span>-<span class="number">13</span> <span class="number">12</span>:<span class="number">03</span>:<span class="number">33</span>,<span class="number">328</span> [myid:] - INFO  [main:ZKAuditProvider@<span class="number">42</span>] - ZooKeeper audit is disabled.</span><br></pre></td></tr></table></figure></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kafka/" rel="tag"># Kafka</a>
+              <a href="/tags/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" rel="tag"># Kafka源码分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%8D%81%E4%B8%80)Redis%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E5%92%8C%E9%9B%AA%E5%B4%A9/" rel="prev" title="Redis基础入门(十一)Redis缓存穿透和雪崩">
+                  <i class="fa fa-angle-left"></i> Redis基础入门(十一)Redis缓存穿透和雪崩
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/Kafka%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90(%E4%BA%8C)KafkaProducer%E5%88%9D%E5%A7%8B%E5%8C%96/" rel="next" title="Kafka源码分析(二)KafkaProducer初始化">
+                  Kafka源码分析(二)KafkaProducer初始化 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
