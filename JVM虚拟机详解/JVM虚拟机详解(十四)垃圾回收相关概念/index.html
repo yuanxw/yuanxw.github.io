@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。然而system.gc() )调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM虚拟机详解(十四)**垃圾回收相关概念">
+<meta property="og:url" content="https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。然而system.gc() )调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter14/image.png">
+<meta property="article:published_time" content="2023-02-13T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T15:22:51.570Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="JVM虚拟机详解">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/jvm_virtual_machine/chapter14/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/","path":"JVM虚拟机详解/JVM虚拟机详解(十四)垃圾回收相关概念/","title":"JVM虚拟机详解(十四)**垃圾回收相关概念"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JVM虚拟机详解(十四)**垃圾回收相关概念 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3-%E5%8D%81%E5%9B%9B-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5"><span class="nav-number">1.</span> <span class="nav-text">JVM虚拟机详解(十四)垃圾回收相关概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-System-gc"><span class="nav-number">1.1.</span> <span class="nav-text">1. System.gc()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E5%92%8C%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F"><span class="nav-number">1.2.</span> <span class="nav-text">2.内存溢出和内存泄漏</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-Stop-The-World"><span class="nav-number">1.3.</span> <span class="nav-text">3.Stop The World</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E5%9B%9B)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JVM虚拟机详解(十四)**垃圾回收相关概念 | 我的博客">
+      <meta itemprop="description" content="在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。然而system.gc() )调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JVM虚拟机详解(十四)**垃圾回收相关概念
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-02-14 00:00:00" itemprop="dateCreated datePublished" datetime="2023-02-14T00:00:00+08:00">2023-02-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 23:22:51" itemprop="dateModified" datetime="2025-09-03T23:22:51+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/" itemprop="url" rel="index"><span itemprop="name">JVM虚拟机详解</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。然而system.gc() )调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="JVM虚拟机详解-十四-垃圾回收相关概念"><a href="#JVM虚拟机详解-十四-垃圾回收相关概念" class="headerlink" title="JVM虚拟机详解(十四)垃圾回收相关概念"></a>JVM虚拟机详解(十四)<strong>垃圾回收相关概念</strong></h2><h3 id="1-System-gc"><a href="#1-System-gc" class="headerlink" title="1. System.gc()"></a>1. <strong>System.gc()</strong></h3><ul>
+<li><p><strong>理解</strong></p>
+<ul>
+<li><p>在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。然而system.gc() )调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)</p>
+</li>
+<li><p>JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况下，垃圾回收应该是自动进行的，无须手动触发，否则就太过于麻烦了。在一些特殊情况下，如我们正在编写一个性能基准，我们可以在运行之间调用System.gc()代码演示是否出发GC操作</p>
+</li>
+<li><p>代码演示是否出发GC操作</p>
+  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa.gc;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * System.gc()</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span>: peppa</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span>: 2022-03-07 10:41:57</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SystemGC</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">SystemGC</span>();</span><br><span class="line">        <span class="comment">// 提醒JVM进行垃圾回收</span></span><br><span class="line">        System.gc();</span><br><span class="line">        <span class="comment">// 强制调用 失去引用对象的finalize()</span></span><br><span class="line">        <span class="comment">//System.runFinalization();</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">finalize</span><span class="params">()</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">        <span class="built_in">super</span>.finalize();</span><br><span class="line">        System.out.println(<span class="string">&quot;...SystemGC.finalize()方法被执行!!!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>  输出结果不确定：有时候会调用 finalize() 方法，有时候并不会调用</p>
+  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">...SystemGC.finalize()方法被执行!!!</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>手动GC来理解不可达对象的回收</strong></p>
+  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa.gc;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 加上参数：  -XX:+PrintGCDetails -Xms256m -Xmx256m -XX:+PrintGCDetails -XX:PretenureSizeThreshold=15m</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> peppa</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2022-03-07 10:53:44</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LocalVariablesGC</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 触发Minor GC没有回收对象，然后在触发Full GC将该对象存入old区</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localvarGC1</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">//10MB</span></span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  触发YoungGC的时候，已经被回收了</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localvarGC2</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        buffer = <span class="literal">null</span>;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 不会被回收，因为它还存放在局部变量表索引为1的槽中</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localvarGC3</span><span class="params">()</span> &#123;</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 会被回收，因为它还存放在局部变量表索引为1的槽中，但是后面定义的value把这个槽给替换了</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localvarGC4</span><span class="params">()</span> &#123;</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">10</span> * <span class="number">1024</span> * <span class="number">1024</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">int</span> <span class="variable">value</span> <span class="operator">=</span> <span class="number">10</span>;</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * localvarGC5中的数组已经被回收</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">localvarGC5</span><span class="params">()</span> &#123;</span><br><span class="line">        localvarGC1();</span><br><span class="line">        System.gc();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">LocalVariablesGC</span> <span class="variable">local</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LocalVariablesGC</span>();</span><br><span class="line">        <span class="comment">// 通过在main方法调用这几个方法进行测试</span></span><br><span class="line">        System.out.println(<span class="string">&quot;...LocalVariablesGC.localvarGC-1()&quot;</span>);</span><br><span class="line">        local.localvarGC1();</span><br><span class="line"></span><br><span class="line"><span class="comment">//        System.out.println(&quot;...LocalVariablesGC.localvarGC-2()&quot;);</span></span><br><span class="line"><span class="comment">//        local.localvarGC2();</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//        System.out.println(&quot;...LocalVariablesGC.localvarGC-3()&quot;);</span></span><br><span class="line"><span class="comment">//        local.localvarGC3();</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//        System.out.println(&quot;...LocalVariablesGC.localvarGC-4()&quot;);</span></span><br><span class="line"><span class="comment">//        local.localvarGC4();</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//        System.out.println(&quot;...LocalVariablesGC.localvarGC-5()&quot;);</span></span><br><span class="line"><span class="comment">//        local.localvarGC5();</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>执行结果：</p>
+<ul>
+<li>执行 System.gc() 仅仅是将年轻代的 buffer 数组对象放到了老年代，buffer对象仍然没有回收</li>
+</ul>
+  <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">...LocalVariablesGC.localvarGC<span class="literal">-1</span>()</span><br><span class="line">**[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10728</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10976</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0052388</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">10728</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">248</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">10976</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3228</span><span class="type">K</span>-&gt;<span class="number">3228</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0040694</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.02</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>]** </span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">655</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">1</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000faba3ee8</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">10868</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">6</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f0a9d270</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">3235</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4500</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">350</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">388</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>由于 buffer 数组对象没有引用指向它，执行 System.gc() 将被回收</li>
+</ul>
+  <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...LocalVariablesGC.localvarGC<span class="literal">-2</span>()</span><br><span class="line">**[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">840</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">848</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0007219</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">840</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">8</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">848</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3229</span><span class="type">K</span>-&gt;<span class="number">3229</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0034734</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>]** </span><br><span class="line">Heap</span><br><span class="line"></span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">655</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">1</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000faba3ee8</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">628</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f009d260</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">3235</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4500</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">350</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">388</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>虽然出了代码块的作用域，但是 buffer 数组对象并没有被回收</li>
+</ul>
+  <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">...LocalVariablesGC.localvarGC<span class="literal">-3</span>()</span><br><span class="line">**[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10736</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10976</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0051980</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.01</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">10736</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">240</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">10976</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3229</span><span class="type">K</span>-&gt;<span class="number">3229</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0039932</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.05</span> <span class="type">sys</span>=<span class="number">0.06</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>]** </span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">655</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">1</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000faba3ee8</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">10868</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">6</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f0a9d270</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">3235</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4500</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">350</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">388</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>1、来看看字节码：实例方法局部变量表第一个变量肯定是 this</p>
+<p>  Q：就多定义了一个局部变量 value ，就可以把字节数组回收了呢？</p>
+<p>  A：局部变量表长度为 2 ，这说明了出了代码块时，buffer 就出了其作用域范围，此时没有为 value 开启新的槽，value 变量直接占据了 buffer 变量的槽（Slot），导致堆中的字节数组没有引用再指向它，执行 System.gc() 时被回收。看，value 位于局部变量表中索引为 1 的位置。value这个局部变量把原本属于buffer的slot给占用了，这样栈上就没有buffer变量指向<code>new byte[10 * 1024 * 1024]</code>实例了。</p>
+</li>
+<li><p>局部变量除了方法范围就是失效了，堆中的字节数组铁定被回收</p>
+</li>
+</ul>
+  <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">...LocalVariablesGC.localvarGC<span class="literal">-5</span>()</span><br><span class="line">[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10728</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">10944</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0050946</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.01</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">10728</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">216</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">10944</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3229</span><span class="type">K</span>-&gt;<span class="number">3229</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0043706</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.13</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">0</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">10868</span><span class="type">K</span>-&gt;<span class="number">10868</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0002125</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">0</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">10868</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">10868</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3229</span><span class="type">K</span>-&gt;<span class="number">3229</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0042302</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">655</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">1</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000faba3ee8</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">628</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f009d260</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">3235</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4500</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">350</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">388</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure>
+  <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">...LocalVariablesGC.localvarGC<span class="literal">-4</span>()</span><br><span class="line">[<span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">840</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">15483</span><span class="type">K</span>-&gt;<span class="number">848</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0007100</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">[<span class="type">Full</span> <span class="type">GC</span> (<span class="type">System.gc</span>()) [<span class="type">PSYoungGen</span>: <span class="number">840</span><span class="type">K</span>-&gt;<span class="number">0</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] [<span class="type">ParOldGen</span>: <span class="number">8</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">175104</span><span class="type">K</span>)] <span class="number">848</span><span class="type">K</span>-&gt;<span class="number">628</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), [<span class="type">Metaspace</span>: <span class="number">3229</span><span class="type">K</span>-&gt;<span class="number">3229</span><span class="type">K</span>(<span class="number">1056768</span><span class="type">K</span>)], <span class="number">0.0041518</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>] </span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">655</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">1</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000faba3ee8</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">628</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f009d260</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">3235</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4500</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">350</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">388</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-内存溢出和内存泄漏"><a href="#2-内存溢出和内存泄漏" class="headerlink" title="2.内存溢出和内存泄漏"></a>2.<strong>内存溢出和内存泄漏</strong></h3><ul>
+<li><p>什么是<strong>内存溢出？</strong></p>
+<ol>
+<li>内存溢出相对于内存泄漏来说，尽管更容易被理解，但是同样的，内存溢出也是引发程序崩溃的罪魁祸首之一。</li>
+<li>由于GC一直在发展，所有一般情况下，除非应用程序占用的内存增长速度非常快，造成垃圾回收已经跟不上内存消耗的速度，否则不太容易出现OOM的情况。</li>
+<li>大多数情况下，GC会进行各种年龄段的垃圾回收，实在不行了就放大招，来一次独占式的Full GC操作，这时候会回收大量的内存，供应用程序继续使用。</li>
+<li>Javadoc中对OutofMemoryError的解释是，没有空闲内存，并且垃圾收集器也无法提供更多内存。</li>
+</ol>
+</li>
+<li><p><strong>内存溢出（OOM）原因分析</strong></p>
+<ul>
+<li><p>首先说没有空闲内存的情况：说明Java虚拟机的堆内存不够。原因有二：</p>
+<ol>
+<li>Java虚拟机的堆内存设置不够。<ul>
+<li>比如：可能存在内存泄漏问题；也很有可能就是堆的大小不合理，比如我们要处理比较可观的数据量，但是没有显式指定JVM堆大小或者指定数值偏小。我们可以通过参数-Xms 、-Xmx来调整。</li>
+</ul>
+</li>
+<li>代码中创建了大量大对象，并且长时间不能被垃圾收集器收集（存在被引用）<ul>
+<li>对于老版本的Oracle JDK，因为永久代的大小是有限的，并且JVM对永久代垃圾回收（如，常量池回收、卸载不再需要的类型）非常不积极，所以当我们不断添加新类型的时候，永久代出现<strong>OutOfMemoryError</strong>也非常多见。尤其是在运行时存在大量动态类型生成的场合；类似intern字符串缓存占用太多空间，也会导致OOM问题。对应的异常信息，会标记出来和永久代相关：“<strong>java.lang.OutOfMemoryError:PermGen space</strong>“。</li>
+<li>随着元数据区的引入，方法区内存已经不再那么窘迫，所以相应的OOM有所改观，出现OOM，异常信息则变成了：“<strong>java.lang.OutofMemoryError:Metaspace</strong>“。直接内存不足，也会导致<strong>OOM</strong>。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><p>抛出<strong>OutofMemoryError</strong>之前，通常垃圾收集器会被触发，尽其所能去清理出空间。</p>
+<ul>
+<li>例如：在引用机制分析中，涉及到JVM会去尝试<strong>回收软引用指向的对象</strong>等。</li>
+<li>在**java.nio.Bits.reserveMemory()**方法中，我们能清楚的看到，System.gc()会被调用，以清理空间。</li>
+</ul>
+</li>
+<li><p>当然，也不是在任何情况下垃圾收集器都会被触发的</p>
+<ul>
+<li>比如，我们去分配一个超大对象，类似一个超大数组超过堆的最大值，JVM可以判断出垃圾收集并不能解决这个问题，所以直接抛出<strong>OutofMemoryError</strong>。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>什么是<strong>内存泄漏？</strong></p>
+<ol>
+<li>也称作“存储渗漏”。严格来说，<strong>只有对象不会再被程序用到了，但是GC又不能回收他们的情况，才叫内存泄漏。</strong></li>
+<li>但实际情况很多时候一些不太好的实践（或疏忽）会导致对象的生命周期变得很长甚至导致OOM，也可以叫做宽泛意义上的“内存泄漏”。</li>
+<li>尽管内存泄漏并不会立刻引起程序崩溃，但是一旦发生内存泄漏，程序中的可用内存就会被逐步蚕食，直至耗尽所有内存，最终出现OutofMemory异常，导致程序崩溃。</li>
+<li>注意，这里的存储空间并不是指物理内存，而是指虚拟内存大小，这个虚拟内存大小取决于磁盘交换区设定的大小。</li>
+</ol>
+<p>  <img src="/images/jvm_virtual_machine/chapter14/image.png" alt="Untitled"></p>
+<p>  Java使用可达性分析算法，最上面的数据不可达，就是需要被回收的。后期有一些对象不用了，按道理应该断开引用，但是存在一些链没有断开，从而导致没有办法被回收。</p>
+<ul>
+<li><p><strong>举例</strong></p>
+<ul>
+<li>单例模式</li>
+</ul>
+<p>  单例的生命周期和应用程序是一样长的，所以单例程序中，如果持有对外部对象的引用的话，那么这个外部对象是不能被回收的，则会导致内存泄漏的产生。</p>
+<ul>
+<li>一些提供close的资源未关闭导致内存泄漏</li>
+</ul>
+<p>  数据库连接（dataSourse.getConnection() ），网络连接（socket）和io连接必须手动close，否则是不能被回收的。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-Stop-The-World"><a href="#3-Stop-The-World" class="headerlink" title="3.Stop The World"></a>3.<strong>Stop The World</strong></h3>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JVM/" rel="tag"># JVM</a>
+              <a href="/tags/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/" rel="tag"># JVM虚拟机详解</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3/JVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E8%A7%A3(%E5%8D%81%E4%B8%89)%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95/" rel="prev" title="JVM虚拟机详解(十三)垃圾回收算法">
+                  <i class="fa fa-angle-left"></i> JVM虚拟机详解(十三)垃圾回收算法
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

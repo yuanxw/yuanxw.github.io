@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 compareTo() 方法来指定元素排序规则，或者初始化时通过构造器参数 Comparator 来指定排序规则。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器">
+<meta property="og:url" content="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 compareTo() 方法来指定元素排序规则，或者初始化时通过构造器参数 Comparator 来指定排序规则。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter26/20200210174818165.png">
+<meta property="article:published_time" content="2023-01-25T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T08:21:26.268Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/java_multithreading/chapter26/20200210174818165.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/","path":"Java多线程/JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器/","title":"JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E4%BA%8C%E5%8D%81%E5%85%AD-Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">1.JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%80%E4%B9%88%E6%98%AFPriorityBlockingQueue"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 什么是PriorityBlockingQueue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-PriorityBlockingQueue%E6%97%A0%E7%95%8C%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 PriorityBlockingQueue无界阻塞队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-PriorityBlockingQueue%E6%97%A0%E7%95%8C%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E7%89%B9%E7%82%B9"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 PriorityBlockingQueue无界阻塞队列特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-%E5%B8%B8%E7%94%A8%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 常用的方法</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器 | 我的博客">
+      <meta itemprop="description" content="PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 compareTo() 方法来指定元素排序规则，或者初始化时通过构造器参数 Comparator 来指定排序规则。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-01-26 00:00:00" itemprop="dateCreated datePublished" datetime="2023-01-26T00:00:00+08:00">2023-01-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 16:21:26" itemprop="dateModified" datetime="2025-09-03T16:21:26+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Java多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 compareTo() 方法来指定元素排序规则，或者初始化时通过构造器参数 Comparator 来指定排序规则。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-JAVA多线程-二十六-Java多线程之PriorityBlockingQueue容器"><a href="#1-JAVA多线程-二十六-Java多线程之PriorityBlockingQueue容器" class="headerlink" title="1.JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器"></a>1.JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器</h2><h3 id="1-1-什么是PriorityBlockingQueue"><a href="#1-1-什么是PriorityBlockingQueue" class="headerlink" title="1.1 什么是PriorityBlockingQueue"></a>1.1 什么是PriorityBlockingQueue</h3><p>&emsp;&emsp;PriorityBlockingQueue 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 compareTo() 方法来指定元素排序规则，或者初始化时通过构造器参数 Comparator 来指定排序规则。</p>
+<p>PriorityBlockingQueue 并发控制采用的是 ReentrantLock，队列为无界队列（ArrayBlockingQueue 是有界队列，LinkedBlockingQueue 也可以通过在构造函数中传入 capacity 指定队列最大的容量，但是 PriorityBlockingQueue 只能指定初始的队列大小，后面插入元素的时候，如果空间不够的话会自动扩容）。</p>
+<p>下面是 PriorityBlockingQueue继承结构关系图：<br><img src="/images/java_multithreading/chapter26/20200210174818165.png" alt="在这里插入图片描述"></p>
+<h3 id="1-2-PriorityBlockingQueue无界阻塞队列"><a href="#1-2-PriorityBlockingQueue无界阻塞队列" class="headerlink" title="1.2 PriorityBlockingQueue无界阻塞队列"></a>1.2 PriorityBlockingQueue无界阻塞队列</h3><p>&emsp;&emsp;简单地说，它就是 PriorityQueue 的线程安全版本。不可以插入 null 值，同时，插入队列的对象必须是可比较大小的（comparable），否则报 ClassCastException 异常。它的插入操作 put 方法不会 block，因为它是无界队列（take 方法在队列为空的时候会阻塞）。<br>通过源代码查看PriorityBlockingQueue实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建一个PriorityBlockingQueue ，具有默认的初始容量（11），根据它们的Comparable对其元素进行排序 。 </span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Creates a &#123;<span class="doctag">@code</span> PriorityBlockingQueue&#125; with the default</span></span><br><span class="line"><span class="comment"> * initial capacity (11) that orders its elements according to</span></span><br><span class="line"><span class="comment"> * their &#123;<span class="doctag">@linkplain</span> Comparable natural ordering&#125;.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">PriorityBlockingQueue</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(DEFAULT_INITIAL_CAPACITY, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建一个PriorityBlockingQueue ，指定容量大小，根据它们的Comparable对其元素进行排序 。 </span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Creates a &#123;<span class="doctag">@code</span> PriorityBlockingQueue&#125; with the specified</span></span><br><span class="line"><span class="comment"> * initial capacity that orders its elements according to their</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@linkplain</span> Comparable natural ordering&#125;.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> initialCapacity the initial capacity for this priority queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> initialCapacity&#125; is less</span></span><br><span class="line"><span class="comment"> *         than 1</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">PriorityBlockingQueue</span><span class="params">(<span class="type">int</span> initialCapacity)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(initialCapacity, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建具有 PriorityBlockingQueue初始容量的PriorityBlockingQueue，根据指定的比较器对其元素进行排序。 </span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Creates a &#123;<span class="doctag">@code</span> PriorityBlockingQueue&#125; with the specified initial</span></span><br><span class="line"><span class="comment"> * capacity that orders its elements according to the specified</span></span><br><span class="line"><span class="comment"> * comparator.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> initialCapacity the initial capacity for this priority queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span>  comparator the comparator that will be used to order this</span></span><br><span class="line"><span class="comment"> *         priority queue.  If &#123;<span class="doctag">@code</span> null&#125;, the &#123;<span class="doctag">@linkplain</span> Comparable</span></span><br><span class="line"><span class="comment"> *         natural ordering&#125; of the elements will be used.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> initialCapacity&#125; is less</span></span><br><span class="line"><span class="comment"> *         than 1</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">PriorityBlockingQueue</span><span class="params">(<span class="type">int</span> initialCapacity,</span></span><br><span class="line"><span class="params">                             Comparator&lt;? <span class="built_in">super</span> E&gt; comparator)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (initialCapacity &lt; <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>();</span><br><span class="line">    <span class="built_in">this</span>.lock = <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">    <span class="built_in">this</span>.notEmpty = lock.newCondition();</span><br><span class="line">    <span class="built_in">this</span>.comparator = comparator;</span><br><span class="line">    <span class="built_in">this</span>.queue = <span class="keyword">new</span> <span class="title class_">Object</span>[initialCapacity];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建一个 PriorityBlockingQueue集合中的元素的PriorityBlockingQueue。 </span></span><br><span class="line"><span class="comment"> * 在指定的集合中。如果指定的集合是 &#123;<span class="doctag">@link</span> SortedSet&#125;或&#123;<span class="doctag">@link</span> PriorityQueue&#125;，</span></span><br><span class="line"><span class="comment"> * 这个优先队列将按照相同的顺序排序。否则，此优先队列将根据&#123;<span class="doctag">@linkplain</span>可比较的自然排序&#125;。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Creates a &#123;<span class="doctag">@code</span> PriorityBlockingQueue&#125; containing the elements</span></span><br><span class="line"><span class="comment"> * in the specified collection.  If the specified collection is a</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> SortedSet&#125; or a &#123;<span class="doctag">@link</span> PriorityQueue&#125;, this</span></span><br><span class="line"><span class="comment"> * priority queue will be ordered according to the same ordering.</span></span><br><span class="line"><span class="comment"> * Otherwise, this priority queue will be ordered according to the</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@linkplain</span> Comparable natural ordering&#125; of its elements.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span>  c the collection whose elements are to be placed</span></span><br><span class="line"><span class="comment"> *         into this priority queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> ClassCastException if elements of the specified collection</span></span><br><span class="line"><span class="comment"> *         cannot be compared to one another according to the priority</span></span><br><span class="line"><span class="comment"> *         queue&#x27;s ordering</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> NullPointerException if the specified collection or any</span></span><br><span class="line"><span class="comment"> *         of its elements are null</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">PriorityBlockingQueue</span><span class="params">(Collection&lt;? extends E&gt; c)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.lock = <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>();</span><br><span class="line">    <span class="built_in">this</span>.notEmpty = lock.newCondition();</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">heapify</span> <span class="operator">=</span> <span class="literal">true</span>; <span class="comment">// true if not known to be in heap order</span></span><br><span class="line">    <span class="type">boolean</span> <span class="variable">screen</span> <span class="operator">=</span> <span class="literal">true</span>;  <span class="comment">// true if must screen for nulls</span></span><br><span class="line">    <span class="keyword">if</span> (c <span class="keyword">instanceof</span> SortedSet&lt;?&gt;) &#123;</span><br><span class="line">        SortedSet&lt;? <span class="keyword">extends</span> <span class="title class_">E</span>&gt; ss = (SortedSet&lt;? <span class="keyword">extends</span> <span class="title class_">E</span>&gt;) c;</span><br><span class="line">        <span class="built_in">this</span>.comparator = (Comparator&lt;? <span class="built_in">super</span> E&gt;) ss.comparator();</span><br><span class="line">        heapify = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (c <span class="keyword">instanceof</span> PriorityBlockingQueue&lt;?&gt;) &#123;</span><br><span class="line">        PriorityBlockingQueue&lt;? <span class="keyword">extends</span> <span class="title class_">E</span>&gt; pq =</span><br><span class="line">            (PriorityBlockingQueue&lt;? <span class="keyword">extends</span> <span class="title class_">E</span>&gt;) c;</span><br><span class="line">        <span class="built_in">this</span>.comparator = (Comparator&lt;? <span class="built_in">super</span> E&gt;) pq.comparator();</span><br><span class="line">        screen = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (pq.getClass() == PriorityBlockingQueue.class) <span class="comment">// exact match</span></span><br><span class="line">            heapify = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    Object[] a = c.toArray();</span><br><span class="line">    <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> a.length;</span><br><span class="line">    <span class="comment">// If c.toArray incorrectly doesn&#x27;t return Object[], copy it.</span></span><br><span class="line">    <span class="keyword">if</span> (a.getClass() != Object[].class)</span><br><span class="line">        a = Arrays.copyOf(a, n, Object[].class);</span><br><span class="line">    <span class="keyword">if</span> (screen &amp;&amp; (n == <span class="number">1</span> || <span class="built_in">this</span>.comparator != <span class="literal">null</span>)) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; n; ++i)</span><br><span class="line">            <span class="keyword">if</span> (a[i] == <span class="literal">null</span>)</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">this</span>.queue = a;</span><br><span class="line">    <span class="built_in">this</span>.size = n;</span><br><span class="line">    <span class="keyword">if</span> (heapify)</span><br><span class="line">        heapify();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="1-3-PriorityBlockingQueue无界阻塞队列特点"><a href="#1-3-PriorityBlockingQueue无界阻塞队列特点" class="headerlink" title="1.3 PriorityBlockingQueue无界阻塞队列特点"></a>1.3 PriorityBlockingQueue无界阻塞队列特点</h3><ol>
+<li>PriorityBlockingQueue无界队列，只能指定初始的队列大小，后面插入元素的时候，如果空间不够的话会自动扩容。</li>
+<li>PriorityBlockingQueue不可以插入 null 值。</li>
+<li>插入队列的对象必须是可比较大小的（comparable）。</li>
+</ol>
+<h3 id="1-4-常用的方法"><a href="#1-4-常用的方法" class="headerlink" title="1.4 常用的方法"></a>1.4 常用的方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.thread.chapter26;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.PriorityBlockingQueue;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PriorityBlockingQueueExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="comment">// add();</span></span><br><span class="line">        <span class="comment">// poll();</span></span><br><span class="line">        <span class="comment">// peek();</span></span><br><span class="line">        <span class="comment">// element();</span></span><br><span class="line">        <span class="comment">// remove();</span></span><br><span class="line">        <span class="comment">// addNoComparable();</span></span><br><span class="line">        addWithNull();</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * PriorityBlockingQueue</span></span><br><span class="line"><span class="comment">     * 将指定的元素插入到此优先级队列中。 由于队列无限制，此方法将永远不会返回false 。</span></span><br><span class="line"><span class="comment">     * add()方法、put()方法，都调用用offer()方法。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行add()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         Message 1</span></span><br><span class="line"><span class="comment">         Message 2</span></span><br><span class="line"><span class="comment">         Message 3</span></span><br><span class="line"><span class="comment">         =====执行add()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行add()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="comment">// 创建一个PriorityBlockingQueue ，具有指定的初始容量，根据它们的natural ordering对其元素进行排序 。</span></span><br><span class="line">        <span class="comment">// 超过容量之后会自动扩容</span></span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>(<span class="number">2</span>);</span><br><span class="line">        priorityBlockingQueue.add(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.offer(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.forEach(System.out::println);</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行add()签名方法-开始=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检索并删除此队列的头，则等待空间变为可用。</span></span><br><span class="line"><span class="comment">     =====执行poll()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中poll()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中poll()数据值为：Message 2</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【1】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中poll()数据值为：Message 3</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中poll()数据值为：null</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中poll()数据值为：null</span></span><br><span class="line"><span class="comment">     =====执行poll()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">poll</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行poll()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>(<span class="number">2</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot;</span> + priorityBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot;</span> + priorityBlockingQueue.poll());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot;</span> + priorityBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot;</span> + priorityBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中poll()数据值为：&quot;</span> + priorityBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行poll()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检索但不删除此队列的头，如果此队列为空，则返回 null。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行peek()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         =====执行peek()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">peek</span><span class="params">()</span>  &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行peek()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>(<span class="number">2</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot;</span> + priorityBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot;</span> + priorityBlockingQueue.peek());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot;</span> + priorityBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot;</span> + priorityBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中peek()数据值为：&quot;</span> + priorityBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行peek()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检索，但不删除，这个队列的头。 此方法与peek的不同之处在于，如果此队列为空，它将抛出异常。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行element()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中take()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中take()数据值为：Message 2</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中take()数据值为：Message 3</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【0】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         Exception in thread &quot;main&quot; java.util.NoSuchElementException</span></span><br><span class="line"><span class="comment">         at java.util.AbstractQueue.element(AbstractQueue.java:136)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.element(PriorityBlockingQueueExample.java:123)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:11)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">element</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行element()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中take()数据值为：&quot;</span> + priorityBlockingQueue.take());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中take()数据值为：&quot;</span> + priorityBlockingQueue.take());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中take()数据值为：&quot;</span> + priorityBlockingQueue.take());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中element()数据值为：&quot;</span> + priorityBlockingQueue.element());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行element()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检索并删除此队列的头。 此方法与poll不同之处在于，如果此队列为空，它将抛出异常。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行remove()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中的个数：【3】,容量：【2147483647】</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中remove()数据值为：Message 1</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中remove()数据值为：Message 2</span></span><br><span class="line"><span class="comment">         当前priorityBlockingQueue对象中remove()数据值为：Message 3</span></span><br><span class="line"><span class="comment">         Exception in thread &quot;main&quot; java.util.NoSuchElementException</span></span><br><span class="line"><span class="comment">         at java.util.AbstractQueue.remove(AbstractQueue.java:117)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.remove(PriorityBlockingQueueExample.java:151)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:12)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行remove()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        priorityBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot;</span> + priorityBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot;</span> + priorityBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot;</span> + priorityBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前priorityBlockingQueue对象中remove()数据值为：&quot;</span> + priorityBlockingQueue.remove());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前priorityBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, priorityBlockingQueue.size(),priorityBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行remove()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 验证：</span></span><br><span class="line"><span class="comment">     * 添加元素时，插入队列的对象必须是可比较大小的（comparable），否则报 ClassCastException 异常。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行addNoComparable()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         Exception in thread &quot;main&quot; java.lang.ClassCastException: com.yuanxw.thread.chapter26.PriorityBlockingQueueExample$Order cannot be cast to java.lang.Comparable</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.PriorityBlockingQueue.siftUpComparable(PriorityBlockingQueue.java:358)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.PriorityBlockingQueue.offer(PriorityBlockingQueue.java:490)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.PriorityBlockingQueue.add(PriorityBlockingQueue.java:464)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.addNoComparable(PriorityBlockingQueueExample.java:166)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:12)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">addNoComparable</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行addNoComparable()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="comment">// 默认长度为：11</span></span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>();</span><br><span class="line">        priorityBlockingQueue.add(<span class="keyword">new</span> <span class="title class_">Order</span>());</span><br><span class="line">        priorityBlockingQueue.forEach(System.out::println);</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行addNoComparable()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 验证：</span></span><br><span class="line"><span class="comment">     * 添加元素时，插入队列的对象是null，报 NullPointerException 异常。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行addWithNull()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         Exception in thread &quot;main&quot; java.lang.NullPointerException</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.PriorityBlockingQueue.offer(PriorityBlockingQueue.java:480)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.PriorityBlockingQueue.add(PriorityBlockingQueue.java:464)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.addWithNull(PriorityBlockingQueueExample.java:194)</span></span><br><span class="line"><span class="comment">         at com.yuanxw.thread.chapter26.PriorityBlockingQueueExample.main(PriorityBlockingQueueExample.java:13)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">addWithNull</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行addWithNull()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="comment">// 默认长度为：11</span></span><br><span class="line">        <span class="type">PriorityBlockingQueue</span> <span class="variable">priorityBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PriorityBlockingQueue</span>();</span><br><span class="line">        priorityBlockingQueue.add(<span class="literal">null</span>);</span><br><span class="line">        priorityBlockingQueue.forEach(System.out::println);</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行addWithNull()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">Order</span>&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。<br>  <p align="right">——厚积薄发(yuanxw)</p></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/" rel="prev" title="JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器">
+                  <i class="fa fa-angle-left"></i> JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BLinkedBlockingQueue%E5%AE%B9%E5%99%A8/" rel="next" title="JAVA多线程(二十七)Java多线程之LinkedBlockingQueue容器">
+                  JAVA多线程(二十七)Java多线程之LinkedBlockingQueue容器 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

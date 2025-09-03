@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA多线程(十七)Java多线程之ForkJoin框架">
+<meta property="og:url" content="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter17/20200129223432223.jpg">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter17/20200129224455413.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter17/20200129230728981.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter17/2020013015395489.png">
+<meta property="article:published_time" content="2023-01-16T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T08:25:13.389Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/java_multithreading/chapter17/20200129223432223.jpg">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/","path":"Java多线程/JAVA多线程(十七)Java多线程之ForkJoin框架/","title":"JAVA多线程(十七)Java多线程之ForkJoin框架"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JAVA多线程(十七)Java多线程之ForkJoin框架 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E5%8D%81%E4%B8%83-Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6"><span class="nav-number">1.</span> <span class="nav-text">1.JAVA多线程(十七)Java多线程之ForkJoin框架</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%80%E4%B9%88%E6%98%AFForkJoin%E6%A1%86%E6%9E%B6%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 什么是ForkJoin框架？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-RecursiveTask%E4%BD%BF%E7%94%A8%E6%A0%B7%E4%BE%8B"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 RecursiveTask使用样例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-ForkJoinPool%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 ForkJoinPool线程池</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-RecursiveAction%E4%BD%BF%E7%94%A8%E6%A0%B7%E4%BE%8B"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 RecursiveAction使用样例</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E4%B8%83)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BForkJoin%E6%A1%86%E6%9E%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JAVA多线程(十七)Java多线程之ForkJoin框架 | 我的博客">
+      <meta itemprop="description" content="Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA多线程(十七)Java多线程之ForkJoin框架
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-01-17 00:00:00" itemprop="dateCreated datePublished" datetime="2023-01-17T00:00:00+08:00">2023-01-17</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 16:25:13" itemprop="dateModified" datetime="2025-09-03T16:25:13+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Java多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">Fork/Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork/Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork/Join框架的讲解，基于JDK1.8+中的Fork/Join框架实现。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-JAVA多线程-十七-Java多线程之ForkJoin框架"><a href="#1-JAVA多线程-十七-Java多线程之ForkJoin框架" class="headerlink" title="1.JAVA多线程(十七)Java多线程之ForkJoin框架"></a>1.JAVA多线程(十七)Java多线程之ForkJoin框架</h2><h3 id="1-1-什么是ForkJoin框架？"><a href="#1-1-什么是ForkJoin框架？" class="headerlink" title="1.1 什么是ForkJoin框架？"></a>1.1 什么是ForkJoin框架？</h3><p>&emsp;&emsp; Fork&#x2F;Join 框架，可以将一个大的任务拆分成多个子任务进行并行处理，最后将子任务结果合并成最后的计算结果，并进行输出。通过这种方式，Fork&#x2F;Join 能试着去使用所有可用的处理器，以达到加速处理多线程的目的。本文中对Fork&#x2F;Join框架的讲解，基于JDK1.8+中的Fork&#x2F;Join框架实现。</p>
+<p><img src="/images/java_multithreading/chapter17/20200129223432223.jpg" alt="在这里插入图片描述"></p>
+<p><strong>Fork&#x2F;Join</strong>框架要完成两件事情：</p>
+<ol>
+<li><p>任务分割：<br/><br>&emsp;&emsp; 首先Fork&#x2F;Join框架需要把大的任务分割成足够小的子任务，如果子任务比较大的话还要对子任务进行继续分割。</p>
+</li>
+<li><p>执行任务并合并结果：<br/><br>&emsp;&emsp; 分割的子任务分别放到双端队列里，然后几个启动线程分别从双端队列里获取任务执行。子任务执行完的结果都放在另外一个队列里，启动一个线程从队列里取数据，然后合并这些数据。</p>
+</li>
+<li><p>ForkJoinTask类：<br/><br>&emsp;&emsp;使用Fork&#x2F;Join框架，首先需要创建一个ForkJoin任务。该类提供了在任务中执行fork和join的机制。通常情况下我们不需要直接集成ForkJoinTask类，只需要继承它的子类，Fork&#x2F;Join框架提供了两个子类:<br/><br>&emsp;&emsp;<strong>RecursiveTask</strong>： 用于有返回结果的任务<br/><br>&emsp;&emsp;<strong>RecursiveAction</strong>：用于没有返回结果的任务</p>
+</li>
+</ol>
+<p><img src="/images/java_multithreading/chapter17/20200129224455413.png" alt="在这里插入图片描述"></p>
+<h3 id="1-2-RecursiveTask使用样例"><a href="#1-2-RecursiveTask使用样例" class="headerlink" title="1.2 RecursiveTask使用样例"></a>1.2 RecursiveTask使用样例</h3><p>使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter17;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ForkJoinPool;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ForkJoinTask;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.RecursiveTask;</span><br><span class="line"><span class="keyword">import</span> java.util.stream.IntStream;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 使用CalculatorRecursiveTask extends RecursiveTask完成1到10000累加的需求</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ForkJoinRecursiveTask</span> &#123;</span><br><span class="line">    <span class="comment">// 阈值</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">THRESHOLD</span> <span class="operator">=</span> <span class="number">200</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        <span class="comment">// 计算1-50累加值</span></span><br><span class="line">        <span class="type">CalculatorRecursiveTask</span> <span class="variable">calculatorRecursiveTask</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CalculatorRecursiveTask</span>(<span class="number">1</span>,<span class="number">10000</span>);</span><br><span class="line">        <span class="type">ForkJoinPool</span> <span class="variable">forkJoinPool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span>();</span><br><span class="line">        ForkJoinTask&lt;Integer&gt; forkJoinTask = forkJoinPool.submit(calculatorRecursiveTask);</span><br><span class="line">        System.out.println(<span class="string">&quot;计算结果：&quot;</span>+forkJoinTask.get());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 有返回值ForkJoin任务</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">CalculatorRecursiveTask</span> <span class="keyword">extends</span> <span class="title class_">RecursiveTask</span>&lt;Integer&gt; &#123;</span><br><span class="line">        <span class="comment">// 开始计算机位置</span></span><br><span class="line">        <span class="keyword">public</span> <span class="type">int</span> first;</span><br><span class="line">        <span class="comment">// 结束计算机位置</span></span><br><span class="line">        <span class="keyword">private</span> <span class="type">int</span> last;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 构造函数</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param</span> first</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param</span> last</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">CalculatorRecursiveTask</span><span class="params">(<span class="type">int</span> first, <span class="type">int</span> last)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.first = first;</span><br><span class="line">            <span class="built_in">this</span>.last = last;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> Integer <span class="title function_">compute</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (last - first &lt;= THRESHOLD) &#123;</span><br><span class="line">                <span class="comment">/**</span></span><br><span class="line"><span class="comment">                 * 任务足够小则直接计算</span></span><br><span class="line"><span class="comment">                 * 使用lambda表达式简化如下代码</span></span><br><span class="line"><span class="comment">                 * &lt;pre&gt;</span></span><br><span class="line"><span class="comment">                 * for (int i = first; i &lt;= last; i++) &#123;</span></span><br><span class="line"><span class="comment">                 *     result += i;</span></span><br><span class="line"><span class="comment">                 * &#125;</span></span><br><span class="line"><span class="comment">                 * &lt;/pre&gt;</span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                <span class="keyword">return</span> IntStream.rangeClosed(first, last).sum();</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 获得中间值，向上取整</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">middle</span> <span class="operator">=</span> (first + last) / <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">                <span class="type">CalculatorRecursiveTask</span> <span class="variable">leftTask</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CalculatorRecursiveTask</span>(first, middle);</span><br><span class="line">                <span class="type">CalculatorRecursiveTask</span> <span class="variable">rightTask</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CalculatorRecursiveTask</span>(middle + <span class="number">1</span>, last);</span><br><span class="line"></span><br><span class="line">                leftTask.fork();</span><br><span class="line">                rightTask.fork();</span><br><span class="line">                <span class="keyword">return</span> leftTask.join() + rightTask.join();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">计算结果：50005000</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-3-ForkJoinPool线程池"><a href="#1-3-ForkJoinPool线程池" class="headerlink" title="1.3 ForkJoinPool线程池"></a>1.3 ForkJoinPool线程池</h3><p>&emsp;&emsp;ForkJoin 使用 ForkJoinPool 来启动，它是一个特殊的线程池，线程数量取决于 CPU 核数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ForkJoinPool</span> <span class="keyword">extends</span> <span class="title class_">AbstractExecutorService</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Creates a &#123;<span class="doctag">@code</span> ForkJoinPool&#125; with parallelism equal to &#123;<span class="doctag">@link</span></span></span><br><span class="line"><span class="comment">     * java.lang.Runtime#availableProcessors&#125;, using the &#123;<span class="doctag">@linkplain</span></span></span><br><span class="line"><span class="comment">     * #defaultForkJoinWorkerThreadFactory default thread factory&#125;,</span></span><br><span class="line"><span class="comment">     * no UncaughtExceptionHandler, and non-async LIFO processing mode.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> SecurityException if a security manager exists and</span></span><br><span class="line"><span class="comment">     *         the caller is not permitted to modify threads</span></span><br><span class="line"><span class="comment">     *         because it does not hold &#123;<span class="doctag">@link</span></span></span><br><span class="line"><span class="comment">     *         java.lang.RuntimePermission&#125;&#123;<span class="doctag">@code</span> (&quot;modifyThread&quot;)&#125;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">ForkJoinPool</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>(Math.min(MAX_CAP, Runtime.getRuntime().availableProcessors()),</span><br><span class="line">             defaultForkJoinWorkerThreadFactory, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>ForkJoinPool 实现了工作窃取算法来提高 CPU 的利用率。每个线程都维护了一个双端队列，用来存储需要执行的任务。工作窃取算法允许空闲的线程从其它线程的双端队列中窃取一个任务来执行。窃取的任务必须是最晚的任务，避免和队列所属线程发生竞争。例如下图中，Thread2 从 Thread1 的队列中拿出最晚的 Task1 任务，Thread1 会拿出 Task2 来执行，这样就避免发生竞争。但是如果队列中只有一个任务时还是会发生竞争。</p>
+<p><img src="/images/java_multithreading/chapter17/20200129230728981.png" alt="在这里插入图片描述"></p>
+<h3 id="1-4-RecursiveAction使用样例"><a href="#1-4-RecursiveAction使用样例" class="headerlink" title="1.4 RecursiveAction使用样例"></a>1.4 RecursiveAction使用样例</h3><ol>
+<li>用于没有返回结果的任务，利用RecursiveAction，拆分大文件。代码如下：</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter17;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.io.File;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.FileNotFoundException;</span><br><span class="line"><span class="keyword">import</span> java.io.FileOutputStream;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.nio.channels.FileChannel;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ForkJoinPool;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ForkJoinTask;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.RecursiveAction;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 利用RecursiveAction，拆分大文件</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ForkJoinRecursiveAction</span> &#123;</span><br><span class="line">    <span class="comment">// 阈值</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> <span class="type">int</span> <span class="variable">SPLIT_THRESHOLD</span> <span class="operator">=</span> <span class="number">100_000_000</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException, InterruptedException &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">fileFullPath</span> <span class="operator">=</span> <span class="string">&quot;G:\\当幸福来敲门BD中英双字1280高清.rmvb&quot;</span>;</span><br><span class="line">        <span class="type">File</span> <span class="variable">bigFile</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(fileFullPath);</span><br><span class="line">        <span class="type">FileInputStream</span> <span class="variable">fileInputStream</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(bigFile);</span><br><span class="line"></span><br><span class="line">        <span class="type">ForkJoinPool</span> <span class="variable">forkJoinPool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span>();</span><br><span class="line">        ForkJoinTask&lt;Void&gt; submit = forkJoinPool.submit(<span class="keyword">new</span> <span class="title class_">SplitFileRecursiveAction</span>(fileInputStream, fileFullPath, <span class="number">0</span>, (<span class="type">int</span>) bigFile.length()));</span><br><span class="line">        <span class="comment">// 等待任务执行结束</span></span><br><span class="line">        forkJoinPool.awaitTermination(<span class="number">1</span>, TimeUnit.SECONDS);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 无返回值ForkJoin任务</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title class_">SplitFileRecursiveAction</span> <span class="keyword">extends</span> <span class="title class_">RecursiveAction</span> &#123;</span><br><span class="line">        <span class="comment">// 文件输出流</span></span><br><span class="line">        <span class="keyword">private</span> FileInputStream fileInputStream;</span><br><span class="line">        <span class="comment">// 文件全路径</span></span><br><span class="line">        <span class="keyword">private</span> String fileFullPath;</span><br><span class="line">        <span class="comment">// 开始位置</span></span><br><span class="line">        <span class="keyword">private</span> <span class="type">int</span> start;</span><br><span class="line">        <span class="comment">// 结束位置</span></span><br><span class="line">        <span class="keyword">private</span> <span class="type">int</span> end;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">SplitFileRecursiveAction</span><span class="params">(FileInputStream fileInputStream, String fileFullPath, <span class="type">int</span> start, <span class="type">int</span> end)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.fileInputStream = fileInputStream;</span><br><span class="line">            <span class="built_in">this</span>.fileFullPath = fileFullPath;</span><br><span class="line">            <span class="built_in">this</span>.start = start;</span><br><span class="line">            <span class="built_in">this</span>.end = end;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">protected</span> <span class="keyword">void</span> <span class="title function_">compute</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="comment">// 如果任务计算小于阈值，则开始拆分文件</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">length</span> <span class="operator">=</span> end - start;</span><br><span class="line">            System.out.println(start +<span class="string">&quot;-&quot;</span>+end);</span><br><span class="line">            <span class="keyword">if</span>(length &lt;= SPLIT_THRESHOLD)&#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="comment">// 每次切割大小</span></span><br><span class="line">                    <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[length];</span><br><span class="line">                    <span class="type">File</span> <span class="variable">currentTempFile</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(fileFullPath);</span><br><span class="line">                    String[] split = currentTempFile.getName().split(<span class="string">&quot;\\.&quot;</span>);</span><br><span class="line">                    <span class="type">File</span> <span class="variable">fileName</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(String.format(<span class="string">&quot;%s_%s_%s.%s&quot;</span>, currentTempFile.getParent()+split[<span class="number">0</span>], start, end, split[<span class="number">1</span>]));</span><br><span class="line">                    <span class="type">FileOutputStream</span> <span class="variable">fileOutputStream</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(fileName);</span><br><span class="line">                    <span class="type">FileChannel</span> <span class="variable">outputChannel</span> <span class="operator">=</span> fileOutputStream.getChannel();</span><br><span class="line">                    <span class="comment">// 通道传输文件数据</span></span><br><span class="line">                    fileInputStream.getChannel().transferTo(start, end, outputChannel);</span><br><span class="line">                    fileOutputStream.write(buffer);</span><br><span class="line">                    fileOutputStream.flush();</span><br><span class="line">                    outputChannel.close();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 获得中间值，向上取整</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">middle</span> <span class="operator">=</span> (end + start) / <span class="number">2</span>;</span><br><span class="line">                <span class="type">SplitFileRecursiveAction</span> <span class="variable">leftAction</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SplitFileRecursiveAction</span>(fileInputStream,fileFullPath,start,middle);</span><br><span class="line">                <span class="type">SplitFileRecursiveAction</span> <span class="variable">rightAction</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SplitFileRecursiveAction</span>(fileInputStream,fileFullPath,middle+<span class="number">1</span>,end);</span><br><span class="line"></span><br><span class="line">                leftAction.fork();</span><br><span class="line">                rightAction.fork();</span><br><span class="line"></span><br><span class="line">                leftAction.join();</span><br><span class="line">                rightAction.join();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<p><img src="/images/java_multithreading/chapter17/2020013015395489.png" alt="在这里插入图片描述"></p>
+<p> &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(十七)Java多线程之ForkJoin框架》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。<br>  <p align="right">——厚积薄发(yuanxw)</p></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCondition/" rel="prev" title="JAVA多线程(十六)Java多线程之Condition对象">
+                  <i class="fa fa-angle-left"></i> JAVA多线程(十六)Java多线程之Condition对象
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E5%8D%81%E5%85%AB)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BExecutor%E6%A1%86%E6%9E%B6&ThreadPoolExecutor%E7%B1%BB/" rel="next" title="JAVA多线程(十八)Java多线程之Executor框架&amp;ThreadPoolExecutor类">
+                  JAVA多线程(十八)Java多线程之Executor框架&ThreadPoolExecutor类 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器">
+<meta property="og:url" content="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter25/20200210155410849.png">
+<meta property="article:published_time" content="2023-01-24T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T08:21:32.778Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/java_multithreading/chapter25/20200210155410849.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/","path":"Java多线程/JAVA多线程(二十五)Java多线程之ArrayBlockingQueue容器/","title":"JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-JAVA-%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E4%BA%8C%E5%8D%81%E4%BA%94-Java-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8B-ArrayBlockingQueue-%E5%AE%B9%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">1.JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%80%E4%B9%88%E6%98%AF-BlockingQueue"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 什么是 BlockingQueue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-ArrayBlockingQueue-%E6%9C%89%E7%95%8C%E7%9A%84%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 ArrayBlockingQueue 有界的阻塞队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-ArrayBlockingQueue-%E6%9C%89%E7%95%8C%E7%9A%84%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E7%89%B9%E7%82%B9"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 ArrayBlockingQueue 有界的阻塞队列特点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-%E5%B8%B8%E7%94%A8%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 常用的方法</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器 | 我的博客">
+      <meta itemprop="description" content="阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-01-25 00:00:00" itemprop="dateCreated datePublished" datetime="2023-01-25T00:00:00+08:00">2023-01-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 16:21:32" itemprop="dateModified" datetime="2025-09-03T16:21:32+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Java多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-JAVA-多线程-二十五-Java-多线程之-ArrayBlockingQueue-容器"><a href="#1-JAVA-多线程-二十五-Java-多线程之-ArrayBlockingQueue-容器" class="headerlink" title="1.JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器"></a>1.JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器</h2><h3 id="1-1-什么是-BlockingQueue"><a href="#1-1-什么是-BlockingQueue" class="headerlink" title="1.1 什么是 BlockingQueue"></a>1.1 什么是 BlockingQueue</h3><p>&emsp;&emsp;阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。</p>
+<p><strong>BlockingQueue 和 ArrayBlockingQueue 之间的关系：</strong><br>&emsp;&emsp;BlockingQueue 是一个接口，继承自 Queue，所以其实现类也可以作为 Queue 的实现来使用，而 Queue 又继承自 Collection 接口。下面是 BlockingQueue 继承结构关系图：<br><img src="/images/java_multithreading/chapter25/20200210155410849.png" alt="在这里插入图片描述"></p>
+<h3 id="1-2-ArrayBlockingQueue-有界的阻塞队列"><a href="#1-2-ArrayBlockingQueue-有界的阻塞队列" class="headerlink" title="1.2 ArrayBlockingQueue 有界的阻塞队列"></a>1.2 ArrayBlockingQueue 有界的阻塞队列</h3><p>&emsp;&emsp;ArrayBlockingQueue 是 BlockingQueue 接口的有界队列实现类，底层采用数组来实现。ArrayBlockingQueue 一旦创建，容量不能改变。其并发控制采用可重入锁来控制，不管是插入操作还是读取操作，都需要获取到锁才能进行操作。当队列容量满时，尝试将元素放入队列将导致操作阻塞;尝试从一个空队列中取一个元素也会同样阻塞。</p>
+<p>ArrayBlockingQueue 默认情况下不能保证线程访问队列的公平性，所谓公平性是指严格按照线程等待的绝对时间顺序，即最先等待的线程能够最先访问到 ArrayBlockingQueue。而非公平性则是指访问 ArrayBlockingQueue 的顺序不是遵守严格的时间顺序，有可能存在，当 ArrayBlockingQueue 可以被访问时，长时间阻塞的线程依然无法访问到 ArrayBlockingQueue。如果保证公平性，通常会降低吞吐量。<br>通过源代码查看 ArrayBlockingQueue 实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建具有给定（固定）容量和默认访问策略的 ArrayBlockingQueue 。</span></span><br><span class="line"><span class="comment"> * Creates an &#123;<span class="doctag">@code</span> ArrayBlockingQueue&#125; with the given (fixed)</span></span><br><span class="line"><span class="comment"> * capacity and default access policy.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> capacity the capacity of this queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> capacity &lt; 1&#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">ArrayBlockingQueue</span><span class="params">(<span class="type">int</span> capacity)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(capacity, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建一个 ArrayBlockingQueue具有给定（固定）容量和指定访问策略。</span></span><br><span class="line"><span class="comment"> * 如果true然后对插入或删除阻塞的线程进行队列访问，则按FIFO顺序处理; 如果false访问顺序未指定。</span></span><br><span class="line"><span class="comment"> * Creates an &#123;<span class="doctag">@code</span> ArrayBlockingQueue&#125; with the given (fixed)</span></span><br><span class="line"><span class="comment"> * capacity and the specified access policy.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> capacity the capacity of this queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> fair if &#123;<span class="doctag">@code</span> true&#125; then queue accesses for threads blocked</span></span><br><span class="line"><span class="comment"> *        on insertion or removal, are processed in FIFO order;</span></span><br><span class="line"><span class="comment"> *        if &#123;<span class="doctag">@code</span> false&#125; the access order is unspecified.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> capacity &lt; 1&#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">ArrayBlockingQueue</span><span class="params">(<span class="type">int</span> capacity, <span class="type">boolean</span> fair)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (capacity &lt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>();</span><br><span class="line">    <span class="built_in">this</span>.items = <span class="keyword">new</span> <span class="title class_">Object</span>[capacity];</span><br><span class="line">    lock = <span class="keyword">new</span> <span class="title class_">ReentrantLock</span>(fair);</span><br><span class="line">    notEmpty = lock.newCondition();</span><br><span class="line">    notFull =  lock.newCondition();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建一个 ArrayBlockingQueue具有给定（固定）容量，指定访问策略和最初包含给定集合中的元素，添加在收集* 迭代器的遍历顺序。</span></span><br><span class="line"><span class="comment"> * Creates an &#123;<span class="doctag">@code</span> ArrayBlockingQueue&#125; with the given (fixed)</span></span><br><span class="line"><span class="comment"> * capacity, the specified access policy and initially containing the</span></span><br><span class="line"><span class="comment"> * elements of the given collection,</span></span><br><span class="line"><span class="comment"> * added in traversal order of the collection&#x27;s iterator.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> capacity the capacity of this queue</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> fair if &#123;<span class="doctag">@code</span> true&#125; then queue accesses for threads blocked</span></span><br><span class="line"><span class="comment"> *        on insertion or removal, are processed in FIFO order;</span></span><br><span class="line"><span class="comment"> *        if &#123;<span class="doctag">@code</span> false&#125; the access order is unspecified.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> c the collection of elements to initially contain</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> capacity&#125; is less than</span></span><br><span class="line"><span class="comment"> *         &#123;<span class="doctag">@code</span> c.size()&#125;, or less than 1.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> NullPointerException if the specified collection or any</span></span><br><span class="line"><span class="comment"> *         of its elements are null</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">ArrayBlockingQueue</span><span class="params">(<span class="type">int</span> capacity, <span class="type">boolean</span> fair,</span></span><br><span class="line"><span class="params">                          Collection&lt;? extends E&gt; c)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(capacity, fair);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> <span class="type">ReentrantLock</span> <span class="variable">lock</span> <span class="operator">=</span> <span class="built_in">this</span>.lock;</span><br><span class="line">    lock.lock(); <span class="comment">// Lock only for visibility, not mutual exclusion</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (E e : c) &#123;</span><br><span class="line">                checkNotNull(e);</span><br><span class="line">                items[i++] = e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ArrayIndexOutOfBoundsException ex) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        count = i;</span><br><span class="line">        putIndex = (i == capacity) ? <span class="number">0</span> : i;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-3-ArrayBlockingQueue-有界的阻塞队列特点"><a href="#1-3-ArrayBlockingQueue-有界的阻塞队列特点" class="headerlink" title="1.3 ArrayBlockingQueue 有界的阻塞队列特点"></a>1.3 ArrayBlockingQueue 有界的阻塞队列特点</h3><ol>
+<li>ArrayBlockingQueue 是一个用数组实现的有界阻塞队列，此队列按照先进先出（FIFO）的原则对元素进行排序。</li>
+<li>ArrayBlockingQueue 是基于数组实现的，也就具有数组的特性：一旦初始化，大小就无法修改。</li>
+</ol>
+<h3 id="1-4-常用的方法"><a href="#1-4-常用的方法" class="headerlink" title="1.4 常用的方法"></a>1.4 常用的方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.thread.chapter25;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ArrayBlockingQueue;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ArrayBlockingQueueExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="comment">// add();</span></span><br><span class="line">        <span class="comment">// offer();</span></span><br><span class="line">        <span class="comment">// put();</span></span><br><span class="line">        <span class="comment">// poll();</span></span><br><span class="line">        <span class="comment">// peek();</span></span><br><span class="line">        <span class="comment">// element();</span></span><br><span class="line">        remove();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 如果可以在不超过队列的容量的情况下立即将其指定的元素插入到该队列的尾部，</span></span><br><span class="line"><span class="comment">     * 如果队列已满，则返回 true并抛出 IllegalStateException 。</span></span><br><span class="line"><span class="comment">     * 执行结果：</span></span><br><span class="line"><span class="comment">     *     =====执行add()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     *     arrayBlockingQueue.add()执行返回结果：true</span></span><br><span class="line"><span class="comment">     *     arrayBlockingQueue.add()执行返回结果：true</span></span><br><span class="line"><span class="comment">     *     arrayBlockingQueue.add()执行返回结果：true</span></span><br><span class="line"><span class="comment">     *     Exception in thread &quot;main&quot; java.lang.IllegalStateException: Queue full</span></span><br><span class="line"><span class="comment">     *     at java.util.AbstractQueue.add(AbstractQueue.java:98)</span></span><br><span class="line"><span class="comment">     *     at java.util.concurrent.ArrayBlockingQueue.add(ArrayBlockingQueue.java:312)</span></span><br><span class="line"><span class="comment">     *     at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.add(ArrayBlockingQueueExample.java:28)</span></span><br><span class="line"><span class="comment">     *     at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.main(ArrayBlockingQueueExample.java:7)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行add()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.add()执行返回结果：&quot;</span>+arrayBlockingQueue.add(<span class="string">&quot;Message 1&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.add()执行返回结果：&quot;</span>+arrayBlockingQueue.add(<span class="string">&quot;Message 2&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.add()执行返回结果：&quot;</span>+arrayBlockingQueue.add(<span class="string">&quot;Message 3&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.add()执行返回结果：&quot;</span>+arrayBlockingQueue.add(<span class="string">&quot;Message 4&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行add()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      * 如果可以在不超过队列容量的情况下立即将其指定的元素插入该队列的尾部，</span></span><br><span class="line"><span class="comment">      * 则在成功时true如果该队列已满，则返回false 。</span></span><br><span class="line"><span class="comment">      * 执行结果：</span></span><br><span class="line"><span class="comment">      *  =====执行offer()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      *  arrayBlockingQueue.offer()执行返回结果：true</span></span><br><span class="line"><span class="comment">      *  arrayBlockingQueue.offer()执行返回结果：true</span></span><br><span class="line"><span class="comment">      *  arrayBlockingQueue.offer()执行返回结果：true</span></span><br><span class="line"><span class="comment">      *  arrayBlockingQueue.offer()执行返回结果：false</span></span><br><span class="line"><span class="comment">      *  =====执行offer()签名方法-结束=====</span></span><br><span class="line"><span class="comment">      */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">offer</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行offer()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.offer()执行返回结果：&quot;</span>+arrayBlockingQueue.offer(<span class="string">&quot;Message 1&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.offer()执行返回结果：&quot;</span>+arrayBlockingQueue.offer(<span class="string">&quot;Message 2&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.offer()执行返回结果：&quot;</span>+arrayBlockingQueue.offer(<span class="string">&quot;Message 3&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;arrayBlockingQueue.offer()执行返回结果：&quot;</span>+arrayBlockingQueue.offer(<span class="string">&quot;Message 4&quot;</span>));</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行offer()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      * 在该队列的尾部插入指定的元素，如果队列已满，则等待空间变为可用。</span></span><br><span class="line"><span class="comment">      *  执行结果：</span></span><br><span class="line"><span class="comment">      *   =====执行put()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的个数：3</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的容量：0</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中take()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   Message 2</span></span><br><span class="line"><span class="comment">      *   Message 3</span></span><br><span class="line"><span class="comment">      *   Message 4</span></span><br><span class="line"><span class="comment">      *   =====执行put()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">put</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行put()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        Executors.newSingleThreadExecutor().execute(()-&gt;&#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：&quot;</span> + arrayBlockingQueue.size());</span><br><span class="line">            System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中的容量：&quot;</span> + arrayBlockingQueue.remainingCapacity());</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">                <span class="comment">// 检索并删除此队列的头</span></span><br><span class="line">                <span class="type">Object</span> <span class="variable">take</span> <span class="operator">=</span> arrayBlockingQueue.take();</span><br><span class="line">                System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中take()数据值为：&quot;</span> + take);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 4&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.forEach(System.out::println);</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行put()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      * 检索并删除此队列的头，则等待空间变为可用。</span></span><br><span class="line"><span class="comment">      *  执行结果：</span></span><br><span class="line"><span class="comment">      *   =====执行poll()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的个数：【3】,容量：【0】</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中poll()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中poll()数据值为：Message 2</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的个数：【1】,容量：【2】</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中poll()数据值为：Message 3</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中poll()数据值为：null</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中poll()数据值为：null</span></span><br><span class="line"><span class="comment">      *   =====执行poll()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">poll</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行poll()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中poll()数据值为：&quot;</span> + arrayBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中poll()数据值为：&quot;</span> + arrayBlockingQueue.poll());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中poll()数据值为：&quot;</span> + arrayBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中poll()数据值为：&quot;</span> + arrayBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中poll()数据值为：&quot;</span> + arrayBlockingQueue.poll());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行poll()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      * 检索但不删除此队列的头，如果此队列为空，则返回 null。</span></span><br><span class="line"><span class="comment">      *  执行结果：</span></span><br><span class="line"><span class="comment">      *   =====执行peek()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的个数：【3】,容量：【0】</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中的个数：【3】,容量：【0】</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   当前arrayBlockingQueue对象中peek()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      *   =====执行peek()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">peek</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行peek()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中peek()数据值为：&quot;</span> + arrayBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中peek()数据值为：&quot;</span> + arrayBlockingQueue.peek());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中peek()数据值为：&quot;</span> + arrayBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中peek()数据值为：&quot;</span> + arrayBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中peek()数据值为：&quot;</span> + arrayBlockingQueue.peek());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行peek()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检索，但不删除，这个队列的头。 此方法与peek的不同之处在于，如果此队列为空，它将抛出异常。</span></span><br><span class="line"><span class="comment">     *  执行结果：</span></span><br><span class="line"><span class="comment">     *   =====执行element()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     *   当前arrayBlockingQueue对象中的个数：【3】,容量：【0】</span></span><br><span class="line"><span class="comment">     *   当前arrayBlockingQueue对象中take()数据值为：Message 1</span></span><br><span class="line"><span class="comment">     *   当前arrayBlockingQueue对象中take()数据值为：Message 2</span></span><br><span class="line"><span class="comment">     *   当前arrayBlockingQueue对象中take()数据值为：Message 3</span></span><br><span class="line"><span class="comment">     *   当前arrayBlockingQueue对象中的个数：【0】,容量：【3】</span></span><br><span class="line"><span class="comment">     *   Exception in thread &quot;main&quot; java.util.NoSuchElementException</span></span><br><span class="line"><span class="comment">     *   at java.util.AbstractQueue.element(AbstractQueue.java:136)</span></span><br><span class="line"><span class="comment">     *   at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.element(ArrayBlockingQueueExample.java:182)</span></span><br><span class="line"><span class="comment">     *   at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.main(ArrayBlockingQueueExample.java:14)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">element</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行element()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中take()数据值为：&quot;</span> + arrayBlockingQueue.take());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中take()数据值为：&quot;</span> + arrayBlockingQueue.take());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中take()数据值为：&quot;</span> + arrayBlockingQueue.take());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中element()数据值为：&quot;</span> + arrayBlockingQueue.element());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行element()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      * 检索并删除此队列的头。 此方法与poll不同之处在于，如果此队列为空，它将抛出异常。</span></span><br><span class="line"><span class="comment">      * 执行结果：</span></span><br><span class="line"><span class="comment">      * =====执行remove()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      * 当前arrayBlockingQueue对象中的个数：【3】,容量：【0】</span></span><br><span class="line"><span class="comment">      * 当前arrayBlockingQueue对象中remove()数据值为：Message 1</span></span><br><span class="line"><span class="comment">      * 当前arrayBlockingQueue对象中remove()数据值为：Message 2</span></span><br><span class="line"><span class="comment">      * 当前arrayBlockingQueue对象中remove()数据值为：Message 3</span></span><br><span class="line"><span class="comment">      * Exception in thread &quot;main&quot; java.util.NoSuchElementException</span></span><br><span class="line"><span class="comment">      * at java.util.AbstractQueue.remove(AbstractQueue.java:117)</span></span><br><span class="line"><span class="comment">      * at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.remove(ArrayBlockingQueueExample.java:212)</span></span><br><span class="line"><span class="comment">      * at com.yuanxw.thread.chapter25.ArrayBlockingQueueExample.main(ArrayBlockingQueueExample.java:15)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行remove()签名方法-开始=====&quot;</span>);</span><br><span class="line">        <span class="type">ArrayBlockingQueue</span> <span class="variable">arrayBlockingQueue</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ArrayBlockingQueue</span>(<span class="number">3</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 1&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 2&quot;</span>);</span><br><span class="line">        arrayBlockingQueue.put(<span class="string">&quot;Message 3&quot;</span>);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中remove()数据值为：&quot;</span> + arrayBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中remove()数据值为：&quot;</span> + arrayBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中remove()数据值为：&quot;</span> + arrayBlockingQueue.remove());</span><br><span class="line">        System.out.println(<span class="string">&quot;当前arrayBlockingQueue对象中remove()数据值为：&quot;</span> + arrayBlockingQueue.remove());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;当前arrayBlockingQueue对象中的个数：【%s】,容量：【%s】&quot;</span>, arrayBlockingQueue.size(),arrayBlockingQueue.remainingCapacity()));</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行remove()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>&emsp;&emsp;&emsp;&emsp;– 以上为《JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。</p>
+  <p align="right">——厚积薄发(yuanxw)</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/" rel="prev" title="JAVA多线程(二十四)Java多线程之CompletableFuture类">
+                  <i class="fa fa-angle-left"></i> JAVA多线程(二十四)Java多线程之CompletableFuture类
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%85%AD)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BPriorityBlockingQueue%E5%AE%B9%E5%99%A8/" rel="next" title="JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器">
+                  JAVA多线程(二十六)Java多线程之PriorityBlockingQueue容器 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

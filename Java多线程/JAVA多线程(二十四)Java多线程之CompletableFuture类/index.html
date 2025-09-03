@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Future是Java 5添加的类，用来描述一个异步计算的结果。你可以使用isDone方法检查计算是否完成，或者使用get阻塞住调用线程，直到计算完成返回结果，你也可以使用cancel方法停止任务的执行。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA多线程(二十四)Java多线程之CompletableFuture类">
+<meta property="og:url" content="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="Future是Java 5添加的类，用来描述一个异步计算的结果。你可以使用isDone方法检查计算是否完成，或者使用get阻塞住调用线程，直到计算完成返回结果，你也可以使用cancel方法停止任务的执行。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter24/20200205192248674.png">
+<meta property="article:published_time" content="2023-01-23T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T08:22:32.140Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/java_multithreading/chapter24/20200205192248674.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/","path":"Java多线程/JAVA多线程(二十四)Java多线程之CompletableFuture类/","title":"JAVA多线程(二十四)Java多线程之CompletableFuture类"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JAVA多线程(二十四)Java多线程之CompletableFuture类 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E4%BA%8C%E5%8D%81%E5%9B%9B-Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB"><span class="nav-number">1.</span> <span class="nav-text">1.JAVA多线程(二十四)Java多线程之CompletableFuture类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E4%BB%80%E4%B9%88%E6%98%AFFuture"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 什么是Future</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-Future%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 Future的局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-%E4%BB%80%E4%B9%88%E6%98%AFCompletableFuture"><span class="nav-number">1.3.</span> <span class="nav-text">1.3 什么是CompletableFuture</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-4-CompletableFuture%E6%96%B9%E6%B3%95%E5%88%86%E7%B1%BB"><span class="nav-number">1.4.</span> <span class="nav-text">1.4 CompletableFuture方法分类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-1-%E5%88%9B%E5%BB%BACompletableFuture%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.4.1.</span> <span class="nav-text">1.4.1. 创建CompletableFuture对象</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-2-%E4%B8%BB%E5%8A%A8%E5%AE%8C%E6%88%90%E8%AE%A1%E7%AE%97"><span class="nav-number">1.4.2.</span> <span class="nav-text">1.4.2. 主动完成计算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-3-%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%AE%8C%E6%88%90%E6%97%B6%E7%9A%84%E5%A4%84%E7%90%86"><span class="nav-number">1.4.3.</span> <span class="nav-text">1.4.3. 计算结果完成时的处理 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-4-%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%AE%8C%E6%88%90%E6%97%B6%E7%9A%84%E8%BD%AC%E6%8D%A2"><span class="nav-number">1.4.4.</span> <span class="nav-text">1.4.4. 计算结果完成时的转换 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-5-%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%AE%8C%E6%88%90%E6%97%B6%E7%9A%84%E6%B6%88%E8%B4%B9"><span class="nav-number">1.4.5.</span> <span class="nav-text">1.4.5. 计算结果完成时的消费 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-6-%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%AE%8C%E6%88%90%E6%97%B6%E7%9A%84%E6%B6%88%E8%B4%B9%E5%90%88%E5%B9%B6%E7%BB%93%E6%9E%9C"><span class="nav-number">1.4.6.</span> <span class="nav-text">1.4.6. 计算结果完成时的消费合并结果 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-7-%E5%AF%B9%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E7%9A%84%E7%BB%84%E5%90%88"><span class="nav-number">1.4.7.</span> <span class="nav-text">1.4.7. 对计算结果的组合 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-8-%E5%AF%B9%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E7%9A%84%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86"><span class="nav-number">1.4.8.</span> <span class="nav-text">1.4.8. 对计算结果的异常处理 </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-4-9-%E5%85%B6%E5%AE%83%E6%96%B9%E6%B3%95"><span class="nav-number">1.4.9.</span> <span class="nav-text">1.4.9. 其它方法 </span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E5%9B%9B)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BCompletableFuture%E7%B1%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JAVA多线程(二十四)Java多线程之CompletableFuture类 | 我的博客">
+      <meta itemprop="description" content="Future是Java 5添加的类，用来描述一个异步计算的结果。你可以使用isDone方法检查计算是否完成，或者使用get阻塞住调用线程，直到计算完成返回结果，你也可以使用cancel方法停止任务的执行。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA多线程(二十四)Java多线程之CompletableFuture类
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-01-24 00:00:00" itemprop="dateCreated datePublished" datetime="2023-01-24T00:00:00+08:00">2023-01-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 16:22:32" itemprop="dateModified" datetime="2025-09-03T16:22:32+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Java多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">Future是Java 5添加的类，用来描述一个异步计算的结果。你可以使用isDone方法检查计算是否完成，或者使用get阻塞住调用线程，直到计算完成返回结果，你也可以使用cancel方法停止任务的执行。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-JAVA多线程-二十四-Java多线程之CompletableFuture类"><a href="#1-JAVA多线程-二十四-Java多线程之CompletableFuture类" class="headerlink" title="1.JAVA多线程(二十四)Java多线程之CompletableFuture类"></a>1.JAVA多线程(二十四)Java多线程之CompletableFuture类</h2><h3 id="1-1-什么是Future"><a href="#1-1-什么是Future" class="headerlink" title="1.1 什么是Future"></a>1.1 什么是Future</h3><p>&emsp;&emsp;Future是Java 5添加的类，用来描述一个异步计算的结果。你可以使用isDone方法检查计算是否完成，或者使用get阻塞住调用线程，直到计算完成返回结果，你也可以使用cancel方法停止任务的执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Future;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadLocalRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FutureExample</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        <span class="comment">// 构造一个线程池</span></span><br><span class="line">        <span class="type">ExecutorService</span> <span class="variable">executorService</span> <span class="operator">=</span> Executors.newCachedThreadPool();</span><br><span class="line">        <span class="comment">// 提交线程任务</span></span><br><span class="line">        Future&lt;Integer&gt; future = executorService.submit(() -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                System.out.println(String.format(<span class="string">&quot;当前【%s】线程工作-开始...&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">10</span>);</span><br><span class="line">                System.out.println(String.format(<span class="string">&quot;当前【%s】线程工作-结束...&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">                <span class="keyword">return</span> ThreadLocalRandom.current().nextInt(<span class="number">100</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;【%s】在等待线程执行结果...&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        System.out.println(<span class="string">&quot;是否执行结束：&quot;</span>+future.isDone());</span><br><span class="line">        System.out.println(future.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;是否执行结束：&quot;</span>+future.isDone());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">当前【pool-1-thread-1】线程工作-开始...</span><br><span class="line">【main】在等待线程执行结果...</span><br><span class="line">是否执行结束：false</span><br><span class="line">当前【pool-1-thread-1】线程工作-结束...</span><br><span class="line">76</span><br><span class="line">是否执行结束：true</span><br></pre></td></tr></table></figure>
+<h3 id="1-2-Future的局限性"><a href="#1-2-Future的局限性" class="headerlink" title="1.2 Future的局限性"></a>1.2 Future的局限性</h3><p>&emsp;&emsp;虽然Future以及相关使用方法提供了异步执行任务的能力，但是对于结果的获取却是很不方便，只能通过阻塞或者轮询的方式得到任务的结果。阻塞的方式显然和我们的异步编程的初衷相违背，轮询的方式又会耗费无谓的CPU资源，而且也不能及时地得到计算结果。CompletableFuture的出现解决了Future模式的缺点。</p>
+<ul>
+<li>不能手动完成：<ul>
+<li>当你写了一个函数，用于通过一个远程API获取一个电子商务产品最新价格。因为这个 API 太耗时，你把它允许在一个独立的线程中，并且从你的函数中返回一个 Future。现在假设这个API服务宕机了，这时你想通过该产品的最新缓存价格手工完成这个Future 。你会发现无法这样做。</li>
+</ul>
+</li>
+<li>Future的结果在非阻塞的情况下，不能执行更进一步的操作：<ul>
+<li>Future 不会通知你它已经完成了，它提供了一个阻塞的 get() 方法通知你结果。你无法给 Future 植入一个回调函数，当 Future 结果可用的时候，用该回调函数自动的调用 Future 的结果。</li>
+</ul>
+</li>
+<li>多个Future不能串联在一起组成链式调用：<ul>
+<li>有时候你需要执行一个长时间运行的计算任务，并且当计算任务完成的时候，你需要把它的计算结果发送给另外一个长时间运行的计算任务等等。你会发现你无法使用 Future 创建这样的一个工作流。<br>  不能组合多个 Future 的结果<br>  假设你有10个不同的Future，你想并行的运行，然后在它们运行未完成后运行一些函数。你会发现你也无法使用 Future 这样做。</li>
+</ul>
+</li>
+<li>没有异常处理：<ul>
+<li>Future API 没有任务的异常处理结构居然有如此多的限制，幸好我们有CompletableFuture，你可以使用 CompletableFuture 达到以上所有目的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-3-什么是CompletableFuture"><a href="#1-3-什么是CompletableFuture" class="headerlink" title="1.3 什么是CompletableFuture"></a>1.3 什么是CompletableFuture</h3><p>&emsp;&emsp; 在Java中CompletableFuture用于异步编程，异步编程是编写非阻塞的代码，运行的任务在一个单独的线程，与主线程隔离，并且会通知主线程它的进度，成功或者失败。在这种方式中，主线程不会被阻塞，不需要一直等到子线程完成。主线程可以并行的执行其他任务。使用这种并行方式，可以极大的提高程序的性能。<br>&emsp;&emsp; CompletableFuture 实现了 Future 和 CompletionStage接口，并且提供了许多关于创建，链式调用和组合多个 Future 的便利方法集，而且有广泛的异常处理支持。<br>&emsp;&emsp; CompletableFuture和Java8的Stream搭配使用，使用对于一些并行访问的耗时操作有很大的操作。</p>
+<p><strong>CompletableFuture继承结构关系图</strong>：</p>
+<p><img src="/images/java_multithreading/chapter24/20200205192248674.png" alt="在这里插入图片描述"><br>CompletableFuture类实现了CompletionStage和Future接口，所以你还是可以像以前一样通过阻塞或者轮询的方式获得结果，尽管这种方式不推荐使用。</p>
+<h3 id="1-4-CompletableFuture方法分类"><a href="#1-4-CompletableFuture方法分类" class="headerlink" title="1.4 CompletableFuture方法分类"></a>1.4 CompletableFuture方法分类</h3><h4 id="1-4-1-创建CompletableFuture对象"><a href="#1-4-1-创建CompletableFuture对象" class="headerlink" title="1.4.1. 创建CompletableFuture对象"></a>1.4.1. <strong>创建CompletableFuture对象</strong><br /></h4><p>&emsp;&emsp;以Async结尾并且没有指定Executor的方法会使用ForkJoinPool.commonPool()作为它的线程池执行异步代码。runAsync方法也好理解，它以Runnable函数式接口类型为参数，所以CompletableFuture的计算结果为空。supplyAsync方法以Supplier&lt;U&gt;函数式接口类型为参数,CompletableFuture的计算结果类型为U。<br>CompletableFuture的静态工厂方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>runAsync(Runnable runnable)</td>
+<td>使用ForkJoinPool.commonPool()作为它的线程池执行异步代码。</td>
+</tr>
+<tr>
+<td>runAsync(Runnable runnable, Executor executor)</td>
+<td>使用指定的thread pool执行异步代码。</td>
+</tr>
+<tr>
+<td>supplyAsync(Supplier<U> supplier)</td>
+<td>使用ForkJoinPool.commonPool()作为它的线程池执行异步代码，异步操作有返回值。</td>
+</tr>
+<tr>
+<td>supplyAsync(Supplier<U> supplier, Executor executor)</td>
+<td>使用指定的thread pool执行异步代码，异步操作有返回值。</td>
+</tr>
+</tbody></table>
+<ul>
+<li>CompletableFuture.completedFuture是一个静态辅助方法，用来返回一个已经计算好的CompletableFuture。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns a new CompletableFuture that is already completed with</span></span><br><span class="line"><span class="comment"> * the given value.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> value the value</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;U&gt; the type of the value</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the completed CompletableFuture</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;U&gt; CompletableFuture&lt;U&gt; <span class="title function_">completedFuture</span><span class="params">(U value)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;U&gt;((value == <span class="literal">null</span>) ? NIL : value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>而以下四个静态方法用来为一段异步执行的代码创建CompletableFuture对象：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns a new CompletableFuture that is asynchronously completed</span></span><br><span class="line"><span class="comment"> * by a task running in the &#123;<span class="doctag">@link</span> ForkJoinPool#commonPool()&#125; with</span></span><br><span class="line"><span class="comment"> * the value obtained by calling the given Supplier.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> supplier a function returning the value to be used</span></span><br><span class="line"><span class="comment"> * to complete the returned CompletableFuture</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;U&gt; the function&#x27;s return type</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the new CompletableFuture</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;U&gt; CompletableFuture&lt;U&gt; <span class="title function_">supplyAsync</span><span class="params">(Supplier&lt;U&gt; supplier)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> asyncSupplyStage(asyncPool, supplier);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns a new CompletableFuture that is asynchronously completed</span></span><br><span class="line"><span class="comment"> * by a task running in the given executor with the value obtained</span></span><br><span class="line"><span class="comment"> * by calling the given Supplier.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> supplier a function returning the value to be used</span></span><br><span class="line"><span class="comment"> * to complete the returned CompletableFuture</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> executor the executor to use for asynchronous execution</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> &lt;U&gt; the function&#x27;s return type</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the new CompletableFuture</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;U&gt; CompletableFuture&lt;U&gt; <span class="title function_">supplyAsync</span><span class="params">(Supplier&lt;U&gt; supplier,Executor executor)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> asyncSupplyStage(screenExecutor(executor), supplier);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns a new CompletableFuture that is asynchronously completed</span></span><br><span class="line"><span class="comment"> * by a task running in the &#123;<span class="doctag">@link</span> ForkJoinPool#commonPool()&#125; after</span></span><br><span class="line"><span class="comment"> * it runs the given action.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> runnable the action to run before completing the</span></span><br><span class="line"><span class="comment"> * returned CompletableFuture</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the new CompletableFuture</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> CompletableFuture&lt;Void&gt; <span class="title function_">runAsync</span><span class="params">(Runnable runnable)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> asyncRunStage(asyncPool, runnable);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Returns a new CompletableFuture that is asynchronously completed</span></span><br><span class="line"><span class="comment"> * by a task running in the given executor after it runs the given</span></span><br><span class="line"><span class="comment"> * action.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> runnable the action to run before completing the</span></span><br><span class="line"><span class="comment"> * returned CompletableFuture</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> executor the executor to use for asynchronous execution</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the new CompletableFuture</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> CompletableFuture&lt;Void&gt; <span class="title function_">runAsync</span><span class="params">(Runnable runnable,Executor executor)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> asyncRunStage(screenExecutor(executor), runnable);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-4-2-主动完成计算"><a href="#1-4-2-主动完成计算" class="headerlink" title="1.4.2. 主动完成计算"></a>1.4.2. <strong>主动完成计算</strong></h4><table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>get()</td>
+<td>方法同步等待结果。</td>
+</tr>
+<tr>
+<td>get(timeout,unit)</td>
+<td>get(timeout,unit)签名方法，给定时间，然后返回其结果，如果超时，抛出异常</td>
+</tr>
+<tr>
+<td>join()</td>
+<td>完成后返回结果值，如果完成异常，则返回（未检查）异常。</td>
+</tr>
+<tr>
+<td>getNow()</td>
+<td>如果已完成，则返回结果值（或抛出任何遇到的异常），否则返回给定的值IfAbsent。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadLocalRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeoutException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample1</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        runAsync();</span><br><span class="line">        <span class="comment">// get() 方法同步等待结果。</span></span><br><span class="line">        get();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// get(timeout,unit)签名方法，给定时间，然后返回其结果，如果超时，抛出异常</span></span><br><span class="line">        get(<span class="number">3</span>,TimeUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// join() 完成后返回结果值，如果完成异常，则返回（未检查）异常。</span></span><br><span class="line">        join();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// getNow() 如果已完成，则返回结果值（或抛出任何遇到的异常），否则返回给定的值IfAbsent。</span></span><br><span class="line">        getNow();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * runAsync()异步执行runAsync返回的CompletableFuture是没有返回值的。</span></span><br><span class="line"><span class="comment">     * supplyAsync()异步执行runAsync返回的CompletableFuture是有返回值的。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">     =====【main】执行runAsync()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     Hello world！！！</span></span><br><span class="line"><span class="comment">     =====【main】执行runAsync()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ExecutionException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">runAsync</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行runAsync()签名方法-开始=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        CompletableFuture.runAsync(() -&gt; System.out.println(<span class="string">&quot;Hello world！！！&quot;</span>)).get();</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行runAsync()签名方法-结束=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     get() 方法同步等待结果。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">          =====【main】执行get()签名方法-开始=====</span></span><br><span class="line"><span class="comment">          get()签名方法，执行结果：4</span></span><br><span class="line"><span class="comment">          =====【main】执行get()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ExecutionException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">get</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行get()签名方法-开始=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        CompletableFuture&lt;Integer&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            <span class="keyword">return</span> ThreadLocalRandom.current().nextInt(<span class="number">10</span>) * <span class="number">2</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="comment">/** get() 方法同步等待结果。 **/</span></span><br><span class="line">        System.out.println(<span class="string">&quot;get()签名方法，执行结果：&quot;</span>+completableFuture.get());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行get()签名方法-结束=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     get(timeout,unit)签名方法，给定时间，然后返回其结果，如果超时，抛出异常</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">     =====【main】执行get(timeout,unit)签名方法-开始=====</span></span><br><span class="line"><span class="comment">     java.util.concurrent.TimeoutException</span></span><br><span class="line"><span class="comment">     	at java.util.concurrent.CompletableFuture.timedGet(CompletableFuture.java:1771)</span></span><br><span class="line"><span class="comment">     	at java.util.concurrent.CompletableFuture.get(CompletableFuture.java:1915)</span></span><br><span class="line"><span class="comment">     	at com.yuanxw.chapter24.CompletableFutureExample.get(CompletableFutureExample.java:53)</span></span><br><span class="line"><span class="comment">     	at com.yuanxw.chapter24.CompletableFutureExample.main(CompletableFutureExample.java:11)</span></span><br><span class="line"><span class="comment">     =====【main】执行get(timeout,unit)签名方法-结束=====</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> timeout</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> unit</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ExecutionException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">get</span><span class="params">(<span class="type">long</span> timeout, TimeUnit unit)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行get(timeout,unit)签名方法-开始=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        CompletableFuture&lt;Integer&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            <span class="keyword">return</span> ThreadLocalRandom.current().nextInt(<span class="number">10</span>) * <span class="number">2</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;get(timeout,unit)签名方法，执行结果：&quot;</span>+completableFuture.get(timeout,unit));</span><br><span class="line">        &#125; <span class="keyword">catch</span> (TimeoutException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行get(timeout,unit)签名方法-结束=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">      join() 完成后返回结果值，如果完成异常，则返回（未检查）异常。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====【main】执行join()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         join()签名方法，执行结果：40</span></span><br><span class="line"><span class="comment">         =====【main】执行join()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ExecutionException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">join</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行join()签名方法-开始=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        CompletableFuture&lt;Integer&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            <span class="keyword">return</span> ThreadLocalRandom.current().nextInt(<span class="number">10</span>) * <span class="number">5</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="comment">/** join() 完成后返回结果值，如果完成异常，则返回（未检查）异常。 **/</span></span><br><span class="line">        System.out.println(<span class="string">&quot;join()签名方法，执行结果：&quot;</span>+ completableFuture.join());</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行join()签名方法-结束=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     getNow() 如果已完成，则返回结果值（或抛出任何遇到的异常），否则返回给定的值IfAbsent。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">      =====【main】执行getNow()签名方法-开始=====</span></span><br><span class="line"><span class="comment">      getNow()签名方法，执行结果：===unknown===</span></span><br><span class="line"><span class="comment">      getNow()签名方法，执行结果：N</span></span><br><span class="line"><span class="comment">      =====【main】getNow()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">getNow</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】执行getNow()签名方法-开始=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            <span class="comment">// 生成随机字符</span></span><br><span class="line">            <span class="type">char</span> <span class="variable">c</span> <span class="operator">=</span> (<span class="type">char</span>) (ThreadLocalRandom.current().nextInt(<span class="number">25</span> )+ <span class="number">65</span>);</span><br><span class="line">            <span class="keyword">return</span> String.valueOf(c);</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="comment">/** getNow() 如果已完成，则返回结果值（或抛出任何遇到的异常），否则返回给定的值IfAbsent。 **/</span></span><br><span class="line">        System.out.println(<span class="string">&quot;getNow()签名方法，执行结果：&quot;</span>+ completableFuture.getNow(<span class="string">&quot;===unknown===&quot;</span>));</span><br><span class="line">        processSleep(<span class="number">6</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;getNow()签名方法，执行结果：&quot;</span>+ completableFuture.getNow(<span class="string">&quot;===unknown===&quot;</span>));</span><br><span class="line">        System.out.println(String.format(<span class="string">&quot;=====【%s】getNow()签名方法-结束=====&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线程休眠的方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> seconds</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">processSleep</span><span class="params">(<span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(seconds);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-4-3-计算结果完成时的处理"><a href="#1-4-3-计算结果完成时的处理" class="headerlink" title="1.4.3. 计算结果完成时的处理 "></a>1.4.3. <strong>计算结果完成时的处理</strong> <br/></h4><p>&emsp;&emsp; 当CompletableFuture计算结果完成时,我们需要对结果进行处理，或者当CompletableFuture产生异常的时候需要对异常进行处理。有如下几种方法:</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>whenComplete(BiConsumer&lt;? super T, ? super Throwable&gt; action)</td>
+<td>当CompletableFuture完成计算结果时对结果进行处理，或者当CompletableFuture产生异常的时候对异常进行处理。</td>
+</tr>
+<tr>
+<td>whenCompleteAsync(BiConsumer&lt;? super T, ? super Throwable&gt; action)</td>
+<td>当CompletableFuture完成计算结果时对结果进行处理，或者当CompletableFuture产生异常的时候对异常进行处理。使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>BiConsumer&lt;? super T, ? super Throwable&gt; action, Executor executor)</td>
+<td>当CompletableFuture完成计算结果时对结果进行处理，或者当CompletableFuture产生异常的时候对异常进行处理。使用指定的线程池。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample2</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        whenComplete();</span><br><span class="line">        Thread.currentThread().join();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * runAsync()异步执行runAsync返回的CompletableFuture是没有返回值的。</span></span><br><span class="line"><span class="comment">     * supplyAsync()异步执行runAsync返回的CompletableFuture是有返回值的。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">     =====【main】执行runAsync()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     Hello world！！！</span></span><br><span class="line"><span class="comment">     =====【main】执行runAsync()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * whenComplete()：当CompletableFuture完成计算结果时对结果进行处理，或者当CompletableFuture产生异常的时候对异常进行处理。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行whenComplete()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         执行supplyAsync()签名方法-结束&gt;&gt;&gt;&gt;&gt;</span></span><br><span class="line"><span class="comment">         统计字符串长度：14</span></span><br><span class="line"><span class="comment">         =====执行whenComplete()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">whenComplete</span><span class="params">()</span>  &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行whenComplete()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture.supplyAsync(() -&gt;&#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            System.out.println(<span class="string">&quot;执行supplyAsync()签名方法-结束&gt;&gt;&gt;&gt;&gt;&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;Hello world！！！&quot;</span>;</span><br><span class="line">        &#125;).whenComplete((s, throwable) -&gt; &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;统计字符串长度：&quot;</span>+s.length());</span><br><span class="line">            System.out.println(<span class="string">&quot;=====执行whenComplete()签名方法-结束=====&quot;</span>);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线程休眠的方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> seconds</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">processSleep</span><span class="params">(<span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(seconds);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="1-4-4-计算结果完成时的转换"><a href="#1-4-4-计算结果完成时的转换" class="headerlink" title="1.4.4. 计算结果完成时的转换 "></a>1.4.4. <strong>计算结果完成时的转换</strong> <br/></h4><p>&emsp;&emsp; 这里同样也是返回CompletableFuture，但是这个结果会由我们自定义返回去转换他，同样的不以Async结尾的方法由原来的线程计算，以Async结尾的方法由默认的线程池ForkJoinPool.commonPool()或者指定的线程池executor运行。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public &lt;U&gt; CompletableFuture&lt;U&gt; thenApply(Function&lt;? super T,? extends U&gt; fn)</td>
+<td>接受一个Function&lt;? super T,? extends U&gt;参数用来转换CompletableFuture。</td>
+</tr>
+<tr>
+<td>public &lt;U&gt; CompletableFuture&lt;U&gt; thenApplyAsync(Function&lt;? super T,? extends U&gt; fn)</td>
+<td>接受一个Function&lt;? super T,? extends U&gt;参数用来转换CompletableFuture，使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public &lt;U&gt; CompletableFuture&lt;U&gt; thenApplyAsync(Function&lt;? super T,? extends U&gt; fn, Executor executor)</td>
+<td>接受一个Function&lt;? super T,? extends U&gt;参数用来转换CompletableFuture，使用指定的线程池。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadLocalRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"><span class="keyword">import</span> java.util.stream.IntStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample3</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        thenApply();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     thenApply() 当原来的CompletableFuture计算完后，将结果传递给函数fn，将fn的结果作为新的CompletableFuture计算结果。</span></span><br><span class="line"><span class="comment">     因此它的功能相当于将CompletableFuture&lt;T&gt;转换成CompletableFuture&lt;U&gt;。。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行thenApply()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         thenApply()签名方法，在supplyAsync阶段，执行结果：DFRHHQ</span></span><br><span class="line"><span class="comment">         thenApply()签名方法，执行结果：###【dfrhhq】###</span></span><br><span class="line"><span class="comment">         =====thenApply()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">thenApply</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行thenApply()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            <span class="type">StringBuffer</span> <span class="variable">buffer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuffer</span>();</span><br><span class="line">            IntStream.range(<span class="number">0</span>,<span class="number">6</span>).boxed().forEach(integer -&gt; &#123;</span><br><span class="line">                <span class="comment">// 生成随机字符</span></span><br><span class="line">                <span class="type">char</span> <span class="variable">c</span> <span class="operator">=</span> (<span class="type">char</span>) (ThreadLocalRandom.current().nextInt(<span class="number">25</span> )+ <span class="number">65</span>);</span><br><span class="line">                buffer.append(c);</span><br><span class="line">            &#125;);</span><br><span class="line">            System.out.println(<span class="string">&quot;thenApply()签名方法，在supplyAsync阶段，执行结果：&quot;</span> + buffer.toString());</span><br><span class="line">            <span class="keyword">return</span> buffer.toString();</span><br><span class="line">        &#125;).thenApply(str -&gt; String.format(<span class="string">&quot;###【%s】###&quot;</span>, str.toLowerCase()));</span><br><span class="line">        System.out.println(<span class="string">&quot;thenApply()签名方法，执行结果：&quot;</span>+ completableFuture.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====thenApply()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线程休眠的方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> seconds</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">processSleep</span><span class="params">(<span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(seconds);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-4-5-计算结果完成时的消费"><a href="#1-4-5-计算结果完成时的消费" class="headerlink" title="1.4.5. 计算结果完成时的消费 "></a>1.4.5. <strong>计算结果完成时的消费</strong> <br/></h4><p>&emsp;&emsp; 这里还会有一个只会对计算结果消费不会返回任何结果的方法。同样的不以Async结尾的方法由原来的线程计算，以Async结尾的方法由默认的线程池ForkJoinPool.commonPool()或者指定的线程池executor运行。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public CompletableFuture<Void> thenAccept(Consumer&lt;? super T&gt; action)</td>
+<td>当CompletableFuture完成计算结果，只对结果执行Action，而不返回新的计算值。</td>
+</tr>
+<tr>
+<td>public CompletableFuture<Void> thenAcceptAsync(Consumer&lt;? super T&gt; action)</td>
+<td>当CompletableFuture完成计算结果，只对结果执行Action，而不返回新的计算值，使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public CompletableFuture<Void> thenAcceptAsync(Consumer&lt;? super T&gt; action,Executor executor)</td>
+<td>当CompletableFuture完成计算结果，只对结果执行Action，而不返回新的计算值。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ThreadLocalRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"><span class="keyword">import</span> java.util.stream.IntStream;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample4</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        thenAccept();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     thenAccept() CompletableFuture完成计算结果，只对结果执行Action，而不返回新的计算值。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">     =====执行thenAccept()签名方法-开始=====</span></span><br><span class="line"><span class="comment">     系统自动生成的6位验证码：EHSRHT，该验证码5分钟有效，请勿泄露给他人。</span></span><br><span class="line"><span class="comment">     =====thenAccept()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">thenAccept</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行thenAccept()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture</span><br><span class="line">                .supplyAsync(() -&gt; <span class="string">&quot;系统自动生成的6位验证码：&quot;</span>)</span><br><span class="line">                .thenApply((str) -&gt; str + verifiCode())</span><br><span class="line">                .thenApply((str) -&gt; str + <span class="string">&quot;，该验证码5分钟有效，请勿泄露给他人。&quot;</span>)</span><br><span class="line">                .thenAccept(System.out::println);</span><br><span class="line">        System.out.println(<span class="string">&quot;=====thenAccept()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 生成6位数验证码</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> String <span class="title function_">verifiCode</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">StringBuffer</span> <span class="variable">buffer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuffer</span>();</span><br><span class="line">        IntStream.range(<span class="number">0</span>,<span class="number">6</span>).boxed().forEach(integer -&gt; &#123;</span><br><span class="line">            <span class="comment">// 生成随机字符</span></span><br><span class="line">            <span class="type">char</span> <span class="variable">c</span> <span class="operator">=</span> (<span class="type">char</span>) (ThreadLocalRandom.current().nextInt(<span class="number">25</span> )+ <span class="number">65</span>);</span><br><span class="line">            buffer.append(c);</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">return</span> buffer.toString();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="1-4-6-计算结果完成时的消费合并结果"><a href="#1-4-6-计算结果完成时的消费合并结果" class="headerlink" title="1.4.6. 计算结果完成时的消费合并结果 "></a>1.4.6. <strong>计算结果完成时的消费合并结果</strong> <br/></h4><p>&emsp;&emsp; thenAcceptBoth以及相关方法提供了类似的功能，当两个CompletionStage都正常完成计算的时候，就会执行提供的action，它用来组合另外一个异步的结果。</p>
+<p>&emsp;&emsp; runAfterBoth是当两个CompletionStage都正常完成计算的时候,执行一个Runnable，这个Runnable并不使用计算的结果。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public &lt;U&gt; CompletableFuture&lt;Void&gt; thenAcceptBoth(CompletionStage&lt;? extends U&gt; other,BiConsumer&lt;? super T, ? super U&gt; action)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的action，用它来组合另外一个CompletableFuture的结果。</td>
+</tr>
+<tr>
+<td>public &lt;U&gt; CompletableFuture&lt;Void&gt; thenAcceptBothAsync(CompletionStage&lt;? extends U&gt; other,BiConsumer&lt;? super T, ? super U&gt; action)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的action，用它来组合另外一个CompletableFuture的结果。使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public &lt;U&gt; CompletableFuture&lt;Void&gt; thenAcceptBothAsync(CompletionStage&lt;? extends U&gt; other,BiConsumer&lt;? super T, ? super U&gt; action, Executor executor)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的action，用它来组合另外一个CompletableFuture的结果。使用指定的线程池。</td>
+</tr>
+<tr>
+<td>public CompletableFuture&lt;Void&gt; runAfterBoth(CompletionStage&lt;?&gt; other,Runnable action)</td>
+<td>当两个CompletionStage都正常完成计算的时候,执行一个Runnable，这个Runnable并不使用计算的结果。</td>
+</tr>
+<tr>
+<td>public CompletableFuture&lt;Void&gt; runAfterBothAsync(CompletionStage&lt;?&gt; other,Runnable action)</td>
+<td>当两个CompletionStage都正常完成计算的时候,执行一个Runnable，这个Runnable并不使用计算的结果。使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public CompletableFuture&lt;Void&gt; runAfterBothAsync(CompletionStage&lt;?&gt; other,Runnable action,Executor executor)</td>
+<td>当两个CompletionStage都正常完成计算的时候,执行一个Runnable，这个Runnable并不使用计算的结果。使用指定的线程池。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample5</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        thenAcceptBoth();</span><br><span class="line">        runAfterBoth();</span><br><span class="line">        Thread.currentThread().join();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     thenAcceptBoth() 当你想要使用两个Future结果时，但不需要将任何结果值进行返回时，</span></span><br><span class="line"><span class="comment">     可以用 thenAcceptBoth ，它表示后续的处理不需要返回值。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====执行thenAcceptBoth()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         Hello World</span></span><br><span class="line"><span class="comment">         =====thenAcceptBoth()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">thenAcceptBoth</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行thenAcceptBoth()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture.supplyAsync(() -&gt; <span class="string">&quot;Hello&quot;</span>)</span><br><span class="line">                .thenAcceptBoth(CompletableFuture.supplyAsync(() -&gt; <span class="string">&quot; World&quot;</span>),</span><br><span class="line">                        (s1, s2) -&gt; System.out.println(s1 + s2));</span><br><span class="line">        System.out.println(<span class="string">&quot;=====thenAcceptBoth()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * runAfterBoth是当两个CompletionStage都正常完成计算的时候,</span></span><br><span class="line"><span class="comment">     执行一个Runnable，这个Runnable并不使用计算的结果。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">          =====执行runAfterBoth()签名方法-开始=====</span></span><br><span class="line"><span class="comment">          ForkJoinPool.commonPool-worker-1线程，工作-开始&gt;&gt;</span></span><br><span class="line"><span class="comment">          ForkJoinPool.commonPool-worker-2线程，工作-开始&gt;&gt;</span></span><br><span class="line"><span class="comment">          =====runAfterBoth()签名方法-结束=====</span></span><br><span class="line"><span class="comment">          ForkJoinPool.commonPool-worker-2线程，工作-结束&lt;&lt;</span></span><br><span class="line"><span class="comment">          ForkJoinPool.commonPool-worker-1线程，工作-结束&lt;&lt;</span></span><br><span class="line"><span class="comment">          ===执行任务结束===</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">runAfterBoth</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行runAfterBoth()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-开始&gt;&gt;&quot;</span>);</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-结束&lt;&lt;&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        &#125;).runAfterBoth(CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-开始&gt;&gt;&quot;</span>);</span><br><span class="line">            <span class="comment">// 睡眠1秒</span></span><br><span class="line">            processSleep(<span class="number">1</span>);</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-结束&lt;&lt;&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">        &#125;), () -&gt; System.out.println(<span class="string">&quot;===执行任务结束===&quot;</span>));</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;=====runAfterBoth()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线程休眠的方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> seconds</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">processSleep</span><span class="params">(<span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(seconds);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<h4 id="1-4-7-对计算结果的组合"><a href="#1-4-7-对计算结果的组合" class="headerlink" title="1.4.7. 对计算结果的组合 "></a>1.4.7. <strong>对计算结果的组合</strong> <br/></h4><p>&emsp;&emsp; 对于Compose可以连接两个CompletableFuture，其内部处理逻辑是当第一个CompletableFuture处理没有完成时会合并成一个CompletableFuture,如果处理完成，第二个future会紧接上一个CompletableFuture进行处理。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombine(CompletionStage&lt;? extends U&gt; other,BiFunction&lt;? super T,? super U,? extends V&gt; fn)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的fn，用它来组合另外一个CompletableFuture的结果。</td>
+</tr>
+<tr>
+<td>public &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombineAsync(CompletionStage&lt;? extends U&gt; other,BiFunction&lt;? super T,? super U,? extends V&gt; fn)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的fn，用它来组合另外一个CompletableFuture的结果。使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public &lt;U,V&gt; CompletableFuture&lt;V&gt; thenCombineAsync(CompletionStage&lt;? extends U&gt; other,BiFunction&lt;? super T,? super U,? extends V&gt; fn, Executor executor)</td>
+<td>当两个CompletableFuture都正常完成后，执行提供的fn，用它来组合另外一个CompletableFuture的结果。使用指定的线程池。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample6</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        thenCombine();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 执行thenCombine()对于Compose可以连接两个CompletableFuture，</span></span><br><span class="line"><span class="comment">     * 其内部处理逻辑是当第一个CompletableFuture处理没有完成时会合并成一个CompletableFuture,</span></span><br><span class="line"><span class="comment">     * 如果处理完成，第二个future会紧接上一个CompletableFuture进行处理。</span></span><br><span class="line"><span class="comment">      执行结果：</span></span><br><span class="line"><span class="comment">         =====执行thenCombine()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         thenCombine()签名方法，执行结果：计算结果：30</span></span><br><span class="line"><span class="comment">         =====thenCombine()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">thenCombine</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====执行thenCombine()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture&lt;Integer&gt; future1 = CompletableFuture.supplyAsync(() -&gt; <span class="number">10</span>);</span><br><span class="line">        CompletableFuture&lt;Integer&gt; future2 = CompletableFuture.supplyAsync(() -&gt; <span class="number">20</span>);</span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture = future1.thenCombine(future2, (x, y) -&gt; <span class="string">&quot;计算结果：&quot;</span> + (x + y));</span><br><span class="line">        System.out.println(<span class="string">&quot;thenCombine()签名方法，执行结果：&quot;</span>+ completableFuture.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====thenCombine()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="1-4-8-对计算结果的异常处理"><a href="#1-4-8-对计算结果的异常处理" class="headerlink" title="1.4.8. 对计算结果的异常处理 "></a>1.4.8. <strong>对计算结果的异常处理</strong> <br/></h4><p>&emsp;&emsp; 当CompletableFuture的计算结果完成，或者抛出异常的时候，可以通过handle方法对结果进行处理。<br>&emsp;&emsp; exceptionally() 方法将导致CompletableFuture 内发生问题的异常抛出。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public <U> CompletableFuture<U> handle(BiFunction&lt;? super T, Throwable, ? extends U&gt; fn)</td>
+<td>当CompletableFuture的计算结果完成，或者抛出异常的时候，可以通过handle方法对结果进行处理。</td>
+</tr>
+<tr>
+<td>public <U> CompletableFuture<U> handleAsync(BiFunction&lt;? super T, Throwable, ? extends U&gt; fn)</td>
+<td>当CompletableFuture的计算结果完成，或者抛出异常的时候，可以通过handle方法对结果进行处理。使用ForkJoinPool。</td>
+</tr>
+<tr>
+<td>public <U> CompletableFuture<U> handleAsync(BiFunction&lt;? super T, Throwable, ? extends U&gt; fn, Executor executor)</td>
+<td>当CompletableFuture的计算结果完成，或者抛出异常的时候，可以通过handle方法对结果进行处理。使用指定的线程池。</td>
+</tr>
+<tr>
+<td>public CompletableFuture<T> exceptionally(Function&lt;Throwable, ? extends T&gt; fn)</td>
+<td>exceptionally() 方法将导致CompletableFuture 内发生问题的异常抛出。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample7</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        handle();</span><br><span class="line">        exceptionally();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     handle() 当CompletableFuture的计算结果完成，或者抛出异常的时候，可以通过handle方法对结果进行处理。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====handle()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         handle()签名方法，在supplyAsync阶段，执行1/0结果。</span></span><br><span class="line"><span class="comment">         handle()签名方法，执行结果：-1</span></span><br><span class="line"><span class="comment">         =====handle()签名方法-结束=====</span></span><br><span class="line"><span class="comment">         java.util.concurrent.CompletionException: java.lang.ArithmeticException: / by zero</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.CompletableFuture.encodeThrowable(CompletableFuture.java:273)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.CompletableFuture.completeThrowable(CompletableFuture.java:280)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1592)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.CompletableFuture$AsyncSupply.exec(CompletableFuture.java:1582)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:289)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.ForkJoinPool$WorkQueue.runTask(ForkJoinPool.java:1056)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:1692)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:157)</span></span><br><span class="line"><span class="comment">         Caused by: java.lang.ArithmeticException: / by zero</span></span><br><span class="line"><span class="comment">         at com.yuanxw.chapter24.CompletableFutureExample7.lambda$handle$0(CompletableFutureExample3.java:26)</span></span><br><span class="line"><span class="comment">         at java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1590)</span></span><br><span class="line"><span class="comment">         ... 5 more</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">handle</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====handle()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture&lt;Integer&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;handle()签名方法，在supplyAsync阶段，执行1/0结果。&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>/<span class="number">0</span>;</span><br><span class="line">        &#125;).handle((integer, throwable) -&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span>(throwable != <span class="literal">null</span>)&#123;</span><br><span class="line">                throwable.printStackTrace();</span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">           <span class="keyword">return</span> integer;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;handle()签名方法，执行结果：&quot;</span>+ completableFuture.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====handle()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * exceptionally() 方法将导致CompletableFuture 内发生问题的异常抛出。</span></span><br><span class="line"><span class="comment">     * 这样，当执行任务发生异常时，调用get()方法的线程将会收到一个 ExecutionException 异常，</span></span><br><span class="line"><span class="comment">     * 该异常接收了一个包含失败原因的Exception 参数。</span></span><br><span class="line"><span class="comment">     * 执行结果：</span></span><br><span class="line"><span class="comment">         =====exceptionally()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         exceptionally()签名方法，在supplyAsync阶段，执行1/0结果。</span></span><br><span class="line"><span class="comment">         exceptionally()签名方法，执行结果：java.lang.ArrayIndexOutOfBoundsException: 1</span></span><br><span class="line"><span class="comment">         =====exceptionally()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> ExecutionException</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">exceptionally</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====exceptionally()签名方法-开始=====&quot;</span>);</span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;exceptionally()签名方法，在supplyAsync阶段，执行1/0结果。&quot;</span>);</span><br><span class="line">            String [] array = <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;&#125;;</span><br><span class="line">            <span class="comment">// 此处异常：java.lang.ArrayIndexOutOfBoundsException: 1</span></span><br><span class="line">            <span class="keyword">return</span> array[<span class="number">1</span>];</span><br><span class="line">        &#125;).exceptionally(ex -&gt; ex.getMessage());</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;exceptionally()签名方法，执行结果：&quot;</span>+ completableFuture.get());</span><br><span class="line">        System.out.println(<span class="string">&quot;=====exceptionally()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="1-4-9-其它方法"><a href="#1-4-9-其它方法" class="headerlink" title="1.4.9. 其它方法 "></a>1.4.9. <strong>其它方法</strong> <br/></h4><p>&emsp;&emsp;allOf方法是当所有的CompletableFuture都执行完后执行计算。anyOf方法是当任意一个CompletableFuture执行完后就会执行计算，计算的结果相同。</p>
+<table>
+<thead>
+<tr>
+<th>方法名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>public static CompletableFuture<Void> allOf(CompletableFuture&lt;?&gt;… cfs)</td>
+<td>allOf方法是当所有的CompletableFuture都执行完后执行计算。</td>
+</tr>
+<tr>
+<td>public static CompletableFuture<Object> anyOf(CompletableFuture&lt;?&gt;… cfs)</td>
+<td>anyOf方法是当任意一个CompletableFuture执行完后就会执行计算，计算的结果相同。</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter24;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.CompletableFuture;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CompletableFutureExample8</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        anyAndAllOfCompletableFuture();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     allOf方法是当所有的CompletableFuture都执行完后执行计算。</span></span><br><span class="line"><span class="comment">     anyOf方法是当任意一个CompletableFuture执行完后就会执行计算，计算的结果相同。</span></span><br><span class="line"><span class="comment">     执行结果：</span></span><br><span class="line"><span class="comment">         =====anyAndAllOfCompletableFuture()签名方法-开始=====</span></span><br><span class="line"><span class="comment">         ForkJoinPool.commonPool-worker-1线程，工作-开始&gt;&gt;</span></span><br><span class="line"><span class="comment">         ForkJoinPool.commonPool-worker-2线程，工作-开始&gt;&gt;</span></span><br><span class="line"><span class="comment">         ForkJoinPool.commonPool-worker-2线程，工作-结束&lt;&lt;</span></span><br><span class="line"><span class="comment">         anyOf()签名方法，执行结果：result-2</span></span><br><span class="line"><span class="comment">         ForkJoinPool.commonPool-worker-1线程，工作-结束&lt;&lt;</span></span><br><span class="line"><span class="comment">         =====anyAndAllOfCompletableFuture()签名方法-结束=====</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">anyAndAllOfCompletableFuture</span><span class="params">()</span> <span class="keyword">throws</span> ExecutionException, InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;=====anyAndAllOfCompletableFuture()签名方法-开始=====&quot;</span>);</span><br><span class="line"></span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture1=CompletableFuture.supplyAsync(()-&gt;&#123;</span><br><span class="line">            <span class="comment">//模拟执行耗时任务</span></span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-开始&gt;&gt;&quot;</span>);</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">5</span>);</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-结束&lt;&lt;&quot;</span>);</span><br><span class="line">            <span class="comment">//返回结果</span></span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;result-1&quot;</span>;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        CompletableFuture&lt;String&gt; completableFuture2=CompletableFuture.supplyAsync(()-&gt;&#123;</span><br><span class="line">            <span class="comment">//模拟执行耗时任务</span></span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-开始&gt;&gt;&quot;</span>);</span><br><span class="line">            <span class="comment">// 睡眠5秒</span></span><br><span class="line">            processSleep(<span class="number">1</span>);</span><br><span class="line">            System.out.println(Thread.currentThread().getName() + <span class="string">&quot;线程，工作-结束&lt;&lt;&quot;</span>);</span><br><span class="line">            <span class="comment">//返回结果</span></span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;result-2&quot;</span>;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        CompletableFuture&lt;Object&gt; anyOfCompletableFuture = CompletableFuture.anyOf(completableFuture1,completableFuture2);</span><br><span class="line">        System.out.println(<span class="string">&quot;anyOf()签名方法，执行结果：&quot;</span>+ anyOfCompletableFuture.get());</span><br><span class="line"></span><br><span class="line">        CompletableFuture&lt;Void&gt; allOfCompletableFuture = CompletableFuture.allOf(completableFuture1,completableFuture2);</span><br><span class="line">        <span class="comment">// 阻塞等待所有任务执行完成</span></span><br><span class="line">        allOfCompletableFuture.join();</span><br><span class="line">        System.out.println(<span class="string">&quot;=====anyAndAllOfCompletableFuture()签名方法-结束=====&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 线程休眠的方法</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> seconds</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">processSleep</span><span class="params">(<span class="type">long</span> seconds)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(seconds);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十四)Java多线程之CompletableFuture类》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。<br>  <p align="right">——厚积薄发(yuanxw)</p></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%89)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BScheduledThreadPool%E5%AE%9A%E6%9C%9F%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="prev" title="JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池">
+                  <i class="fa fa-angle-left"></i> JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%94)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BArrayBlockingQueue%E5%AE%B9%E5%99%A8/" rel="next" title="JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器">
+                  JAVA 多线程(二十五)Java 多线程之 ArrayBlockingQueue 容器 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

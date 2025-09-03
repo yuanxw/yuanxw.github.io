@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池">
+<meta property="og:url" content="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/java_multithreading/chapter22/20200202171651883.png">
+<meta property="article:published_time" content="2023-01-21T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T08:23:40.780Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="多线程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/java_multithreading/chapter22/20200202171651883.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/","path":"Java多线程/JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池/","title":"JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E4%BA%8C%E5%8D%81%E4%BA%8C-Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0"><span class="nav-number">1.</span> <span class="nav-text">1.JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0WorkStealingPool"><span class="nav-number">1.1.</span> <span class="nav-text">1.1 工作窃取线程池WorkStealingPool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-WorkStealingPool%E4%BD%BF%E7%94%A8%E6%A0%B7%E4%BE%8B"><span class="nav-number">1.2.</span> <span class="nav-text">1.2 WorkStealingPool使用样例</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%BA%8C)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BWorkStealingPool%E5%B7%A5%E4%BD%9C%E7%AA%83%E5%8F%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池 | 我的博客">
+      <meta itemprop="description" content="在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-01-22 00:00:00" itemprop="dateCreated datePublished" datetime="2023-01-22T00:00:00+08:00">2023-01-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-03 16:23:40" itemprop="dateModified" datetime="2025-09-03T16:23:40+08:00">2025-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index"><span itemprop="name">Java多线程</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="1-JAVA多线程-二十二-Java多线程之WorkStealingPool工作窃取线程池"><a href="#1-JAVA多线程-二十二-Java多线程之WorkStealingPool工作窃取线程池" class="headerlink" title="1.JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池"></a>1.JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池</h2><h3 id="1-1-工作窃取线程池WorkStealingPool"><a href="#1-1-工作窃取线程池WorkStealingPool" class="headerlink" title="1.1 工作窃取线程池WorkStealingPool"></a>1.1 工作窃取线程池WorkStealingPool</h3><p>&emsp;&emsp; 在Java 8中，引入了一种新型的线程池，作为newWorkStealingPool()来补充现有的线程池。WorkStealingPool线程池，来维持相应的并行级别，它会通过工作窃取的方式，使得多核的 CPU 不会闲置，总会有活着的线程让 CPU 去运行。</p>
+<p>&emsp;&emsp;顾名思义，它基于  工作窃取算法，其中任务可以生成其他较小的任务，这些任务将添加到并行处理线程的队列中。如果一个线程完成了工作并且无事可做，则可以从另一线程的队列中“窃取”工作。<br>通过源代码查看WorkStealingPool实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Creates a work-stealing thread pool using all</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> Runtime#availableProcessors available processors&#125;</span></span><br><span class="line"><span class="comment"> * as its target parallelism level.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the newly created thread pool</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #newWorkStealingPool(int)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@since</span> 1.8</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> ExecutorService <span class="title function_">newWorkStealingPool</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span></span><br><span class="line">        (Runtime.getRuntime().availableProcessors(),</span><br><span class="line">         ForkJoinPool.defaultForkJoinWorkerThreadFactory,</span><br><span class="line">         <span class="literal">null</span>, <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Creates a thread pool that maintains enough threads to support</span></span><br><span class="line"><span class="comment"> * the given parallelism level, and may use multiple queues to</span></span><br><span class="line"><span class="comment"> * reduce contention. The parallelism level corresponds to the</span></span><br><span class="line"><span class="comment"> * maximum number of threads actively engaged in, or available to</span></span><br><span class="line"><span class="comment"> * engage in, task processing. The actual number of threads may</span></span><br><span class="line"><span class="comment"> * grow and shrink dynamically. A work-stealing pool makes no</span></span><br><span class="line"><span class="comment"> * guarantees about the order in which submitted tasks are</span></span><br><span class="line"><span class="comment"> * executed.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> parallelism the targeted parallelism level</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> the newly created thread pool</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalArgumentException if &#123;<span class="doctag">@code</span> parallelism &lt;= 0&#125;</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@since</span> 1.8</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> ExecutorService <span class="title function_">newWorkStealingPool</span><span class="params">(<span class="type">int</span> parallelism)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">ForkJoinPool</span></span><br><span class="line">        (parallelism,</span><br><span class="line">         ForkJoinPool.defaultForkJoinWorkerThreadFactory,</span><br><span class="line">         <span class="literal">null</span>, <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在WorkStealingPool实现中：</p>
+<ul>
+<li>parallelism &#x3D;&gt; Runtime.getRuntime().availableProcessors() - 这是JVM可用的处理器数。</li>
+<li>handler &#x3D;&gt; ForkJoinPool.defaultForkJoinWorkerThreadFactory - 返回新线程的默认线程工厂。</li>
+<li>asyncMode &#x3D;&gt; true – 使其在aysnc模式下工作，并为分叉的任务设置FIFO顺序，这些任务永远不会从其工作队列中加入。</li>
+</ul>
+<p><img src="/images/java_multithreading/chapter22/20200202171651883.png" alt="在这里插入图片描述"></p>
+<h3 id="1-2-WorkStealingPool使用样例"><a href="#1-2-WorkStealingPool使用样例" class="headerlink" title="1.2 WorkStealingPool使用样例"></a>1.2 WorkStealingPool使用样例</h3><ol>
+<li>单线程化线程池WorkStealingPool特点：<ul>
+<li>WorkStealingPool是守护线程，使用ForkJoinPool实现的WorkStealingPool根据当前操作系统的CPU有几个核就会创建几个线程。</li>
+<li>应用场景：WorkStealingPool能够合理的使用CPU进行对任务操作（并行操作）适合使用在很耗时的操作。</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.yuanxw.chapter22;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Callable;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutionException;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"><span class="keyword">import</span> java.util.stream.Collectors;</span><br><span class="line"><span class="keyword">import</span> java.util.stream.IntStream;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 使用WorkStealingPool工作窃取线程池，创建Callable类型的多线程，并最终返回结果</span></span><br><span class="line"><span class="comment"> * https://blog.csdn.net/yuan_xw/article/details/103730628</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WorkStealingPoolExample</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;获得JAVA虚拟机可用的最大CPU处理器数量：&quot;</span> + Runtime.getRuntime().availableProcessors());</span><br><span class="line">        <span class="type">ExecutorService</span> <span class="variable">executorService</span> <span class="operator">=</span> Executors.newWorkStealingPool();</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * call方法存在返回值futureTask的get方法可以获取这个返回值。</span></span><br><span class="line"><span class="comment">         * 使用此种方法实现线程的好处是当你创建的任务的结果不是立即就要时，</span></span><br><span class="line"><span class="comment">         * 你可以提交一个线程在后台执行，而你的程序仍可以正常运行下去，</span></span><br><span class="line"><span class="comment">         * 在需要执行结果时使用futureTask去获取即可。</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        List&lt;Callable&lt;String&gt;&gt; callableList = IntStream.range(<span class="number">0</span>, <span class="number">20</span>).boxed().map(i -&gt; (Callable&lt;String&gt;) () -&gt; &#123;</span><br><span class="line">            TimeUnit.SECONDS.sleep(<span class="number">3</span>);</span><br><span class="line">            System.out.println(String.format(<span class="string">&quot;当前【%s】线程正在执行&gt;&gt;&gt;&quot;</span>, Thread.currentThread().getName()));</span><br><span class="line">            <span class="keyword">return</span> <span class="string">&quot;callable type thread task：&quot;</span> + i;</span><br><span class="line">        &#125;).collect(Collectors.toList());</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 执行给定的任务，返回持有他们的状态和结果的所有完成的期待列表。</span></span><br><span class="line">        executorService.invokeAll(callableList).stream().map(futureTask-&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> futureTask.get();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ExecutionException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;).forEach(System.out::println);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">获得JAVA虚拟机可用的最大CPU处理器数量：8</span><br><span class="line">当前【ForkJoinPool-1-worker-0】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-6】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-1】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-3】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-5】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-7】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-2】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-4】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-1】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-3】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-2】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-5】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-6】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-0】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-7】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-4】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-1】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-2】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-5】线程正在执行&gt;&gt;&gt;</span><br><span class="line">当前【ForkJoinPool-1-worker-3】线程正在执行&gt;&gt;&gt;</span><br><span class="line">callable type thread task：0</span><br><span class="line">callable type thread task：1</span><br><span class="line">callable type thread task：2</span><br><span class="line">callable type thread task：3</span><br><span class="line">callable type thread task：4</span><br><span class="line">callable type thread task：5</span><br><span class="line">callable type thread task：6</span><br><span class="line">callable type thread task：7</span><br><span class="line">callable type thread task：8</span><br><span class="line">callable type thread task：9</span><br><span class="line">callable type thread task：10</span><br><span class="line">callable type thread task：11</span><br><span class="line">callable type thread task：12</span><br><span class="line">callable type thread task：13</span><br><span class="line">callable type thread task：14</span><br><span class="line">callable type thread task：15</span><br><span class="line">callable type thread task：16</span><br><span class="line">callable type thread task：17</span><br><span class="line">callable type thread task：18</span><br><span class="line">callable type thread task：19</span><br></pre></td></tr></table></figure>
+
+
+
+<p> &emsp;&emsp;&emsp;&emsp;– 以上为《JAVA多线程(二十二)Java多线程之WorkStealingPool工作窃取线程池》，如有不当之处请指出，我后续逐步完善更正，大家共同提高。谢谢大家对我的关注。<br>  <p align="right">——厚积薄发(yuanxw)</p></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag"># 多线程</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%80)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BSingleThreadExecutor%E5%8D%95%E7%BA%BF%E7%A8%8B%E5%8C%96%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="prev" title="JAVA多线程(二十一)Java多线程之SingleThreadExecutor单线程化线程池">
+                  <i class="fa fa-angle-left"></i> JAVA多线程(二十一)Java多线程之SingleThreadExecutor单线程化线程池
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/JAVA%E5%A4%9A%E7%BA%BF%E7%A8%8B(%E4%BA%8C%E5%8D%81%E4%B8%89)Java%E5%A4%9A%E7%BA%BF%E7%A8%8B%E4%B9%8BScheduledThreadPool%E5%AE%9A%E6%9C%9F%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="next" title="JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池">
+                  JAVA多线程(二十三)Java多线程之ScheduledThreadPoolExecutor定时执行任务线程池 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
