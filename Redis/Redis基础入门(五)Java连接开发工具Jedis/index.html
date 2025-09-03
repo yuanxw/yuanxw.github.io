@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="什么是Jedis 是 Redis 官方推荐的 java连接开发工具！ 使用Java 操作Redis 中间件！如果你要使用java操作redis，那么一定要对Jedis 十分的熟悉！">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis基础入门(五)Java连接开发工具Jedis">
+<meta property="og:url" content="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%BA%94)Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="什么是Jedis 是 Redis 官方推荐的 java连接开发工具！ 使用Java 操作Redis 中间件！如果你要使用java操作redis，那么一定要对Jedis 十分的熟悉！">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter5/image.png">
+<meta property="article:published_time" content="2023-04-04T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T16:20:59.490Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Redis基础入门">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter5/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%BA%94)Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%BA%94)Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis/","path":"Redis/Redis基础入门(五)Java连接开发工具Jedis/","title":"Redis基础入门(五)Java连接开发工具Jedis"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis基础入门(五)Java连接开发工具Jedis | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%BA%94)Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8-%E4%BA%94-Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis"><span class="nav-number">1.</span> <span class="nav-text">Redis基础入门(五)Java连接开发工具Jedis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E6%96%B0%E5%BB%BAJedis%E9%A1%B9%E7%9B%AE"><span class="nav-number">1.1.</span> <span class="nav-text">1. 新建Jedis项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-PingTest%E6%B5%8B%E8%AF%95%E8%BF%9E%E6%8E%A5"><span class="nav-number">1.2.</span> <span class="nav-text">2. PingTest测试连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-StringTest%E5%AD%97%E7%AC%A6"><span class="nav-number">1.3.</span> <span class="nav-text">3. StringTest字符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-ListTest%E5%88%97%E8%A1%A8"><span class="nav-number">1.4.</span> <span class="nav-text">4. ListTest列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-SetTest%E9%9B%86%E5%90%88"><span class="nav-number">1.5.</span> <span class="nav-text">5. SetTest集合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-TestHash"><span class="nav-number">1.6.</span> <span class="nav-text">6. TestHash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-TransactionTest%EF%BC%88%E4%BA%8B%E5%8A%A1%EF%BC%89"><span class="nav-number">1.7.</span> <span class="nav-text">7. TransactionTest（事务）</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%BA%94)Java%E8%BF%9E%E6%8E%A5%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7Jedis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis基础入门(五)Java连接开发工具Jedis | 我的博客">
+      <meta itemprop="description" content="什么是Jedis 是 Redis 官方推荐的 java连接开发工具！ 使用Java 操作Redis 中间件！如果你要使用java操作redis，那么一定要对Jedis 十分的熟悉！">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis基础入门(五)Java连接开发工具Jedis
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-04-05 00:00:00" itemprop="dateCreated datePublished" datetime="2023-04-05T00:00:00+08:00">2023-04-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-04 00:20:59" itemprop="dateModified" datetime="2025-09-04T00:20:59+08:00">2025-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">什么是Jedis 是 Redis 官方推荐的 java连接开发工具！ 使用Java 操作Redis 中间件！如果你要使用java操作redis，那么一定要对Jedis 十分的熟悉！</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Redis基础入门-五-Java连接开发工具Jedis"><a href="#Redis基础入门-五-Java连接开发工具Jedis" class="headerlink" title="Redis基础入门(五)Java连接开发工具Jedis"></a>Redis基础入门(五)Java连接开发工具Jedis</h2><p>什么是Jedis 是 Redis 官方推荐的 java连接开发工具！ 使用Java 操作Redis 中间件！如果你要使用java操作redis，那么一定要对Jedis 十分的熟悉！</p>
+<h3 id="1-新建Jedis项目"><a href="#1-新建Jedis项目" class="headerlink" title="1. 新建Jedis项目"></a>1. 新建Jedis项目</h3><p>创建<strong>peppa-jedis</strong>，引用相关jar包</p>
+<p><img src="/images/redis_basics_beginners/chapter5/image.png" alt="Untitled"></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- jedis --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>redis.clients<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>jedis<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.0.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!--fastjson--&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.alibaba<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>fastjson<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.79<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!-- junit --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.13.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!--slf4j --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.slf4j<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>slf4j-api<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.0.0-alpha5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!-- logback --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>ch.qos.logback<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>logback-classic<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.3.0-alpha12<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>ch.qos.logback<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>logback-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.3.0-alpha12<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>ch.qos.logback<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>logback-access<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.3.0-alpha12<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-PingTest测试连接"><a href="#2-PingTest测试连接" class="headerlink" title="2. PingTest测试连接"></a>2. PingTest测试连接</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Jedis;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">PingTest</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger logger= LoggerFactory.getLogger(PingTest.class);</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">ping</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;192.168.3.21&quot;</span>,<span class="number">6379</span>);</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.ping()==&gt;&#123;&#125;&quot;</span>,jedis.ping());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-StringTest字符"><a href="#3-StringTest字符" class="headerlink" title="3. StringTest字符"></a>3. StringTest字符</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"><span class="keyword">import</span> org.omg.CORBA.PUBLIC_MEMBER;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Jedis;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Arrays;</span><br><span class="line"><span class="keyword">import</span> java.util.Set;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">StringTest</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(StringTest.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">key</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;192.168.3.21&quot;</span>, <span class="number">6379</span>);</span><br><span class="line">        logger.info(<span class="string">&quot;按索引查询：&#123;&#125;&quot;</span>, jedis.select(<span class="number">0</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;清空数据：&#123;&#125;&quot;</span>, jedis.flushDB());</span><br><span class="line">        logger.info(<span class="string">&quot;判断某个键是否存在：&#123;&#125;&quot;</span>, jedis.exists(<span class="string">&quot;username&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;新增&lt;&#x27;username&#x27;,&#x27;peppa&#x27;&gt;的键值对：&#123;&#125;&quot;</span>, jedis.set(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;peppa&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;新增&lt;&#x27;password&#x27;,&#x27;password&#x27;&gt;的键值对：&#123;&#125;&quot;</span>, jedis.set(<span class="string">&quot;password&quot;</span>, <span class="string">&quot;123456&quot;</span> ));</span><br><span class="line">        Set&lt;String&gt; keys = jedis.keys(<span class="string">&quot;*&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;系统中所有的键如下：&#123;&#125;&quot;</span>, Arrays.toString(keys.toArray()));</span><br><span class="line">        logger.info(<span class="string">&quot;删除键password:&#123;&#125;&quot;</span>, jedis.del(<span class="string">&quot;password&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;判断键password是否存在：&#123;&#125;&quot;</span>, jedis.exists(<span class="string">&quot;password&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;查看键username所存储的值的类型:&#123;&#125;&quot;</span>, jedis.type(<span class="string">&quot;username&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;随机返回key空间的一个：&#123;&#125;&quot;</span>, jedis.randomKey());</span><br><span class="line">        logger.info(<span class="string">&quot;重命名key：&#123;&#125;&quot;</span>, jedis.rename(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;name&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;取出改后的name：&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;name&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除当前选择数据库中的所有：&#123;&#125;&quot;</span>, jedis.flushDB());</span><br><span class="line">        logger.info(<span class="string">&quot;返回当前数据库中key的数目：&#123;&#125;&quot;</span>, jedis.dbSize());</span><br><span class="line">        logger.info(<span class="string">&quot;删除所有数据库中的所有key：&#123;&#125;&quot;</span>, jedis.flushAll());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">str</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;192.168.3.21&quot;</span>, <span class="number">6379</span>);</span><br><span class="line">        jedis.flushDB();</span><br><span class="line">        logger.info(<span class="string">&quot;==========增加数据=========&quot;</span> );</span><br><span class="line">        logger.info(jedis.set(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;valuel&quot;</span> ));</span><br><span class="line">        logger.info(jedis.set(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;value2&quot;</span> ));</span><br><span class="line">        logger.info(jedis.set(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;value3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除键key2:&#123;&#125;&quot;</span>, jedis.del(<span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取键key2:&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;修改key:&#123;&#125;&quot;</span>, jedis.set(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;valueChanged&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取key1的值：&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;在key3后面加入值：&#123;&#125;&quot;</span>, jedis.append(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;End&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;key3的值：&quot;</span> + jedis.get(<span class="string">&quot;key3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;增加多个键值对：&#123;&#125;&quot;</span>, jedis.mset(<span class="string">&quot;key01&quot;</span>, <span class="string">&quot;value02&quot;</span>, <span class="string">&quot;key02&quot;</span>, <span class="string">&quot;value02&quot;</span>, <span class="string">&quot;key03&quot;</span>, <span class="string">&quot;value03&quot;</span>, <span class="string">&quot;key04&quot;</span>, <span class="string">&quot;value04&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取多个键值对：&#123;&#125;&quot;</span>, jedis.mget(<span class="string">&quot;key01&quot;</span>, <span class="string">&quot;key02&quot;</span>, <span class="string">&quot;key03&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取多个键值对：&#123;&#125;&quot;</span>, jedis.mget(<span class="string">&quot;key01&quot;</span>, <span class="string">&quot;key02&quot;</span>, <span class="string">&quot;key03&quot;</span>, <span class="string">&quot;key04&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除多个键值对：&#123;&#125;&quot;</span>, jedis.del(<span class="string">&quot;key01&quot;</span>, <span class="string">&quot;key02&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取多个键值对：&#123;&#125;&quot;</span>, jedis.mget(<span class="string">&quot;key01&quot;</span>, <span class="string">&quot;key02&quot;</span>, <span class="string">&quot;key03&quot;</span> ));</span><br><span class="line">        jedis.flushDB();</span><br><span class="line">        logger.info(<span class="string">&quot;===========新增键值对防止覆盖筛先值=============&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.setnx():&#123;&#125;&quot;</span>, jedis.setnx(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;value1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.setnx():&#123;&#125;&quot;</span>, jedis.setnx(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;value2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.setnx():&#123;&#125;&quot;</span>, jedis.setnx(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;value2-new&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.get():&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.get():&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;=======新增键值对并设置有效时间=====&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.setex():&#123;&#125;&quot;</span>, jedis.setex(<span class="string">&quot;key3&quot;</span>, <span class="number">2</span>, <span class="string">&quot;value3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.get(key3):&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key3&quot;</span> ));</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">3</span>);</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.get(key3):&#123;&#125;&quot;</span>, jedis.get(<span class="string">&quot;key3&quot;</span> ));</span><br><span class="line"></span><br><span class="line">        logger.info(<span class="string">&quot;===========获取原值，更新为新值===========&quot;</span> );</span><br><span class="line">        logger.info(jedis.getSet(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;key2GetSet&quot;</span> ));</span><br><span class="line">        logger.info(jedis.get(<span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获得key2的值的字串：&#123;&#125;&quot;</span>, jedis.getrange(<span class="string">&quot;key2&quot;</span>, <span class="number">2</span>, <span class="number">4</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-ListTest列表"><a href="#4-ListTest列表" class="headerlink" title="4. ListTest列表"></a>4. <strong>ListTest列表</strong></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Jedis;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ListTest</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(ListTest.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">list</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>);</span><br><span class="line">        jedis.flushDB();</span><br><span class="line">        logger.info(<span class="string">&quot;=======添加一个1ist===========&quot;</span> );</span><br><span class="line">        jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;ArrayList&quot;</span>, <span class="string">&quot;Vector&quot;</span>, <span class="string">&quot;Stack&quot;</span>, <span class="string">&quot;HashMap&quot;</span>, <span class="string">&quot;WeakHashMap&quot;</span>, <span class="string">&quot;LinkedHashMap&quot;</span> );</span><br><span class="line">        jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;HashSet&quot;</span> );</span><br><span class="line">        jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;TreeSet&quot;</span> );</span><br><span class="line">        jedis.lpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;TreeMap&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>)); <span class="comment">//-1代表倒数第一个元素，-2代表倒数第二个元素</span></span><br><span class="line">        logger.info(<span class="string">&quot;collections区间0-3的元素：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, <span class="number">3</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;=================================&quot;</span> );</span><br><span class="line">        <span class="comment">// 删除列表指定的值，第二个参数的个数（有重复时），后add进去的值先被删，类似于出栈</span></span><br><span class="line">        logger.info(<span class="string">&quot;删除指定元素个数：&#123;&#125;&quot;</span> ,jedis.lrem(<span class="string">&quot;collections&quot;</span>, <span class="number">2</span>, <span class="string">&quot;HashMap&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;删除下表0-3区间之外的元素：&#123;&#125;&quot;</span> ,jedis.ltrim(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, <span class="number">3</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;collections列表出栈（左端）：&#123;&#125;&quot;</span> ,jedis.lpop(<span class="string">&quot;collections&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;collections添加元素，从列表右端，与1push相对应：&#123;&#125;&quot;</span> ,jedis.rpush(<span class="string">&quot;collections&quot;</span>, <span class="string">&quot;EnumMap&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;collections3列表出栈（右端）：&#123;&#125;&quot;</span> ,jedis.rpop(<span class="string">&quot;collections&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;修改collections指定下标1的内容：&#123;&#125;&quot;</span> ,jedis.lset(<span class="string">&quot;collections&quot;</span>, <span class="number">1</span>, <span class="string">&quot;LinkedArrayList&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;collections的内容：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;collections&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;=================================&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;collections的长度：&#123;&#125;&quot;</span> ,jedis.llen(<span class="string">&quot;collections&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取collections下标为2的元素：&#123;&#125;&quot;</span> ,jedis.lindex(<span class="string">&quot;collections&quot;</span>, <span class="number">2</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;=================================&quot;</span> );</span><br><span class="line">        jedis.lpush(<span class="string">&quot;sortedList&quot;</span>, <span class="string">&quot;3&quot;</span>, <span class="string">&quot;6&quot;</span>, <span class="string">&quot;2&quot;</span>, <span class="string">&quot;0&quot;</span>, <span class="string">&quot;7&quot;</span>, <span class="string">&quot;4&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;sortedList排序前：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;sortedList&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sort():&#123;&#125;&quot;</span>,jedis.sort(<span class="string">&quot;sortedList&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;sortedList排序后：&#123;&#125;&quot;</span> ,jedis.lrange(<span class="string">&quot;sortedList&quot;</span>, <span class="number">0</span>, -<span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-SetTest集合"><a href="#5-SetTest集合" class="headerlink" title="5. SetTest集合"></a>5. SetTest集合</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">package com.peppa;</span><br><span class="line"></span><br><span class="line">import org.junit.Test;</span><br><span class="line">import org.slf4j.Logger;</span><br><span class="line">import org.slf4j.LoggerFactory;</span><br><span class="line">import redis.clients.jedis.Jedis;</span><br><span class="line"></span><br><span class="line">public class SetTest &#123;</span><br><span class="line">    private static final Logger logger = LoggerFactory.getLogger(SetTest.class);</span><br><span class="line"></span><br><span class="line">    @Test</span><br><span class="line">    public void <span class="function"><span class="title">set</span></span>() &#123;</span><br><span class="line">        Jedis jedis = new Jedis(<span class="string">&quot;127.0.0.1&quot;</span>, 6379);</span><br><span class="line">        jedis.flushDB();</span><br><span class="line">        logger.info(<span class="string">&quot;================向集合中添加元素（不重复）============&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sadd():&#123;&#125;&quot;</span>,jedis.sadd(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e1&quot;</span>, <span class="string">&quot;e2&quot;</span>, <span class="string">&quot;e4&quot;</span>, <span class="string">&quot;e3&quot;</span>, <span class="string">&quot;e0&quot;</span>, <span class="string">&quot;e8&quot;</span>, <span class="string">&quot;e7&quot;</span>, <span class="string">&quot;e5&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sadd():&#123;&#125;&quot;</span>,jedis.sadd(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e6&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sadd():&#123;&#125;&quot;</span>,jedis.sadd(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e6&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet的所有元素为：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除一个元素e0：&#123;&#125;&quot;</span> ,jedis.srem(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e0&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet的所有元素为：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除两个元素e7和e6：&#123;&#125;&quot;</span> ,jedis.srem(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e7&quot;</span>, <span class="string">&quot;e6&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet的所有元素为：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;随机的移除集合中的一个元素：&#123;&#125;&quot;</span> ,jedis.spop(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;随机的移除集合中的一个元素：&#123;&#125;&quot;</span> ,jedis.spop(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet的所有元素为：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet中包含元素的个数：&#123;&#125;&quot;</span> ,jedis.scard(<span class="string">&quot;eleSet&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;e3是否在eleSet中：&#123;&#125;&quot;</span> ,jedis.sismember(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;e1是否在eleSet中：&#123;&#125;&quot;</span> ,jedis.sismember(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;e1是否在eleSet中：&#123;&#125;&quot;</span> ,jedis.sismember(<span class="string">&quot;eleSet&quot;</span>, <span class="string">&quot;e5&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;=============================&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sadd():&#123;&#125;&quot;</span>,jedis.sadd(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;e1&quot;</span>, <span class="string">&quot;e2&quot;</span>, <span class="string">&quot;e4&quot;</span>, <span class="string">&quot;e3&quot;</span>, <span class="string">&quot;e0&quot;</span>, <span class="string">&quot;e8&quot;</span>, <span class="string">&quot;e7&quot;</span>, <span class="string">&quot;e5&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;jedis.sadd():&#123;&#125;&quot;</span>,jedis.sadd(<span class="string">&quot;eleSet2&quot;</span>, <span class="string">&quot;e1&quot;</span>, <span class="string">&quot;e2&quot;</span>, <span class="string">&quot;e4&quot;</span>, <span class="string">&quot;e3&quot;</span>, <span class="string">&quot;e0&quot;</span>, <span class="string">&quot;e8&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;将eleSet1中删除e1并存入eleSet3中：&#123;&#125;&quot;</span> ,jedis.smove(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;eleSet3&quot;</span>, <span class="string">&quot;el&quot;</span> ));//移到集合元素 </span><br><span class="line">        logger.info(<span class="string">&quot;将eleSet1中删除e2并存入eleSet3中：&#123;&#125;&quot;</span> ,jedis.smove(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;eleSet3&quot;</span>, <span class="string">&quot;e2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet1中的元素：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet3中的元素：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;=================集合运算================&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet1中的元素：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet1&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet2中的元素：&#123;&#125;&quot;</span> ,jedis.smembers(<span class="string">&quot;eleSet2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet1和eleSet2的交集：&#123;&#125;&quot;</span> ,jedis.sinter(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;eleSet2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet1和eleSet2的并集：&#123;&#125;&quot;</span> ,jedis.sunion(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;eleSet2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet1和eleSet2的差集:&quot;</span> + jedis.sdiff(<span class="string">&quot;eleSet1&quot;</span>, <span class="string">&quot;eleSet2&quot;</span> ));//eLeSet1中有，eLeSet2中没有</span><br><span class="line">        jedis.sinterstore( <span class="string">&quot;eleSet4&quot;</span>, <span class="string">&quot;eleSet1&quot;</span>,<span class="string">&quot;eleSet2&quot;</span>);//求交集并将交集保</span><br><span class="line">        logger.info(<span class="string">&quot;eleSet4中的元素：&#123;&#125;&quot;</span>,jedis.smembers(<span class="string">&quot;eleSet4&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-TestHash"><a href="#6-TestHash" class="headerlink" title="6. TestHash"></a>6. TestHash</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Jedis;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TestHash</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(ListTest.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">hash</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>);</span><br><span class="line">        jedis.flushDB();</span><br><span class="line">        Map&lt;String, String&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">        map.put(<span class="string">&quot;key1&quot;</span>, <span class="string">&quot;value1&quot;</span> );</span><br><span class="line">        map.put(<span class="string">&quot;key2&quot;</span>, <span class="string">&quot;value2&quot;</span> );</span><br><span class="line">        map.put(<span class="string">&quot;key3&quot;</span>, <span class="string">&quot;value3&quot;</span> );</span><br><span class="line">        map.put(<span class="string">&quot;key4&quot;</span>, <span class="string">&quot;value4&quot;</span> );</span><br><span class="line">        <span class="comment">//添加名称为hash（key）的hash元素</span></span><br><span class="line">        jedis.hmset(<span class="string">&quot;hash&quot;</span>, map);</span><br><span class="line">        <span class="comment">//名称为hash的hash中添加Rey 为key5，vaLue为vatue5元素</span></span><br><span class="line">        jedis.hset(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key5&quot;</span>, <span class="string">&quot;value5&quot;</span> );</span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有键值对为：&#123;&#125;&quot;</span> ,jedis.hgetAll(<span class="string">&quot;hash&quot;</span> )); <span class="comment">//return Map&lt;s</span></span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有键为：&#123;&#125;&quot;</span> ,jedis.hkeys(<span class="string">&quot;hash&quot;</span> )); <span class="comment">//return Set&lt;String&gt;</span></span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有值为：&#123;&#125;&quot;</span> ,jedis.hvals(<span class="string">&quot;hash&quot;</span> )); <span class="comment">//return List&lt;String</span></span><br><span class="line">        logger.info(<span class="string">&quot;将key6保存的值加上一个整数，如果key6不存在则添加key6：&#123;&#125;&quot;</span> ,jedis.hincrBy(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key6&quot;</span>, <span class="number">5</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有键值对为：&#123;&#125;&quot;</span> ,jedis.hgetAll(<span class="string">&quot;hash&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;将key6保存的值加上一个整数，如果key6不存在则添加key6：&#123;&#125;&quot;</span> ,jedis.hincrBy(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key6&quot;</span>, <span class="number">10</span>));</span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有键值对为：&#123;&#125;&quot;</span> ,jedis.hgetAll(<span class="string">&quot;hash&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;删除一个或者多个键值对：&#123;&#125;&quot;</span> ,jedis.hdel(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;散列hash的所有键值对为：&#123;&#125;&quot;</span> ,jedis.hgetAll(<span class="string">&quot;hash&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;散列hash中键值对的个数： &quot;</span> + jedis.hlen(<span class="string">&quot;hash&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;判断hash中是否存在key2：&#123;&#125;&quot;</span> ,jedis.hexists(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key2&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;判断hash中是否存在key3：&#123;&#125;&quot;</span> ,jedis.hexists(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取hash中的值：&#123;&#125;&quot;</span> ,jedis.hmget(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key3&quot;</span> ));</span><br><span class="line">        logger.info(<span class="string">&quot;获取hash中的值：&#123;&#125;&quot;</span> ,jedis.hmget(<span class="string">&quot;hash&quot;</span>, <span class="string">&quot;key3&quot;</span>, <span class="string">&quot;key4&quot;</span> ));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-TransactionTest（事务）"><a href="#7-TransactionTest（事务）" class="headerlink" title="7. TransactionTest（事务）"></a>7. TransactionTest（事务）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.peppa;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.alibaba.fastjson.JSONObject;</span><br><span class="line"><span class="keyword">import</span> org.junit.Test;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.Logger;</span><br><span class="line"><span class="keyword">import</span> org.slf4j.LoggerFactory;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Jedis;</span><br><span class="line"><span class="keyword">import</span> redis.clients.jedis.Transaction;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TransactionTest</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">logger</span> <span class="operator">=</span> LoggerFactory.getLogger(ListTest.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">transaction</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="type">Jedis</span> <span class="variable">jedis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Jedis</span>(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">6379</span>);</span><br><span class="line">        jedis.flushDB();</span><br><span class="line"></span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">jsonObject</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">JSONObject</span>();</span><br><span class="line">        jsonObject.put(<span class="string">&quot;hello&quot;</span>,<span class="string">&quot;world&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 开启事务</span></span><br><span class="line">        <span class="type">Transaction</span> <span class="variable">multi</span> <span class="operator">=</span> jedis.multi();</span><br><span class="line">        <span class="type">String</span> <span class="variable">jsonStr</span> <span class="operator">=</span> jsonObject.toJSONString();</span><br><span class="line">        multi.set(<span class="string">&quot;user1&quot;</span>,jsonStr);</span><br><span class="line">        <span class="keyword">try</span>&#123;</span><br><span class="line">            <span class="comment">// 代码抛出异常，执行失败</span></span><br><span class="line">            <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">1</span>/<span class="number">0</span>;</span><br><span class="line">            <span class="comment">// 执行事务</span></span><br><span class="line">            multi.exec();</span><br><span class="line">        &#125;<span class="keyword">catch</span>(Exception ex)&#123;</span><br><span class="line">            logger.error(ex.getMessage(),ex);</span><br><span class="line">            multi.discard(); <span class="comment">// 放弃事务</span></span><br><span class="line">        &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">// 关闭连接</span></span><br><span class="line">            jedis.close();</span><br><span class="line">            logger.info(<span class="string">&quot;jsonStr:&#123;&#125;&quot;</span>,jedis.get(<span class="string">&quot;user1&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/" rel="tag"># Redis基础入门</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%9B%9B)Redis%20%E4%BA%8B%E5%8A%A1%E6%93%8D%E4%BD%9C/" rel="prev" title="Redis基础入门(四)Redis 事务操作">
+                  <i class="fa fa-angle-left"></i> Redis基础入门(四)Redis 事务操作
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AD)SpringBoot%E6%95%B4%E5%90%88/" rel="next" title="Redis基础入门(六)SpringBoot整合">
+                  Redis基础入门(六)SpringBoot整合 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

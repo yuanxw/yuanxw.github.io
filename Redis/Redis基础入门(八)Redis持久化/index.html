@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.json","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Redis 是内存数据库，如果不将内存中的数据库状态保存到磁盘，那么一旦服务器进程退出，服务器中的数据库状态也会消失。所以 Redis 提供了持久化功能！">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis基础入门(八)Redis持久化">
+<meta property="og:url" content="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AB)Redis%E6%8C%81%E4%B9%85%E5%8C%96/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="Redis 是内存数据库，如果不将内存中的数据库状态保存到磁盘，那么一旦服务器进程退出，服务器中的数据库状态也会消失。所以 Redis 提供了持久化功能！">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image1.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image2.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image3.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image4.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image5.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image6.png">
+<meta property="article:published_time" content="2023-04-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T16:21:03.919Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Redis基础入门">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/redis_basics_beginners/chapter8/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AB)Redis%E6%8C%81%E4%B9%85%E5%8C%96/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AB)Redis%E6%8C%81%E4%B9%85%E5%8C%96/","path":"Redis/Redis基础入门(八)Redis持久化/","title":"Redis基础入门(八)Redis持久化"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Redis基础入门(八)Redis持久化 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AB)Redis%E6%8C%81%E4%B9%85%E5%8C%96/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8-%E5%85%AB-Redis%E6%8C%81%E4%B9%85%E5%8C%96"><span class="nav-number">1.</span> <span class="nav-text">Redis基础入门(八)Redis持久化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-RDB%EF%BC%88Redis-DataBase%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">1. RDB（Redis DataBase）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-AOF%EF%BC%88Append-Only-File%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">2. AOF（Append Only File）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A9%E5%B1%95"><span class="nav-number">1.3.</span> <span class="nav-text">扩展</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%85%AB)Redis%E6%8C%81%E4%B9%85%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Redis基础入门(八)Redis持久化 | 我的博客">
+      <meta itemprop="description" content="Redis 是内存数据库，如果不将内存中的数据库状态保存到磁盘，那么一旦服务器进程退出，服务器中的数据库状态也会消失。所以 Redis 提供了持久化功能！">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis基础入门(八)Redis持久化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2023-04-08 00:00:00" itemprop="dateCreated datePublished" datetime="2023-04-08T00:00:00+08:00">2023-04-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-04 00:21:03" itemprop="dateModified" datetime="2025-09-04T00:21:03+08:00">2025-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">Redis 是内存数据库，如果不将内存中的数据库状态保存到磁盘，那么一旦服务器进程退出，服务器中的数据库状态也会消失。所以 Redis 提供了持久化功能！</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Redis基础入门-八-Redis持久化"><a href="#Redis基础入门-八-Redis持久化" class="headerlink" title="Redis基础入门(八)Redis持久化"></a>Redis基础入门(八)Redis持久化</h2><p>Redis 是内存数据库，如果不将内存中的数据库状态保存到磁盘，那么一旦服务器进程退出，服务器中的数据库状态也会消失。所以 Redis 提供了持久化功能！</p>
+<h3 id="1-RDB（Redis-DataBase）"><a href="#1-RDB（Redis-DataBase）" class="headerlink" title="1. RDB（Redis DataBase）"></a>1. RDB（Redis DataBase）</h3><ul>
+<li><p><strong>什么是RDB</strong></p>
+<ul>
+<li>在主从复制中，rdb就是备用了！从机上面！</li>
+</ul>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image.png" alt="Untitled"></p>
+<p>  在指定的时间间隔内将内存中的数据集快照写入磁盘，也就是行话讲的Snapshot快照，它恢复时是将快照文件直接读到内存里。<br>  Redis会单独创建（fork）一个子进程来进行持久化，会先将数据写入到一个临时文件中，待持久化过程都结束了，再用这个临时文件替换上次持久化好的文件。整个过程中，主进程是不进行任何IO操作的。<br>  这就确保了极高的性能。如果需要进行大规模数据的恢复，且对于数据恢复的完整性不是非常敏感，那RDB方式要比AOF方式更加的高效。RDB的缺点是最后一次持久化后的数据可能丢失。我们默认的就是<br>  RDB，一般情况下不需要修改这个配置！<br>  有时候在生产环境我们会将这个文件进行备份！<br>  <strong><code>rdb保存的文件是dump.rdb</code></strong> 都是在我们的配置文件中快照中进行配置的！</p>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image1.png" alt="Untitled"></p>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image2.png" alt="Untitled">
+  </p>
+</li>
+<li><p><strong>触发机制</strong></p>
+<ul>
+<li>save的规则满足的情况下，会自动触发rdb规则</li>
+<li>执行 flushall 命令，也会触发我们的rdb规则！</li>
+<li>退出redis，也会产生 rdb 文件！备份就自动生成一个 dump.rdb</li>
+</ul>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image3.png" alt="Untitled"></p>
+</li>
+<li><p><strong>如果恢复rdb文件</strong></p>
+<ul>
+<li>只需要将rdb文件放在我们redis启动目录就可以，redis启动的时候会自动检查dump.rdb 恢复其中的数据！</li>
+<li>查看需要存在的位置</li>
+</ul>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; config get <span class="built_in">dir</span></span><br><span class="line">1) <span class="string">&quot;dir&quot;</span></span><br><span class="line">2) <span class="string">&quot;/usr/local/bin&quot;</span> <span class="comment"># 如果在这个目录下存在 dump.rdb 文件，启动就会自动恢复其中的数据</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>优点缺点：</p>
+<ul>
+<li>优点：<ul>
+<li>适合大规模的数据恢复！</li>
+<li>对数据的完整性要不高！</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>需要一定的时间间隔进程操作！如果redis意外宕机了，这个最后一次修改数据就没有的了！</li>
+<li>fork进程的时候，会占用一定的内容空间！！</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-AOF（Append-Only-File）"><a href="#2-AOF（Append-Only-File）" class="headerlink" title="2. AOF（Append Only File）"></a>2. <strong>AOF（Append Only File）</strong></h3><p>将我们的所有命令都记录下来，history，恢复的时候就把这个文件全部在执行一遍！</p>
+<ul>
+<li><p><strong>什么是AOF</strong></p>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image4.png" alt="Untitled"></p>
+</li>
+</ul>
+<p>以日志的形式来记录每个写操作，将Redis执行过的所有指令记录下来（读操作不记录），只许追加文件但不可以改写文件，redis启动之初会读取该文件重新构建数据，换言之，redis重启的话就根据日志文件<br>的内容将写指令从前到后执行一次以完成数据的恢复工作。</p>
+<p><strong><code>Aof保存的是 appendonly.aof 文件</code></strong></p>
+<ul>
+<li><p><strong>append</strong></p>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image5.png" alt="Untitled"></p>
+<p>  默认是不开启的，我们需要手动进行配置！我们只需要将 appendonly 改为yes就开启了 aof！重启，redis 就可以生效了！<br>  如果这个 aof 文件有错位，这时候 redis 是启动不起来的吗，我们需要修复这个aof文件<br>  redis 给我们提供了一个工具：<strong><code>redis-check-aof --fix</code></strong></p>
+<p>  <img src="/images/redis_basics_beginners/chapter8/image6.png" alt="Untitled"></p>
+</li>
+<li><p>重写规则说明</p>
+<ul>
+<li><p>aof 默认就是文件的无限追加，文件会越来越大！，如果 aof 文件大于 64m，太大了！ fork一个新的进程来将我们的文件进行重写！</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">appendonly no <span class="comment"># 默认是不开启aof模式的，默认是使用rdb方式持久化的，在大部分所有的情况下，</span></span><br><span class="line">rdb完全够用！</span><br><span class="line">appendfilename <span class="string">&quot;appendonly.aof&quot;</span> <span class="comment"># 持久化的文件的名字</span></span><br><span class="line"><span class="comment"># appendfsync always # 每次修改都会 sync。消耗性能</span></span><br><span class="line">appendfsync everysec <span class="comment"># 每秒执行一次 sync，可能会丢失这1s的数据！</span></span><br><span class="line"><span class="comment"># appendfsync no # 不执行 sync，这个时候操作系统自己同步数据，速度最快！</span></span><br><span class="line"><span class="comment"># rewrite 重写，</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p>优点和缺点</p>
+<ul>
+<li>优点：<ul>
+<li>每一次修改都同步，文件的完整会更加好！</li>
+<li>每秒同步一次，可能会丢失一秒的数据</li>
+<li>从不同步，效率最高的！</li>
+</ul>
+</li>
+<li>缺点：<ul>
+<li>相对于数据文件来说，aof远远大于 rdb，修复的速度也比 rdb慢！</li>
+<li>Aof 运行效率也要比 rdb 慢，所以我们redis默认的配置就是rdb持久化！</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="扩展"><a href="#扩展" class="headerlink" title="扩展"></a>扩展</h3><ul>
+<li>RDB 持久化方式能够在指定的时间间隔内对你的数据进行快照存储</li>
+<li>AOF 持久化方式记录每次对服务器写的操作，当服务器重启的时候会重新执行这些命令来恢复原始的数据，AOF命令以Redis 协议追加保存每次写的操作到文件末尾，Redis还能对AOF文件进行后台重<br>写，使得AOF文件的体积不至于过大。</li>
+<li>只做缓存，如果你只希望你的数据在服务器运行的时候存在，你也可以不使用任何持久化</li>
+<li>同时开启两种持久化方式：<ul>
+<li>在这种情况下，当redis重启的时候会优先载入AOF文件来恢复原始的数据，因为在通常情况下AOF文件保存的数据集要比RDB文件保存的数据集要完整。</li>
+<li>RDB 的数据不实时，同时使用两者时服务器重启也只会找AOF文件，那要不要只使用AOF呢？作者建议不要，因为RDB更适合用于备份数据库（AOF在不断变化不好备份），快速重启，而且不会有<br>  AOF可能潜在的Bug，留着作为一个万一的手段。</li>
+</ul>
+</li>
+<li>性能建议<ul>
+<li>因为RDB文件只用作后备用途，建议只在Slave上持久化RDB文件，而且只要15分钟备份一次就够了，只保留 save 900 1 这条规则。</li>
+<li>如果Enable AOF ，好处是在最恶劣情况下也只会丢失不超过两秒数据，启动脚本较简单只load自己的AOF文件就可以了，代价一是带来了持续的IO，二是AOF rewrite 的最后将 rewrite 过程中产<br>  生的新数据写到新文件造成的阻塞几乎是不可避免的。只要硬盘许可，应该尽量减少AOF rewrite的频率，AOF重写的基础大小默认值64M太小了，可以设到5G以上，默认超过原大小100%大小重<br>  写可以改到适当的数值。</li>
+<li>如果不Enable AOF ，仅靠 Master-Slave Repllcation 实现高可用性也可以，能省掉一大笔IO，也减少了rewrite时带来的系统波动。代价是如果Master&#x2F;Slave 同时倒掉，会丢失十几分钟的数据，<br>  启动脚本也要比较两个 Master&#x2F;Slave 中的 RDB文件，载入较新的那个，微博就是这种架构。</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/" rel="tag"># Redis基础入门</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%B8%83)Redis%20conf%E8%AF%A6%E8%A7%A3/" rel="prev" title="Redis基础入门(七)Redis.conf详解">
+                  <i class="fa fa-angle-left"></i> Redis基础入门(七)Redis.conf详解
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E4%B9%9D)Redis%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85/" rel="next" title="Redis基础入门(九)Redis发布订阅">
+                  Redis基础入门(九)Redis发布订阅 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
