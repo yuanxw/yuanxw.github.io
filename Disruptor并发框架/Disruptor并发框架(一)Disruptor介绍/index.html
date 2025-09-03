@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="LMAX 的成立旨在打造一个高性能金融交易所。作为我们工作的一部分，我们评估了多种方案去设计这个系统以求达到高性能目标，最后我们发现在传统的解决方案中遇到了基础上的瓶颈。许多应用程序依赖队列在处理阶段之间交换数据。我们的性能测试表明，以这种方式使用队列时，延迟成本与磁盘IO操作（基于RAID或SSD的磁盘系统）的成本处于同一数量级——速度非常慢。如果端到端操作中有多个队列，这将使整体延迟增加数百微">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Disruptor并发框架(一)Disruptor介绍">
+<meta property="og:url" content="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="LMAX 的成立旨在打造一个高性能金融交易所。作为我们工作的一部分，我们评估了多种方案去设计这个系统以求达到高性能目标，最后我们发现在传统的解决方案中遇到了基础上的瓶颈。许多应用程序依赖队列在处理阶段之间交换数据。我们的性能测试表明，以这种方式使用队列时，延迟成本与磁盘IO操作（基于RAID或SSD的磁盘系统）的成本处于同一数量级——速度非常慢。如果端到端操作中有多个队列，这将使整体延迟增加数百微">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image1.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image2.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image3.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image4.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image5.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image6.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image7.png">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image8.png">
+<meta property="article:published_time" content="2025-05-31T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T17:24:44.572Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Disruptor">
+<meta property="article:tag" content="Disruptor并发框架">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/disruptor/chapter1/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/","path":"Disruptor并发框架/Disruptor并发框架(一)Disruptor介绍/","title":"Disruptor并发框架(一)Disruptor介绍"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Disruptor并发框架(一)Disruptor介绍 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.9.0/mermaid.min.js","integrity":"sha256-Cz7UN0EXNjgV2u/a38wg/3BNfdRRO1XtgDq93L2GqJg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6-%E4%B8%80-Disruptor%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">Disruptor并发框架(一)Disruptor介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFDisruptor"><span class="nav-number">2.</span> <span class="nav-text">1. 什么是Disruptor?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E6%A6%82%E8%BF%B0"><span class="nav-number">3.</span> <span class="nav-text">2. 概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%B9%B6%E5%8F%91%E7%9A%84%E5%A4%8D%E6%9D%82%E6%80%A7"><span class="nav-number">4.</span> <span class="nav-text">3. 并发的复杂性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-%E9%94%81%E7%9A%84%E4%BB%A3%E4%BB%B7"><span class="nav-number">4.1.</span> <span class="nav-text">3.1 锁的代价</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-CAS%E7%9A%84%E4%BB%A3%E4%BB%B7"><span class="nav-number">4.2.</span> <span class="nav-text">3.2 CAS的代价</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-%E5%86%85%E5%AD%98%E6%A0%85%E6%A0%8F-Memory-Barriers"><span class="nav-number">4.3.</span> <span class="nav-text">3.3 内存栅栏 Memory Barriers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-%E7%BC%93%E5%AD%98%E8%A1%8C-Cache-Lines"><span class="nav-number">4.4.</span> <span class="nav-text">3.4 缓存行 Cache Lines</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-5-%E9%98%9F%E5%88%97%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">4.5.</span> <span class="nav-text">3.5 队列的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-6-%E7%AE%A1%E9%81%93%E5%92%8C%E5%9B%BE-Pipelines-and-Graphs"><span class="nav-number">4.6.</span> <span class="nav-text">3.6 管道和图 Pipelines and Graphs</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-LMAX-Disruptor-%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">5.</span> <span class="nav-text">4. LMAX Disruptor 的设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D-Memory-Allocation"><span class="nav-number">5.1.</span> <span class="nav-text">4.1 内存分配 Memory Allocation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-%E9%9A%94%E7%A6%BB%E5%85%B3%E6%B3%A8-Teasing-Apart-the-Concerns"><span class="nav-number">5.2.</span> <span class="nav-text">4.2 隔离关注 Teasing Apart the Concerns</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-%E5%BA%8F%E5%88%97%E5%8C%96-Sequencing"><span class="nav-number">5.3.</span> <span class="nav-text">4.3 序列化 Sequencing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-%E6%89%B9%E9%87%8F%E6%95%88%E5%BA%94-Batching-Effect"><span class="nav-number">5.4.</span> <span class="nav-text">4.4 批量效应 Batching Effect</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-5-%E4%BE%9D%E8%B5%96%E5%9B%BE-Dependency-Graphs"><span class="nav-number">5.5.</span> <span class="nav-text">4.5 依赖图 Dependency Graphs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-6-Disruptor-%E7%B1%BB%E5%9B%BE"><span class="nav-number">5.6.</span> <span class="nav-text">4.6 Disruptor 类图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-7-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.7.</span> <span class="nav-text">4.7 代码示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E5%90%9E%E5%90%90%E9%87%8F%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95-Throughput-Performance-Testing"><span class="nav-number">6.</span> <span class="nav-text">5. 吞吐量性能测试 Throughput Performance Testing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%BB%B6%E8%BF%9F%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95-Latency-Performance-Testing"><span class="nav-number">7.</span> <span class="nav-text">6. 延迟性能测试 Latency Performance Testing</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E7%BB%93%E8%AE%BA"><span class="nav-number">8.</span> <span class="nav-text">7. 结论</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">67</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Disruptor并发框架(一)Disruptor介绍 | 我的博客">
+      <meta itemprop="description" content="LMAX 的成立旨在打造一个高性能金融交易所。作为我们工作的一部分，我们评估了多种方案去设计这个系统以求达到高性能目标，最后我们发现在传统的解决方案中遇到了基础上的瓶颈。许多应用程序依赖队列在处理阶段之间交换数据。我们的性能测试表明，以这种方式使用队列时，延迟成本与磁盘IO操作（基于RAID或SSD的磁盘系统）的成本处于同一数量级——速度非常慢。如果端到端操作中有多个队列，这将使整体延迟增加数百微秒。这显然存在优化空间。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Disruptor并发框架(一)Disruptor介绍
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-06-01 00:00:00" itemprop="dateCreated datePublished" datetime="2025-06-01T00:00:00+08:00">2025-06-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-04 01:24:44" itemprop="dateModified" datetime="2025-09-04T01:24:44+08:00">2025-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Disruptor/" itemprop="url" rel="index"><span itemprop="name">Disruptor</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">LMAX 的成立旨在打造一个高性能金融交易所。作为我们工作的一部分，我们评估了多种方案去设计这个系统以求达到高性能目标，最后我们发现在传统的解决方案中遇到了基础上的瓶颈。许多应用程序依赖队列在处理阶段之间交换数据。我们的性能测试表明，以这种方式使用队列时，延迟成本与磁盘IO操作（基于RAID或SSD的磁盘系统）的成本处于同一数量级——速度非常慢。如果端到端操作中有多个队列，这将使整体延迟增加数百微秒。这显然存在优化空间。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Disruptor并发框架-一-Disruptor介绍"><a href="#Disruptor并发框架-一-Disruptor介绍" class="headerlink" title="Disruptor并发框架(一)Disruptor介绍"></a><strong>Disruptor并发框架</strong>(一)<strong>Disruptor介绍</strong></h2><h2 id="1-什么是Disruptor"><a href="#1-什么是Disruptor" class="headerlink" title="1. 什么是Disruptor?"></a>1. 什么是<strong>Disruptor</strong>?</h2><p>LMAX 的成立旨在打造一个高性能金融交易所。作为我们工作的一部分，我们评估了多种方案去设计这个系统以求达到高性能目标，最后我们发现在传统的解决方案中遇到了基础上的瓶颈。</p>
+<p>许多应用程序依赖队列在处理阶段之间交换数据。我们的性能测试表明，以这种方式使用队列时，延迟成本与磁盘IO操作（基于RAID或SSD的磁盘系统）的成本处于同一数量级——速度非常慢。如果端到端操作中有多个队列，这将使整体延迟增加数百微秒。这显然存在优化空间。</p>
+<p>进一步的研究和对计算机科学的关注使我们意识到传统方法中固有的关注点的混合（例如队列和处理节点）导致了多线程实现中的争用，这表明可能存在更好的方法。结合现代 CPU 的工作原理，也就是我们常说的**“机制共鸣”（mechanical sympathy）**【注：意为参考现代 CPU 的设计思想，顺应底层设计思路，来做上层的应用设计，以便使用底层设计的优势，从而达到一个最佳的设计结果，得到一个‘共鸣’】，通过隔离关注，我们提出了一个数据结构和基于该数据结构的模式，这就是 Disruptor。</p>
+<p>测试结果显示，对于一个三阶段的任务管道，Disruptor 的平均延时的数量级要小于基于传统队列的方法三个数量级。另外 Disruptor 的吞吐量是传统方法的 8 倍。</p>
+<p>这些性能改进也意味着对于并发编程我们前进了一大步。对于高吞吐量和低延时的异步事件处理系统，这种新的模式是一个非常理想的基础组件。</p>
+<p>在 LMAX 中，我们已经建立起一个订单匹配引擎，实时风险管理系统，以及一个高可用性的内存事务处理系统，这些系统在 Disruptor 下都取得了巨大的成功。这些系统中的每一个都建立了新的性能标准，据我们所知，这些标准是无与伦比的。</p>
+<p>Disruptor 不只是专门为金融行业设计的，它具有相当的通用性，它能够解决并发编程中的一个复杂问题：如何最大化性能。这个系统的实现非常简单，尽管这里面的有些概念不是那么直观，但相比于其他机制，基于这种模式的系统往往更加简单。</p>
+<p>相比于其他方法，Disruptor 的写竞争比较少，并发开销更低，而且更加缓存友好，吞吐量更高，延时抖动更低。对于一个普通时钟频率的处理器，Disruptor 每秒处理的消息量为 2500 万，延时低于 50 纳秒。 这个性能指标已经接近于现代处理器在多核之间交换数据的上限。</p>
+<h2 id="2-概述"><a href="#2-概述" class="headerlink" title="2. 概述"></a>2. 概述</h2><p>Disruptor 是 LMAX 开发的世界上最快的金融交易系统的产物。早期的设计思路主要借鉴 SEDA [<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_1">1</a>] 和 Actors[<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_2">2</a>] 的实现，希望使用 pipeline 来提升吞吐量。通过测试各种实现，我们发现管道（pipeline）在不同阶段（stage）之间，事件排队是性能的主要杀手。我们发现队列带入了剧烈的延时抖动。我们为了达到更好的性能于是花了很多精力来开发一个新的队列实现。然而最终发现队列有其局限性——耦合了生产者、消费者、数据存储等多个关注点。Disruptor 的实现很好地隔离上述关注点。</p>
+<h2 id="3-并发的复杂性"><a href="#3-并发的复杂性" class="headerlink" title="3. 并发的复杂性"></a>3. 并发的复杂性</h2><p>本文遵循计算机科学的通用定义：并发不仅是说有两个或者多个任务同时执行，还意味着对资源的竞争访问。这些竞争的资源可能是数据库、文件、Socket 或者内存中的某个地址。</p>
+<p>代码的并发执行主要有两个方面：互斥和变化的可见性。 互斥主要用来管理对某些资源的竞争更新。变化的可见性主要是用来控制什么时候这些变化对其他线程可见。如果你能够在应用层面上限制并发更新那么你就有可能避免互斥。比如，如果你的算法能够确保任何资源只会被一个线程更新，那么互斥就是不必要的。读或者写要求所有的变化对其他线程可见，但实际上只有竞争写操作才真正需要互斥。</p>
+<p>并发环境中最耗费时间的操作其实就是并发写。多线程对同一个资源的写需要复杂昂贵的协调，通常会通过某种锁来实现资源协调。</p>
+<h3 id="3-1-锁的代价"><a href="#3-1-锁的代价" class="headerlink" title="3.1 锁的代价"></a><strong>3.1 锁的代价</strong></h3><p>锁提供了互斥，并确保以有序的方式发生更改。锁其实是很昂贵的，因为它们在竞争的时候需要进行仲裁。这个仲裁会涉及到操作系统的上下文切换，操作系统会挂起所有在等待这把锁的线程，直到锁持有者释放该锁。上下文切换期间，执行线程会丧失对操作系统的控制，导致执行线程的执行上下文丢失之前缓存的数据和指令集，这会给现代处理器带来严重的性能损耗。 当然效率更高的用户态锁是另一种选择，但用户锁只有在没有竞争的时候才真正会带来益处【注：因为用户态的锁往往是通过自旋锁来实现（或者带休眠的自旋锁），而自旋在竞争激烈的时候开销是很大的（一直在消耗CPU资源）】。</p>
+<p>为了探究影响到底有多大，我们写了一个程序，这个程序很简单，就是调用一个循环 5 亿次递增操作的函数。这个 Java 函数在单线程，2.4G Intel Westmere EP 的 CPU 上只需要 300ms。</p>
+<p>一旦引入锁来提供互斥，即使锁还没有发生竞争，程序的执行时间也会发生显著的增加。当两个或多个线程开始竞争时，成本将再次增加几个数量级。实验结果如下：</p>
+<table>
+<thead>
+<tr>
+<th><strong>方法</strong></th>
+<th><strong>时间（毫秒）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Single thread</td>
+<td>300</td>
+</tr>
+<tr>
+<td>Single thread with lock</td>
+<td>10,000</td>
+</tr>
+<tr>
+<td>Two threads with lock</td>
+<td>224,000</td>
+</tr>
+<tr>
+<td>Single thread with CAS</td>
+<td>5,700</td>
+</tr>
+<tr>
+<td>Two threads with CAS</td>
+<td>30,000</td>
+</tr>
+<tr>
+<td>Single thread with volatile write</td>
+<td>4,700</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-CAS的代价"><a href="#3-2-CAS的代价" class="headerlink" title="3.2 CAS的代价"></a><strong>3.2 CAS的代价</strong></h3><p>除了锁之外，另外一种方法是 CAS。CAS 依赖于处理器的支持，当然大部分现代处理器都支持的。CAS 相对于锁是非常高效的，因为它不需要涉及内核上下文切换进行仲裁。但 CAS 并不是免费的，处理器需要对指令 pipeline 加锁以确保原子性，并且会用到内存栅栏（Memory Barrier）以确保对其他线程的可见性。 JAVA中的 java.util.concurrent.Automaic 类用到了 CAS 操作。</p>
+<p>如果程序的关键部分比计数器的简单递增更为复杂，则可能需要使用多个 CAS 操作来协调竞争的复杂状态机。用锁进行并发编程就已经很头疼了，使用 CAS 操作和内存屏障开发无锁算法要复杂很多倍，且很难保证正确性。</p>
+<p>最理想的算法就是只有一个线程来负责对单个资源的所有写，而其它所有的线程都是读结果。要在多处理器环境中读取结果，需要有内存栅栏，以使更改对其他处理器上运行的线程可见。</p>
+<h3 id="3-3-内存栅栏-Memory-Barriers"><a href="#3-3-内存栅栏-Memory-Barriers" class="headerlink" title="3.3 内存栅栏 Memory Barriers"></a>3.3 内存栅栏 Memory Barriers</h3><p>现代处理器为了获得更高的性能会做指令重排，在内存和执行单元中，指令执行、数据的加载和存储都会被进行<code>指令重排</code>。处理器只需要确保程序逻辑能得到相同的结果，它不会关心指令的执行顺序。对于单线程程序，指令重排不会有问题，但对于共享状态的多线程程序而言，内存有序变化就变得非常重要。处理器用内存栅栏来标识对内存更新顺序敏感的代码片段，它们确保确保指令的硬件执行顺序和内存变化在线程间的可见性。编译器可以在代码的合适位置放置额外的软件栅栏（software barriers）来确保被编译代码的执行顺序，这些软件内存栅栏是附加在处理器自身的硬件栅栏之上的。</p>
+<p>现代 CPU 相比内存系统来讲速度是非常快的。为了桥接（ bridge ）其各个 CPU，现代处理器使用了复杂的缓存系统，这些缓存实际上是一些高效的独立的硬件哈希表。不同 CPU 之间的缓存是通过消息传输协议来保证一致性。另外，处理器还会使用“存储缓冲区”缓解对缓存的写压力，使用<code>“无效队列”</code>确保在写操作发生时，缓存一致性协议能快速知道无效队列，从而提高效率。</p>
+<p>对于此种实现方式，最近写入的数据可能处于任何存储中：在寄存器里、在存储缓冲区中、在各级缓存中、在主存中。如果多个线程要共享这个值，那么这个值必须要按照一定的顺序对其它线程可见，这种可见性是通过交换缓存一致性消息来协调完成的。内存栅栏可以控制这些消息的适时产生。</p>
+<p>**读内存栅栏（a read barrier）**确保 CPU 上的加载指令有序，当缓存发生变化时，读内存栅栏会在<code>“无效队列”</code>上标记一个点。读内存栅栏标记点之前的写操作可以通过内存栅栏提供一致性视图（view）【注：读内存栅栏会在<code>“无效队列”</code>中标记一个节点，这个节点意味着read barrier 之前读取的所有数据都已不可靠（这也就告诉我们可能有变化发生），之后的所有读操作都需要重新从内存中加载，因此之后的操作从而能够看到数据的最新变化，barrier 之前的所有线程的写指令和 barrier 之后的读指令就有了一个先后顺序。Read memory barrier 使得排在 read memory barrier 之前的写操作成为一个整体，在这个整体内部写操作的顺序是不确定的，但这个整体形成了一个完整的视图，整个整体的结果对后面的操作是可见】。</p>
+<p>**写内存栅栏（a write barrier）**用来确保 CPU 的存储指令有序，写内存栅栏会在存储缓冲区（store buffer）中标记一个点，这个标记点之前的数据变化（write 操作）会通过缓存刷新（flush）到主存。写内存栅栏标记点之前发生的存储操作可以通过写内存栅栏提供有序性视图。</p>
+<p>一个**完整的内存屏障（a full barrier）**命令的加载&#x2F;存储操作只能在执行它的 CPU 上执行。</p>
+<aside>
+💡
+
+<p>注：综上所述，实际上 read barrier 意味着 read 操作不能穿越这个 read barrier，write barrier 意味着 write 操作不能穿越这个 write barrier。执行 read barrier 的 CPU 是多线程中的消费者的角色，它通过 read barrier 能够尽快看到生产者线程的执行结果。而执行 write barrier 的 CPU 往往充当生产者的角色，它通过 write barrier 把自己执行的结果尽可能快得让其它线程看见。</p>
+</aside>
+
+<p>一些 CPU 在上述三个基础栅栏基础上引入了很多变化，但是通过这三个基础栅栏足以理解内存栅栏期望解决问题的复杂性。在 Java 内存模型中，对 volatile 域的读取和写入实际上就是对应的 read barrier 和 write barrier。Java 内存模型[<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_3">3</a>]规范对此有明确的定义。</p>
+<h3 id="3-4-缓存行-Cache-Lines"><a href="#3-4-缓存行-Cache-Lines" class="headerlink" title="3.4 缓存行 Cache Lines"></a>3.4 缓存行 Cache Lines</h3><p>在现代处理器中使用缓存的方式对于性能的影响非常重要。这样处理器在处理缓存中保存的数据和指令时非常高效，但是，当发生高速缓存未命中时，就会导致效率极低。</p>
+<p>硬件并不是以字节或字为单位操作缓存，为了效率考虑，缓存通常以缓存行（cache line）的形式进行组织（ organised ），缓存行通常有 32-256 字节，最常见的是 64 字节。缓存行也是缓存一致性协议操作的最小粒度。这就意味着：如果两个变量不幸在同一个缓存行里，而且它们分别由不同的线程写入，那么这两个变量的写入会发生竞争，就好像多线程在竞争写入同一个变量一样。这种现象被称之为**“伪共享”（false sharing）**。出于高性能的考虑，需要确保独立但被并发写入的变量之间不会共享同一个缓存行，以求将资源竞争降到最低。</p>
+<p>可预测式的 CPU 访问主存【注：这里的 memory 译为主存，以便和缓存（cache）区分开来】时，通常会预测接下来将被访问到的主存内容并在后台将它加载到缓存中，从而将主存访问产生的时延降至最低。主存预读取发生的前提是：处理器能够检测到主存访问的模式&#x2F;规律，主存预读取就像是以一个可预测的‘步幅’（stride）在主存中行走。比如说：当对一个数组的内容进行迭代时，‘步幅’是可预测的，这样主存中的内容就能预读取到缓存行中，最大化访问主存的效率。在处理器能感知到的任何方向中，‘步幅’通常要小于 2048 字节。然而，像链表（linked lists）和树（trees）这样的数据结构在主存中拥有分布广泛的节点，从而没有可预测的访问‘步幅’【注：由于链表或者树各个节点之间分布并不是顺序的，相邻节点的存储地址相隔很远，所以处理器找不到对应的读取规律，无法进行预读取。】，由于主存中缺乏一致的模式限制了系统预取缓存行的能力，导致主存访问的效率可能低了 2 个数量级。</p>
+<h3 id="3-5-队列的问题"><a href="#3-5-队列的问题" class="headerlink" title="3.5 队列的问题"></a>3.5 队列的问题</h3><p>队列通常使用链表或数组作为元素的底层存储。如果允许内存队列不受限制，那么对于许多类型的问题来说，它可能会不受控制地增长，直到耗尽内存而导致灾难性故障。当生产者的速度超过消费者的速度时，就会发生这种情况。在生产者的速度保证不超过消费者且内存是宝贵资源的系统中，无界队列非常有用，但如果此假设不成立且队列无限制增长，则始终存在风险。为了避免这种灾难性后果，通常会限制队列的大小（有界）。保持队列有界需要它基于数组或主动跟踪其大小。</p>
+<p>队列实现往往会在队列头、队列尾和队列大小变量上存在写入争用。由于消费者和生产者的速度差异，队列在使用过程中通常总是接近满或接近空。它们很少能达到生产和消费速率均衡的平衡点。这种总是满或总是空的倾向会导致高水平的争用和&#x2F;或昂贵的缓存一致性。问题在于，即使使用不同的并发对象（例如锁或CAS变量）来区分队列头和队列尾，它们通常也占用相同的缓存行。</p>
+<p>除了在队列上使用单个大粒度锁之外，管理队列头的生产者、队列尾的消费者以及两者之间节点的存储等问题，使得并发实现的设计非常复杂。对于 put 和 take 操作，在整个队列上使用大粒度锁虽然实现起来很简单，但却会严重影响吞吐量。如果在队列的语义中将并发问题分开处理，那么除了单生产者-单消费者实现之外，其他任何实现都会变得非常复杂。</p>
+<p>在 Java 中使用队列还有一个问题，因为它们是垃圾的重要来源。首先，必须分配对象并将其放入队列。其次，如果使用链表，则必须分配表示链表节点的对象。当不再被引用时，所有为支持队列实现而分配的对象都需要被回收。</p>
+<h3 id="3-6-管道和图-Pipelines-and-Graphs"><a href="#3-6-管道和图-Pipelines-and-Graphs" class="headerlink" title="3.6 管道和图 Pipelines and Graphs"></a>3.6 管道和图 Pipelines and Graphs</h3><p>很多问题场景下，需要将多个处理阶段绑定在一起组成管道，这个管道通常以并行地方式组织成图的拓扑结构。各个阶段之间通常使用队列来连接，同时每个阶段会有自己的处理线程。</p>
+<p>这种处理方式并不便宜（ cheap ）——每个阶段都会有入队和出队的开销，当路径必须分叉（fork）时，有多少个目标消费者，就会增加多少倍的成本【注：到每个消费者都会有入队操作】；同时，分叉之后还需要合并，这时候会因为不可避免的资源竞争产生额外的成本。</p>
+<h2 id="4-LMAX-Disruptor-的设计"><a href="#4-LMAX-Disruptor-的设计" class="headerlink" title="4. LMAX Disruptor 的设计"></a>4. LMAX Disruptor 的设计</h2><p>为了解决上面提出的问题，该设计严格地实现了关注分离（separation of the concerns）。该设计确保任何数据只被一个线程进行写访问，从而避免写冲突。这个设计就是 Disruptor，之所以叫这个名字是因为它和Java 7 中为支持 Fork-Join 而引入的“Phasers” [<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_4">4</a>]有很多相似之处。</p>
+<p>Disruptor 的设计初衷就是为了解决上面提到的问题【<strong>注：锁代价过大、CAS代价过大、缓存行导致的伪共享、队列存在的问题</strong>】，以求最优化内存分配，使用缓存友好的方式来最佳使用现代硬件资源。</p>
+<p>Disruptor 的核心机制在于：以 RingBuffer 的形式预分配有界的数据结构，单个或者多个生产者可以向 RingBuffer 中写入数据，单个或者多个消费者可以从 RingBuffer 读取数据。</p>
+<h3 id="4-1-内存分配-Memory-Allocation"><a href="#4-1-内存分配-Memory-Allocation" class="headerlink" title="4.1 内存分配 Memory Allocation"></a>4.1 内存分配 Memory Allocation</h3><p>Ringbuffer 的内存是在启动时预先分配的。Ringbuffer 要么是一个引用数组，每个元素是指向对象的引用【注：针对C#、 java这样的语言】，要么是一个结构数组，每个元素（entry）代表的就是对象实体【注：针对C、C++这样的语言】。由于 Java 语言的限制，Java 实现的 Ringbuffer 实际上只能是一个引用数组。每个元素只能是一个数据的容器，而不是数据本身。这种预先分配的策略就能够避免 Java 内存回收引起的一些性能问题，因为这些元素对象（enries）在能够在 Disruptor 实例中的整个生命周期存活和被复用【注：这些元素（enties）一直被 RingBuffer 对象持有，而 RingBuffer 实例对象又被 Disruptor 持有，故只要 Disruptor 存在，则这些 enties 便不会被 GC】。由于这些对象是在开始阶段同时分配的，很大程度上被连续分布在主存中，即使不连续它们在内存中的间隔也有可能是固定的，从而支持缓存步幅，非常有利于缓存的数据预取。John Rose 提出了一个草案希望未来 JAVA 能够支持所谓的 “value type”[<a target="_blank" rel="noopener" href="https://jitwxs.cn/17fac167.html#fn5">5</a>]，就像C语言那样，如果这样的话，Disruptor 就能够确保对象在内存中一定是连续的，而不仅仅只是有很大可能性了。</p>
+<p>对于 Java 这样的运行环境来讲，垃圾回收对于低延时系统是一个严重的挑战。内存越大，垃圾回收造成的性能压力也就越大。垃圾回收喜欢的对象要么寿命非常短，要么对象干脆是永生的。Ringbuffer 的预先分配使得我们的对象变成了永生的对象，大大减轻垃圾回收的压力。</p>
+<p>在高负载的情况下，基于队列的系统可以 back up，这会降低处理效率，进而导致被分配的对象比原本存活得更长，在使用分代垃圾收集器的 JVM 中，这些对象将会从年轻代进入老年代。这就意味着：</p>
+<ul>
+<li>这些对象被不断地在各代之间【注：年轻代 eden gen 和 survivor area，以及 young gen 和 old gen 之间】进行拷贝，造成延时波动；</li>
+<li>进入老年代的对象回收成本会更高，GC 带来的内存碎片也会更多，引起 ‘stop the world’ 的概率会更大；越多的临时对象进入到老年代，也更可能带来性能上的损耗。</li>
+</ul>
+<p>【注：如果对象是永生的。那么第一点的代价无法避免，但第二点的代价就会大大降低，因为这些对象一直会存在，那么老年代触发 major collection 时它扫描一下所有对象，发现这些对象都无法释放，什么都不用干，那就直接收工。由于对象不会被释放，那也就不会有碎片，那么 stop the world 的概率也就大大降低了。永生对象在第二点中所做的只不过是进行一次扫描，这个代价非常小。】</p>
+<p>下面通过分析 ArrayBlockingQueue 和 RingBuffer 来加深 Disruptor 内存预分配所带来的好处。</p>
+<p>在 ArrayBlockingQueue 中，数组 Object[] items 负责存储队列中的所有元素，如下图所示，当消费者消费完 items[0] 元素，紧接着生产者向 items[0] 放入新的元素 entity1，这时候 items[0] 存储的是对象 entity1 的引用，items[0] 到 entity0 对象的引用被切断，entity0 等待被 GC。生产者不断地向 items[0] 中写入消息，则老的 entity 将不断地需要被 GC，一旦队列阻塞，items 可能熬过多次minor GC，幸存下来，并进入到老年代，带来更严重的性能隐患。</p>
+<p><img src="/images/disruptor/chapter1/image.png" alt="ArrayBlockQueue Memory Allocation"></p>
+<p><em><strong>ArrayBlockQueue Memory Allocation</strong></em></p>
+<p>再来看看 RingBuffer 预分配内存方式的精妙之处。RingBuffer 同样使用数组 Object[] entries 作为存储元素。如下图所示，初始化RingBuffer 时，会将所有的 entries 的每个元素指定为特定的 Event，这时候 event 中的 detail 属性是 null；后面生产者向 RingBuffer中写入消息时，RingBuffer 不是直接将 enties[7] 指向其他的 event 对象，而是先获取 event 对象，然后更改 event 对象的 detail 属性；消费者在消费时，也是从 RingBuffer 中读取出 event，然后取出其 detail 属性。可以看出，生产&#x2F;消费过程中，RingBuffer 的 entities[7] 元素并未发生任何变化，未产生临时对象，entities 及其元素对象一直存活，直到 RingBuffer 消亡。故而可以最小化 GC 的频率，提升性能。</p>
+<p><img src="/images/disruptor/chapter1/image1.png" alt="Disruptor Memory Allocation"></p>
+<p><em><strong>Disruptor Memory Allocation</strong></em></p>
+<h3 id="4-2-隔离关注-Teasing-Apart-the-Concerns"><a href="#4-2-隔离关注-Teasing-Apart-the-Concerns" class="headerlink" title="4.2 隔离关注 Teasing Apart the Concerns"></a>4.2 隔离关注 Teasing Apart the Concerns</h3><p>我们认为以下问题在所有队列实现中都是混杂在一起的，在某种程度上，这种独特行为的集合倾向于定义队列实现的接口：</p>
+<ol>
+<li>队列元素的存储</li>
+<li>队列协调生产者声明下一个需要交换的队列元素的序号</li>
+<li>队列协调并告知消费者等待的元素已经就绪</li>
+</ol>
+<p>在使用带有垃圾回收特性语言来设计金融用的交易所（exchange）时，过多的内存分配会带来麻烦，所以，我们基于链表的队列不是一个好的解决方案。如果用于存储各个阶段交换数据的节点（entries）可以被预先分配内存，则可以最大限度地减少垃圾回收。如果节点被统一分配为相同大小的块，那么在遍历节点时，将会以一种缓存友好的方式进行，效率会更高。预分配内存的数组满足上述的要求，在创建 RingBuffer 时，DIsruptor 使用抽象工厂模式预分配了所有节点，当一个节点被声明时，生产者只需要将它的数据拷贝到这个预分配的数据空间中即可。</p>
+<p>对于现代处理器而言，取余操作是一种比较昂贵的操作。但在 RingBuffer 中取余是一个使用频率很高的操作，因为需要计算某一个序号在 RingBuffer 中的位置需要用到取余。一个替代的方法是将 RingBuffer 的长度设置为2的幂次方，这样通过简单的位操作就可以获取余数。</p>
+<p>我们前面提到，有界队列会在队列头和队列尾形成激烈的竞争。但是 RingBuffer 使用的数据结构则没有这种竞争和并发，因为RingBuffer 将这些竞争的焦点（concerns）转移到了生产者&#x2F;消费者栅栏（barriers）上去，接下来我们将详细阐述这一逻辑。</p>
+<p>Disruptor 的典型应用场景通常只有一个生产者，典型的生产者是文件读取或者网络侦听。如果只有一个生产者，那么队列元素分配或者序号分配不会存在竞争。</p>
+<p>但在一些特别的场景，Disruptor 会有多个生产者，这种情况下生产者们可能会彼此竞争来获取 RingBuffer 中下一个可用的位置，这里的竞争问题可以通过 CAS 操作来处理。</p>
+<p>当生产者将相关的数据拷贝到 RingBuffer 的位置（entry）中后，生产者提交这个序号，告知消费者这个位置的数据可以消费了。这里可以不使用 CAS 操作，而是用简单地自旋直到等待的其他生产者都到达了这个序号便可提交。【注：RingBuffer 通过一个游标（cursor）来告知消费者当前那些位置可以被消费，多个生产者时，需要确保游标之前的 seq 都已经提交，故而这里需要协调各个生产者】。为了避免覆盖情况发生【注：覆盖是指生产者速度快于消费者速度，导致生产者写入消费者还未来得及消费的位置】，生产者在写入前会检查所有消费者最小的 seq，确保写入的 seq不 会大于这个最小的消费者 seq。</p>
+<p>消费者在读取元素之前需要等待一个序号，该序号指示了有效的可以读取的元素。怎么样等待这个序号，有很多种策略。如果 CPU资源比较宝贵，那么消费者可以等待某一个锁的条件变量，由生产者来唤醒消费者。这种方式明显会带来竞争，只适用于 CPU 资源的稀缺性比系统的延时&#x2F;吞吐量重要的场景。另外一种策略是所有消费者线程循环检查游标（cursor），该游标表示 RingBuffer 中当前有效的可供读取的元素的位置，这种策略使用更多消耗 CPU 资源来换取低时延。这种方法由于没有用锁和条件变量，因此打破了生产者和消费者之间的竞争依赖关系。如果你想支持多生产者-多消费者的场景，你就不得不采用很多 CAS 操作，这些 CAS 操作作用在头、尾、队列长度等等，这就带来了复杂性。但 Disruptor 避免了这种复杂的 CAS 竞争。</p>
+<h3 id="4-3-序列化-Sequencing"><a href="#4-3-序列化-Sequencing" class="headerlink" title="4.3 序列化 Sequencing"></a>4.3 序列化 Sequencing</h3><p>顺序化是 Disruptor 管理并发的核心概念。每个生产者和消费者都维护自己的序号，这个序号用来和 RingBuffer 交互。当一个生产者希望在 RingBuffer 中添加一个元素时，它首先要做的是声明一个序号【注：这个序号被称之为生产者的声明序号，该序号用来指示下一个空闲的插槽（slot ）的位置，一旦序号被声明，那么该序号就不会被其它生产者重复操作，生产者就可以操作该声明序号的 slot 数据】。单生产者的场景下，这个声明序号可以是一个简单的整数；多生产者的场景，这个序号必须是一个支持 CAS 的原子变量。当一个生产者序号被声明，这个序号对应的位置就可以被声明该序号的生产者写入了；当生产者完成更新元素后，它就通过更新一个单独的序号来提交变化，这个单独的序号是一个游标（cursor），用来指示消费者可以消费的最新的元素。生产者可以通过一种自旋的方式来读取和更新 RingBuffer 的游标，这里只需要使用内存栅栏而不需要使用 CAS 操作，如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> <span class="variable">expectedSequence</span> <span class="operator">=</span> claimedSequence – <span class="number">1</span>;</span><br><span class="line"><span class="keyword">while</span> (cursor != expectedSequence) &#123; <span class="comment">//this is a memory Barrier</span></span><br><span class="line">    <span class="comment">// busy spin</span></span><br><span class="line">&#125;</span><br><span class="line">cursor = claimedSequence;</span><br></pre></td></tr></table></figure>
+
+<p>消费者等待指定的消费者序号变得可用，它通过内存栅栏（memory barrier）来读取游标（cursor），一旦游标的值被更新，内存栅栏会确保 RingBuffer 中的这一变化会被所有在游标上等待的消费者可见。【注：通过这种机制，消费者能够及时知道生产者提交了新的消息，并尝试进行消费】。</p>
+<p>每个消费者都各自维护一个序号来表示自己最新消费的位置序号。生产者通过跟踪这些序号来确保不会覆盖消费者还未来得及消费的位置，同时这些序号也可以用于协调消费者之间的执行顺序【注：Disruptor 中的多消费者实际上是指对于同一个 event，有多个处理阶段，每个阶段被认为是一个独立的消费者，各个阶段的执行通常是有顺序要求的】。</p>
+<p>单生产者场景下，不管消费者有多么复杂的依赖，Disruptor 都无需使用锁和 CAS 操作，它通过多个序号（Sequences）上的内存栅栏就可以协调整个并发场景。【注：Disruptor 中有两类 Sequence——生产者序号（又叫 cursor）和消费者序号，通过在这两个序号上建立内存栅栏，达到协调并发的目的】。</p>
+<h3 id="4-4-批量效应-Batching-Effect"><a href="#4-4-批量效应-Batching-Effect" class="headerlink" title="4.4 批量效应 Batching Effect"></a>4.4 批量效应 Batching Effect</h3><p>当消费者等待 RingBuffer 中可用的前进游标序号时，如果消费者发现 RingBuffer 游标自上次检查以来已经前进了多个序号，消费者可以直接处理所有可用的多个序号，而不用引入并发机制， 这样滞后的消费者能够迅速跟上生产者的步伐，从而平衡系统，这一特性是队列（queues）不具有的。这种类型的批处理增加了吞吐量，同时减少和平滑了延迟。 根据我们的观察结果，无论负载如何，时延都会维持在一个常数时间值上，直到存储子系统饱和，曲线是线性的，遵循 Little’s Law[<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_6">6</a>] 定律。 这与在负载增加时观察队列所得到时延 “J” 曲线效应非常不同。</p>
+<h3 id="4-5-依赖图-Dependency-Graphs"><a href="#4-5-依赖图-Dependency-Graphs" class="headerlink" title="4.5 依赖图 Dependency Graphs"></a>4.5 依赖图 Dependency Graphs</h3><p>队列从本质上来讲表示一个简单的消费者和生产者之间的只具有一步的管道（pipeline）。如果消费者形成了一个链条，或者一个图状的依赖关系，那么图中的每个阶段之间都会需要一个队列。大量的队列就带来了开销。在设计 LMAX 金融交易系统的过程中，我们发现基于队列的设计方法会导致大量的队列开销，而这些为数众多的队列所带来的开销耗费了事务处理的大部分时间。</p>
+<p>在 Disruptor 设计模式中，生产者和消费者的竞争被很好得隔离开了，因此通过使用一个简单的 RingBuffer 也可以在消费者之间构造复杂的依赖关系。这样降低了执行时延，从而提高了吞吐量。</p>
+<p>一个 RingBuffer 可以用来处理一个具有复杂的依赖关系图的流程。设计 RingBuffer 的时候需要特别注意，需要避免消费者之间错误的共享缓存行。</p>
+<h3 id="4-6-Disruptor-类图"><a href="#4-6-Disruptor-类图" class="headerlink" title="4.6 Disruptor 类图"></a>4.6 Disruptor 类图</h3><p>下图是 Disruptor 框架的核心类图。此图省略了一些可用于简化编程模型的便捷类。依赖关系图构建完成后，那么编程模型就变简单了。生产者通过 ProducerBarrier 来顺序申请 entry，同时将数据变化写入 entry 中，然后再通过 ProducerBarrier 来提交数据变化并使得这些变化对消费者可见。作为一个消费者，它所需要做的只不过是提供一个 BatchHandler 实现，当一个新的 entry 可见时，这个回调会被触发。这使得 Disruptor 编程模型是一个基于事件的模型，和 Actor 模型类似。</p>
+<p>为了更灵活的设计，队列通常将关注点组合起来考虑。RingBuffer 是 Disruptor 模式的核心，它为数据交换提供了存储，同时又避免了竞争。通过 RingBuffer，生产者和消费者之间的并发问题被隔离开了。ProducerBarrier 就是用来管理RingBuffer中的位置槽（slot）声明，同时跟踪相关的消费者从而避免冲突覆盖。而 ConsumerBarrier 在有新的元素有效时会负责通知消费者。通过这些barrier，消费者之间就构造成了一个依赖关系图，这个依赖关系关系图实际上代表了流程处理过程中的各个阶段。</p>
+<p>【注：本篇文章是基于 Disruptor1.0 的，因此下面的类图也是 1.0 版本的，现在已经更新到 4.0 版本，类图已经有了很大的改变。】</p>
+<p><img src="/images/disruptor/chapter1/image2.png" alt="image.png"></p>
+<h3 id="4-7-代码示例"><a href="#4-7-代码示例" class="headerlink" title="4.7 代码示例"></a>4.7 代码示例</h3><p>下面的代码示例是一个单生产者和单消费者的场景，它通过 BatchHandler 来实现消费者。消费者运行在一个单独的线程上，当元素可用时，它被用来接收元素。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Callback handler which can be implemented by consumers</span></span><br><span class="line"><span class="keyword">final</span> BatchHandler&lt;ValueEntry&gt; batchHandler = <span class="keyword">new</span> <span class="title class_">BatchHandler</span>&lt;ValueEntry&gt;() &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onAvailable</span><span class="params">(<span class="keyword">final</span> ValueEntry entry)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// process a new entry as it becomes available.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onEndOfBatch</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// useful for flushing results to an IO device if necessary.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">onCompletion</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="comment">// do any necessary clean up before shutdown</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">RingBuffer&lt;ValueEntry&gt; ringBuffer =</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">RingBuffer</span>&lt;ValueEntry&gt;(ValueEntry.ENTRY_FACTORY, SIZE,</span><br><span class="line">                               ClaimStrategy.Option.SINGLE_THREADED,</span><br><span class="line">                               WaitStrategy.Option.YIELDING);</span><br><span class="line">ConsumerBarrier&lt;ValueEntry&gt; consumerBarrier = ringBuffer.createConsumerBarrier();       </span><br><span class="line">BatchConsumer&lt;ValueEntry&gt; batchConsumer = </span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">BatchConsumer</span>&lt;ValueEntry&gt;(consumerBarrier, batchHandler);</span><br><span class="line">ProducerBarrier&lt;ValueEntry&gt; producerBarrier = ringBuffer.createProducerBarrier(batchConsumer);   </span><br><span class="line"></span><br><span class="line"><span class="comment">// Each consumer can run on a separate thread</span></span><br><span class="line">EXECUTOR.submit(batchConsumer);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Producers claim entries in sequence</span></span><br><span class="line"><span class="type">ValueEntry</span> <span class="variable">entry</span> <span class="operator">=</span> producerBarrier.nextEntry();</span><br><span class="line"></span><br><span class="line"><span class="comment">// copy data into the entry container</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// make the entry available to consumers</span></span><br><span class="line">producerBarrier.commit(entry);</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-吞吐量性能测试-Throughput-Performance-Testing"><a href="#5-吞吐量性能测试-Throughput-Performance-Testing" class="headerlink" title="5. 吞吐量性能测试 Throughput Performance Testing"></a>5. 吞吐量性能测试 Throughput Performance Testing</h2><p>作为参考，我们选择了 Doug Lea 的 java.util.concurrent.ArrayBlockingQueue[<a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_7">7</a>]，根据我们的测试，它在所有有界队列中具有最高的性能。测试是按照阻塞的方式进行的以匹配 Disruptor。以下详细描述的测试用例可在 Disruptor 开源项目中找到。注意：运行测试需要一个能够并行执行至少 4 个线程的系统。</p>
+<aside>
+💡
+
+<p>运行测试需要能够并行执行至少 4 个线程的系统。</p>
+</aside>
+
+<p><img src="/images/disruptor/chapter1/image3.png" alt="图 1. 单播：1P – 1C"></p>
+<p><em>图 1. 单播：1P – 1C</em></p>
+<p><img src="/images/disruptor/chapter1/image4.png" alt="图 2. 三步流水线：1P – 3C"></p>
+<p><em>图 2. 三步流水线：1P – 3C</em></p>
+<p><img src="/images/disruptor/chapter1/image5.png" alt="图 3. 序列器：3P – 1C"></p>
+<p><em>图 3. 序列器：3P – 1C</em></p>
+<p><img src="/images/disruptor/chapter1/image6.png" alt="图 4. 多播：1P – 3C"></p>
+<p><em>图 4. 多播：1P – 3C</em></p>
+<p><img src="/images/disruptor/chapter1/image7.png" alt="图 5. 钻石：1P – 3C"></p>
+<p><em>图 5. 钻石：1P – 3C</em></p>
+<p>对于上述配置，我们<code>ArrayBlockingQueue</code>针对每条数据流弧应用了与 Disruptor 屏障配置进行比较。下表显示了使用 Java 1.6.0_25 64 位 Sun JVM、Windows 7、Intel Core i7 860 @ 2.8 GHz（不带超线程）和 Intel Core i7-2720QM、Ubuntu 11.04 操作系统，处理 5 亿条消息时，以每秒操作数为单位的性能结果，并取 3 次运行中的最佳结果。不同的 JVM 执行结果可能会有很大差异，以下数据并非我们观察到的最高值。</p>
+<ul>
+<li><em>表 2. 比较吞吐量（以每秒操作数为单位）</em></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th><strong>Nehalem 2.8Ghz – Windows 7 SP1 64-bit</strong></th>
+<th></th>
+<th><strong>Sandy Bridge 2.2Ghz – Linux 2.6.38 64-bit</strong></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td><strong>ABQ</strong></td>
+<td><strong>Disruptor</strong></td>
+<td><strong>ABQ</strong></td>
+</tr>
+<tr>
+<td>Unicast: 1P – 1C</td>
+<td>5,339,256</td>
+<td>25,998,336</td>
+<td>4,057,453</td>
+</tr>
+<tr>
+<td>Pipeline: 1P – 3C</td>
+<td>2,128,918</td>
+<td>16,806,157</td>
+<td>2,006,903</td>
+</tr>
+<tr>
+<td>Sequencer: 3P – 1C</td>
+<td>5,539,531</td>
+<td>13,403,268</td>
+<td>2,056,118</td>
+</tr>
+<tr>
+<td>Multicast: 1P – 3C</td>
+<td>1,077,384</td>
+<td>9,377,871</td>
+<td>260,733</td>
+</tr>
+<tr>
+<td>Diamond: 1P – 3C</td>
+<td>2,113,941</td>
+<td>16,143,613</td>
+<td>2,082,725</td>
+</tr>
+</tbody></table>
+<ul>
+<li><em>表 3. 针对现代硬件更新的比较吞吐量（以每秒操作数为单位）</em></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th><strong>AMD EPYC 9374F – Linux 5.4.277 – OpenJDK 11.0.24</strong></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td><strong>ABQ</strong></td>
+<td><strong>Disruptor 3</strong></td>
+</tr>
+<tr>
+<td>Unicast: 1P – 1C</td>
+<td>20,895,148</td>
+<td>134,553,283</td>
+</tr>
+<tr>
+<td>Pipeline: 1P – 3C</td>
+<td>5,216,647</td>
+<td>76,068,766</td>
+</tr>
+<tr>
+<td>Sequencer: 3P – 1C</td>
+<td>18,791,340</td>
+<td>16,010,759</td>
+</tr>
+<tr>
+<td>Multicast: 1P – 3C</td>
+<td>2,355,379</td>
+<td>68,157,033</td>
+</tr>
+<tr>
+<td>Diamond: 1P – 3C</td>
+<td>3,433,665</td>
+<td>61,229,488</td>
+</tr>
+</tbody></table>
+<h2 id="6-延迟性能测试-Latency-Performance-Testing"><a href="#6-延迟性能测试-Latency-Performance-Testing" class="headerlink" title="6. 延迟性能测试 Latency Performance Testing"></a>6. 延迟性能测试 Latency Performance Testing</h2><p>为了测量延时，我们采用 3 个阶段的 pipeline 作为测试场景，为了能够测出系统的最佳状态，我们让吞吐量压力维持在一个合适的水准，这个压力不至于耗尽队列资源。这个压力是通过每插入一个事件就等待 1ms 的方式来实现的，然后一直这样重复 5000 万次。为了精确测量延时，我们需要精确考量 CPU 的时间戳计数器（TSC）。我们采用了那些 TSC 恒定的 CPU 来作为测试机器，因为老的 CPU 为了节省功耗，往往会自动调节 TSC。Intel Nehalem 之后的 CPU 都支持恒定的TSC。可以使用运行于 Ubuntu 11.04 上的 Oracle 最新版本的 JVM 进行测试，本测试未做 CPU 绑定。为了进行比较，我们再次使用 ArrayBlockingQueue。我们本可以使用 ConcurrentLinkedQueue [ <a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnotedef_8">8</a> ]，它可能会给出更好的结果，但我们希望使用有界队列实现，以确保生产者不会通过产生背压而超过消费者。以下结果基于 2.2GHz Core i7-2720QM 处理器，在 Ubuntu 11.04 系统上运行 Java 1.6.0_25 64 位版本。Disruptor 的平均每跳延迟为 52 纳秒，而 ArrayBlockingQueue 的平均每跳延迟为 32,757 纳秒。性能分析显示，使用锁和通过条件变量发送信号是 ArrayBlockingQueue 延迟的主要原因。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Array Blocking Queue (ns)</strong></th>
+<th><strong>Disruptor (ns)</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>最小延迟</td>
+<td>145</td>
+<td>29</td>
+</tr>
+<tr>
+<td>平均延迟</td>
+<td>32,757</td>
+<td>52</td>
+</tr>
+<tr>
+<td>99% 的观测值低于</td>
+<td>2,097,152</td>
+<td>128</td>
+</tr>
+<tr>
+<td>99.99% 的观测值小于</td>
+<td>4,194,304</td>
+<td>8,192</td>
+</tr>
+<tr>
+<td>最大延迟</td>
+<td>5,069,086</td>
+<td>175,567</td>
+</tr>
+</tbody></table>
+<p><img src="/images/disruptor/chapter1/image8.png" alt="image.png"></p>
+<h2 id="7-结论"><a href="#7-结论" class="headerlink" title="7. 结论"></a>7. 结论</h2><p>Disruptor 在提升吞吐量、降低并发执行上下文之间的延迟以及确保可预测的延迟方面迈出了重要一步，而可预测的延迟是许多应用程序中的一个重要考虑因素。我们的测试表明，它的性能优于其他类似的线程间数据交换方法。我们相信，这是此类数据交换中性能最高的机制。通过专注于清晰地分离跨线程数据交换所涉及的关注点，消除写入争用、最大限度地减少读取争用，并确保代码能够与现代处理器使用的缓存良好兼容，我们创建了一种高效的机制，可用于在任何应用程序中的线程间交换数据。</p>
+<p>批处理效应允许消费者在无竞争的情况下处理达到给定阈值的条目，这为高性能系统带来了新的特性。对于大多数系统而言，随着负载和竞争的增加，延迟会呈指数级增长，即典型的“J”曲线。随着 Disruptor 负载的增加，延迟几乎保持平稳，直到内存子系统达到饱和。</p>
+<p>我们相信，Disruptor 为高性能计算设立了新的基准，并且非常适合继续利用处理器和计算机设计的当前趋势。</p>
+<p>资料来源：</p>
+<hr>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_1"><strong>1.</strong></a>分阶段事件驱动架构 – <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Staged_event-driven_architecture">https://en.wikipedia.org/wiki/Staged_event-driven_architecture</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_2"><strong>2.</strong></a>演员模型 – <a target="_blank" rel="noopener" href="http://dspace.mit.edu/handle/1721.1/6952">http://dspace.mit.edu/handle/1721.1/6952</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_3"><strong>3.</strong></a> Java 内存模型 - <a target="_blank" rel="noopener" href="https://jcp.org/en/jsr/detail?id=133">https://jcp.org/en/jsr/detail?id=133</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_4"><strong>4.</strong></a> Phasers - <a target="_blank" rel="noopener" href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Phaser.html">https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Phaser.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_5"><strong>5.</strong></a>值类型 - <a target="_blank" rel="noopener" href="https://blogs.oracle.com/jrose/tuples-in-the-vm">https://blogs.oracle.com/jrose/tuples-in-the-vm</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_6"><strong>6.</strong></a>利特尔定律 - <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Little%27s_law">https://en.wikipedia.org/wiki/Little%27s_law</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_7"><strong>7.</strong></a> ArrayBlockingQueue - <a target="_blank" rel="noopener" href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ArrayBlockingQueue.html">https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ArrayBlockingQueue.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://lmax-exchange.github.io/disruptor/disruptor.html#_footnoteref_8"><strong>8</strong></a> . ConcurrentLinkedQueue - <a target="_blank" rel="noopener" href="http://download.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/ConcurrentLinkedQueue.html">http://download.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/ConcurrentLinkedQueue.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Disruptor/" rel="tag"># Disruptor</a>
+              <a href="/tags/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/" rel="tag"># Disruptor并发框架</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Redis/Redis%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8(%E5%8D%81%E4%B8%80)Redis%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E5%92%8C%E9%9B%AA%E5%B4%A9/" rel="prev" title="Redis基础入门(十一)Redis缓存穿透和雪崩">
+                  <i class="fa fa-angle-left"></i> Redis基础入门(十一)Redis缓存穿透和雪崩
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/" rel="next" title="Disruptor并发框架(二)Disruptor用户指南">
+                  Disruptor并发框架(二)Disruptor用户指南 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

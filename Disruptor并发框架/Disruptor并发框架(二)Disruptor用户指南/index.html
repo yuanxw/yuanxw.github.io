@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/themes/blue/pace-theme-minimal.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pace/1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous" defer></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"yuanxw.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.24.1","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":5,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="理解 Disruptor 是什么最好方式就是将其与现有的比较好理解的东西比较 。Disruptor 就相当于 Java 中 BlockingQueue。同队列一样，Disruptor 用于在不同的线程之间进行数据交互，然而 Disruptor 也提供了一些关键的不同于队列的特性。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Disruptor并发框架(二)Disruptor用户指南">
+<meta property="og:url" content="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="我的博客">
+<meta property="og:description" content="理解 Disruptor 是什么最好方式就是将其与现有的比较好理解的东西比较 。Disruptor 就相当于 Java 中 BlockingQueue。同队列一样，Disruptor 用于在不同的线程之间进行数据交互，然而 Disruptor 也提供了一些关键的不同于队列的特性。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yuanxw.github.io/images/disruptor/chapter2/image.png">
+<meta property="article:published_time" content="2025-06-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-09-03T17:27:35.515Z">
+<meta property="article:author" content="Panda Yuan">
+<meta property="article:tag" content="Disruptor">
+<meta property="article:tag" content="Disruptor并发框架">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yuanxw.github.io/images/disruptor/chapter2/image.png">
+
+
+<link rel="canonical" href="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/","path":"Disruptor并发框架/Disruptor并发框架(二)Disruptor用户指南/","title":"Disruptor并发框架(二)Disruptor用户指南"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Disruptor并发框架(二)Disruptor用户指南 | 我的博客</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+  <script class="next-config" data-name="mermaid" type="application/json">{"enable":true,"theme":{"light":"default","dark":"dark"},"js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.9.0/mermaid.min.js","integrity":"sha256-Cz7UN0EXNjgV2u/a38wg/3BNfdRRO1XtgDq93L2GqJg="}}</script>
+  <script src="/js/third-party/tags/mermaid.js" defer></script>
+
+
+
+  <script src="/js/third-party/pace.js" defer></script>
+
+
+  
+
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quicklink/3.0.1/quicklink.umd.js" integrity="sha256-44BednzIpUeQJcY8qtLyarFu0UCCTbgmWOvaoehiFQQ=" crossorigin="anonymous" defer></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/"}</script>
+  <script src="/js/third-party/quicklink.js" defer></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="我的博客" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">我的博客</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6-%E4%BA%8C-Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97"><span class="nav-number">1.</span> <span class="nav-text">Disruptor并发框架(二)Disruptor用户指南</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Core-Concepts-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="nav-number">1.1.</span> <span class="nav-text">1. Core Concepts  核心概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 核心组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-%E5%AE%98%E6%96%B9%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.2 官方示例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E4%BA%8B%E4%BB%B6%E5%B9%BF%E6%92%AD-Multicast-Events"><span class="nav-number">1.2.</span> <span class="nav-text">2.事件广播 Multicast Events</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-%E6%B6%88%E8%B4%B9%E8%80%85%E4%BE%9D%E8%B5%96%E5%9B%BE-Consumer-Dependency-Graph"><span class="nav-number">1.2.1.</span> <span class="nav-text">2.1 消费者依赖图 Consumer Dependency Graph</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%BA%8B%E4%BB%B6%E9%A2%84%E5%88%86%E9%85%8D-Event-Preallocation"><span class="nav-number">1.3.</span> <span class="nav-text">3.事件预分配 Event Preallocation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%8F%AF%E9%80%89%E6%8B%A9%E7%9A%84%E6%97%A0%E9%94%81-Optionally-Lock-free"><span class="nav-number">1.4.</span> <span class="nav-text">4. 可选择的无锁 Optionally Lock-free</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Panda Yuan"
+      src="/images/gongfu_panda.jpg">
+  <p class="site-author-name" itemprop="name">Panda Yuan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">67</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yuanxw" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yuanxw" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yuanxiongw@126.com" title="E-Mail → mailto:yuanxiongw@126.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yuanxw.github.io/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%BA%8C)Disruptor%E7%94%A8%E6%88%B7%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/gongfu_panda.jpg">
+      <meta itemprop="name" content="Panda Yuan">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="我的博客">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Disruptor并发框架(二)Disruptor用户指南 | 我的博客">
+      <meta itemprop="description" content="理解 Disruptor 是什么最好方式就是将其与现有的比较好理解的东西比较 。Disruptor 就相当于 Java 中 BlockingQueue。同队列一样，Disruptor 用于在不同的线程之间进行数据交互，然而 Disruptor 也提供了一些关键的不同于队列的特性。">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Disruptor并发框架(二)Disruptor用户指南
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2025-06-02 00:00:00" itemprop="dateCreated datePublished" datetime="2025-06-02T00:00:00+08:00">2025-06-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2025-09-04 01:27:35" itemprop="dateModified" datetime="2025-09-04T01:27:35+08:00">2025-09-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Disruptor/" itemprop="url" rel="index"><span itemprop="name">Disruptor</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">理解 Disruptor 是什么最好方式就是将其与现有的比较好理解的东西比较 。Disruptor 就相当于 Java 中 BlockingQueue。同队列一样，Disruptor 用于在不同的线程之间进行数据交互，然而 Disruptor 也提供了一些关键的不同于队列的特性。</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h1 id="Disruptor并发框架-二-Disruptor用户指南"><a href="#Disruptor并发框架-二-Disruptor用户指南" class="headerlink" title="Disruptor并发框架(二)Disruptor用户指南"></a><strong>Disruptor并发框架(二)Disruptor用户指南</strong></h1><p>理解 Disruptor 是什么最好方式就是将其与现有的比较好理解的东西比较 。Disruptor 就相当于 Java 中 BlockingQueue。同队列一样，Disruptor 用于在不同的线程之间进行数据交互，然而 Disruptor 也提供了一些关键的不同于队列的特性，如：</p>
+<ul>
+<li>广播事件至消费者，并且能遵循消费者依赖关系</li>
+<li>预分配用于存储事件内容的内存空间</li>
+<li>针对极高的性能目标而实现的极度优化和无锁的设计</li>
+</ul>
+<h2 id="1-Core-Concepts-核心概念"><a href="#1-Core-Concepts-核心概念" class="headerlink" title="1. Core Concepts  核心概念"></a><strong>1. Core Concepts  核心概念</strong></h2><p>在理解 Disruptor 如何工作之前，定义一些普遍存在于文档和源代码中的术语，对于倾向 DDD 的人而言，它们就是 Disruptor 领域的无处不在的语言。</p>
+<h3 id="1-1-核心组件"><a href="#1-1-核心组件" class="headerlink" title="1.1 核心组件"></a>1.1 核心组件</h3><ul>
+<li><p><strong>Disruptor</strong></p>
+<p>  持有 RingBuffer、消费者线程池 Executor、消费者集合 CounsumerRepository 等引用。</p>
+</li>
+<li><p><strong>RingBuffer 环形缓冲</strong></p>
+<p>  RingBuffer 在 3.0 版本之前被认为是 Disruptor 的主要概念。但从 Diruptor 3.0 开始，RingBuffer 只负责存储和更新 Disruptor 的数据，在一些高级的使用场景中用户也可以自定义它。</p>
+<p>  RingBuffer 是基于数组的缓存实现，存储生产和消费的 Event，它实现了阻塞队列的语义，也是创建 sequencer 与定义 WaitStartegy 的入口。如果 RingBuffer 满了，则生产者会阻塞等待；如果 RingBuffer 空了，则消费者会阻塞等待。</p>
+</li>
+<li><p><strong>Sequence 序列</strong></p>
+<p>  Disruptor 使用 Sequence 来标记特定组件的处理进度，通过顺序递增的序号来编号，管理进行交换的 Event。一个 Sequence 用于跟踪标识某个特定的事件处理者（RingBuffer、Producer、Consumer）的处理进度。</p>
+<p>  Sequence 具有许多 AtomicLong 的特征，虽然使用 AtomicLong 也可以用于标识进度，但它可以防止不同的 Sequence 之间的 CPU 缓存伪共享(Flase Sharing)问题。</p>
+</li>
+<li><p><strong>Sequencer 序列器</strong></p>
+<p>  Sequencer 是 Disruptor 中的真正核心，主要实现生产者和消费者之间快速、正确地传递数据的并发算法。</p>
+<p>  它具有 SingleProducerSequencer 和 MultiProducerSequencer 这两个实现。</p>
+</li>
+<li><p><strong>Sequence Barrier 序列屏障</strong></p>
+<p>  Sequence Barrier 由 Sequencer 创建，它包含了来自 Sequencer 的已经发布的主要 sequence 的引用，或者包含了依赖的消费者的 sequence。</p>
+<p>  用于保持对 RingBuffer 的 Main Published Sequence(Producer) 和 Consumer 之间的平衡关系，它决定了 Consumer 是否还有可处理的 Event 的逻辑。</p>
+</li>
+<li><p><strong>WaitStrategy 等待策略</strong></p>
+<p>  WaitStrategy 决定了消费者以何种方式等待生产者将 Event 放进 Disruptor 中。</p>
+</li>
+<li><p><strong>Event 事件</strong><br>从生产者传到消费者的数据单元叫做 Event。它不是一个被 Disruptor 定义的特定类型，而是由 Disruptor 的使用者自行定义。</p>
+</li>
+<li><p><strong>Event Processor 事件处理器</strong><br>持有特定的消费者的 Sequence，并且拥有一个主事件循环（main event loop）用于处理 Disruptor 的 Event。</p>
+<p>  其中 BatchEventProcessor 是其具体实现，实现了事件循环（event loop），并且会回调到实现了 EventHandler 的接口对象中。</p>
+</li>
+<li><p><strong>EventHandler 事件处理逻辑</strong><br>由用户实现并且代表了 Disruptor 中的一个消费者的接口，消费者相关的逻辑都需要写在这里。</p>
+</li>
+<li><p><strong>Producer 生产者</strong><br>生产者，泛指调用 Disruptor 发布事件的用户代码，它不是一个被 Disruptor 定义的特定类型，而是由 Disruptor 的使用者自行定义。</p>
+</li>
+</ul>
+<h3 id="1-2-官方示例"><a href="#1-2-官方示例" class="headerlink" title="1.2 官方示例"></a>1.2 官方示例</h3><p>为了将这些元素置于上下文中，下面是一个示例，说明 LMAX 如何在其高性能核心服务（例如交易所）中使用 Disruptor。<em>图 1.具有一组依赖消费者的颠覆者。</em></p>
+<p><img src="/images/disruptor/chapter2/image.png" alt="图 1.具有一组依赖消费者的颠覆者。"></p>
+<p><em><strong>图 1.具有一组依赖消费者的颠覆者。</strong></em></p>
+<p>在该示例中为我们展示了一个多生产者多消费者的模型，生产者和消费者的交互核心为 <strong>RingBuffer</strong> 和 <strong>Sequencer</strong>。</p>
+<p>生产者本身不需要维护 Sequence 序列，这两个生产者只需要直接使用 RingBuffer 的 Sequence 即可，不论谁先生产出数据，都只需要对 RingBuffer 的 Sequence 作 CAS 操作递增即可。</p>
+<p>消费者本身需要维护 Sequence 序列，因为每个消费者的消费进度不同，自身的 Sequence 序列标识了当前消费者的消费进度。当各个消费者需要消费更多的数据时，需要通过 Sequence Barrier 进行协调。</p>
+<h2 id="2-事件广播-Multicast-Events"><a href="#2-事件广播-Multicast-Events" class="headerlink" title="2.事件广播 Multicast Events"></a>2.事件广播 Multicast Events</h2><p>事件广播是 Disruptor 和队列最大的区别。当你有多个消费者监听了同一个 Disruptor，所有的事件将会被发布到所有的消费者中，相比之下队列的一个事件只能被发到一个消费者中。Disruptor 这一特性被用来需要对同一数据进行多个并行操作的情况。如在 LMAX 系统中有三个操作可以同时进行：日志（ journalling，将数据持久到日志文件中），复制（ replication，将数据发送到其他的机器上，以确保存在数据远程副本），业务逻辑处理（business logic，实际的处理工作）。也可以使用 WokrerPool 来并行处理不同的事件 。</p>
+<p>再看上图 图1，有三个EventHandler（JournalConsumer, ReplicationConsumer 和 ApplicationConsumer）监听 Disruptor，每一个都将接受 Disruptor 中所有的可用消息，这允许三个消费者并行的工作。</p>
+<h3 id="2-1-消费者依赖图-Consumer-Dependency-Graph"><a href="#2-1-消费者依赖图-Consumer-Dependency-Graph" class="headerlink" title="2.1 消费者依赖图 Consumer Dependency Graph"></a>2.1 消费者依赖图 Consumer Dependency Graph</h3><p>为了支持实际业务中并行的处理流程，Disruptor 提供了多个消费者之间的协助功能。回到上面的 LMAX 的例子，我们可以让日志处理和远程副本赋值先执行完之后再执行业务处理流程，这个功能被称之为 gating。</p>
+<p>gating 发生在两种场景中：</p>
+<ul>
+<li>第一：我们需要确保生产者不要超过消费者。通过调用 RingBuffer.addGatingConsumers() 增加相关的消费者至Disruptor来完成。</li>
+<li>第二：就是之前所说的场景，通过构造包含需要必须先完成的消费者的 Sequence 的 SequenceBarrier 来实现。</li>
+</ul>
+<p>引用上图1， 有三个消费者监听来自 RingBuffer 的事件。这里有一个依赖关系图。ApplicationConsumer 依赖 JournalConsumer 和 ReplicationConsumer。这个意味着 JournalConsumer 和 ReplicationConsumer 可以自由的并发运行。依赖关系可以看成是从 ApplicationConsumer 的 SequenceBarrier 到 JournalConsumer 和 ReplicationConsumer 的 Sequence 的连接。</p>
+<p>还有一点值得关注，Sequencer 与下游的消费者之间的关系。它的作用之一是确保发布（publication）不会包裹（wrap） RingBuffer。为此，所有下游消费者的Sequence 不能比 RingBuffer 的 Sequence 小且不能小于 RingBuffer 的 size。因为 ApplicationConsumers 的 Sequence 确保小于等于 JournalConsumer 和 ReplicationConsumer 的 Sequence，因此 Sequencer 只需要检查 ApplicationConsumers 的 Sequence。从更一般的意义上讲，Sequencer 只需了解依赖（dependency）树中叶节点的消费者的 Sequence 即可。</p>
+<h2 id="3-事件预分配-Event-Preallocation"><a href="#3-事件预分配-Event-Preallocation" class="headerlink" title="3.事件预分配 Event Preallocation"></a>3.事件预分配 Event Preallocation</h2><p>Disruptor 的目标之一是被用在低延迟的环境中，在低延迟系统中有必要减少和降低内存的占用。在基于 Java 的系统中，需要减少由于 GC 导致的停顿次数（在低延迟的 C&#x2F;C++ 系统中，由于内存分配器的争用，大量的内存分配也会导致问题）。</p>
+<p>为了满足这点，用户可以在 Disruptor 中为事件预分配内存。 在初始构造期间，EventFactory 由用户提供，并将在 Disruptor 的 RingBuffer 中为每个条目（ entry）调用其 newInstance() 方法。 当将新的数据发布到 Disruptor 中时， API 允许用户获取已经被构造的对象，以便可以调用方法更新该对象的域。Disruptor 将确保这些操作是线程安全。</p>
+<h2 id="4-可选择的无锁-Optionally-Lock-free"><a href="#4-可选择的无锁-Optionally-Lock-free" class="headerlink" title="4. 可选择的无锁 Optionally Lock-free"></a>4. 可选择的无锁 Optionally Lock-free</h2><p>对于低延迟的需求推动的另一个关键实现细节是广泛使用无锁算法来实现 Disruptor。所有的内存可见性和正确性都使用内存屏障和 CAS 操作实现。除了 BlockingWaitStrategy 中使用到了锁以外，而这仅仅是为了使用 Condition，以便消费者线程在等待一个新的事件到来的时候能被 park 住。</p>
+<aside>
+💡
+
+<p>许多低延迟系统都使用自旋（busy-wait）来避免使用 Condition 造成的抖动，但是自旋（busy-wait）的数量变多时将会导致性能的下降，特别是 CPU 资源严重受限的情况下。例如，在虚拟环境中的 Web 服务器。</p>
+</aside>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Disruptor/" rel="tag"># Disruptor</a>
+              <a href="/tags/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/" rel="tag"># Disruptor并发框架</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%80)Disruptor%E4%BB%8B%E7%BB%8D/" rel="prev" title="Disruptor并发框架(一)Disruptor介绍">
+                  <i class="fa fa-angle-left"></i> Disruptor并发框架(一)Disruptor介绍
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6/Disruptor%E5%B9%B6%E5%8F%91%E6%A1%86%E6%9E%B6(%E4%B8%89)Getting%20Started%E5%BC%80%E5%A7%8B/" rel="next" title="Disruptor并发框架(三)Getting Started开始">
+                  Disruptor并发框架(三)Getting Started开始 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2025</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Panda Yuan</span>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
